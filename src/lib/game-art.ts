@@ -16,6 +16,11 @@ export function vehicleArt(slug: string) {
   return `/game/vehicles/${slug}.jpg`;
 }
 
+export function gymArt(kind: "header" | `l${number}`) {
+  if (kind === "header") return "/game/gym/gym-header.jpg";
+  return `/game/gym/gym-${kind}.jpg`;
+}
+
 export function hoerenArt(kind: "header" | "window" | "drugs" | "handel" | `dark-${string}` | `escort-${number}`) {
   if (kind === "header") return "/game/hoeren/header.jpg";
   if (kind === "window") return "/game/hoeren/window.jpg";

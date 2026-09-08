@@ -44,6 +44,12 @@ model User {
   blackmailTapes        Int       @default(0)
   outbreakUntil         DateTime?
   streetProtectUntil    DateTime?
+  strength              Int       @default(0)
+  condition             Int       @default(0)
+  fightSkill            Int       @default(0)
+  gymExp                Int       @default(0)
+  gymFloor              Int       @default(1)
+  gymCooldownUntil      DateTime?
   familyId              String?
   family                Family?   @relation("FamilyRoster", fields: [familyId], references: [id])
   lastCrimeAt           DateTime?
@@ -134,15 +140,15 @@ model Vehicle {
 model ShopItem {
   id               String          @id @default(cuid())
   slug             String          @unique
-  name              String
-  description       String
-  type              String
-  attack            Int             @default(0)
-  defense           Int             @default(0)
-  healAmount        Int             @default(0)
-  energyAmount      Int             @default(0)
+  name             String
+  description      String
+  type             String
+  attack           Int             @default(0)
+  defense          Int             @default(0)
+  healAmount       Int             @default(0)
+  energyAmount     Int             @default(0)
   bulletsAmount    Int             @default(0)
-  price              Int
+  price            Int
   minRankOrder     Int             @default(1)
   inventory        InventoryItem[]
   listings         MarketListing[]
