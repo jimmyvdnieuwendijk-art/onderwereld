@@ -152,10 +152,11 @@ Then open `https://<project>.vercel.app`, register or log in with the demo accou
 5. **Steel auto's** (o.a. Opel Corsa, Audi RS6, Range Rover, Ferrari Roma, Bugatti Chiron), verkoop of repareer ze in de garage, of zet ze op de markt.
 6. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven.
 7. Koop wapens/vesten/kogels, rust uit, val andere spelers aan (niet tijdens een vlucht).
-8. Open **Gym** (Grindhouse) in het linkermenu: vijf verdiepingen (Kelder → Slachthuis). Training kost energie + soms cash, geeft kracht/conditie/vechtkunst en een recovery-% energie terug. Gym-rep + eenmalige deurprijs opent de volgende vloer. Eén cooldown voor het hele gebouw. Stats tellen mee in PvP. Energie buiten de gym: +2 per 10 seconden, max 100 (winkeldrank +40).
-9. Open **Hoeren** in het linkermenu (**Dark Red Light Empire**): ronsel via club, **straat** of **stripclub**; wijs escorts toe aan high-class, underground strip, live cams of BDSM-club (consensueel, 21+). Huur ramen, boek Dark Room, stuur **VIP / high-roller / corrupte wethouder** (USB-kompromat op de gast — gezocht omlaag, cash of stoepdekking). Claim **straat-hoeken** tegen NPC-pimps (De Roos, Uncle Vito, Madame K). Risico’s: gastgeweld (conditie), zedenrazzia (gezocht), rival takeover, optionele uitbraak (−35% omzet, kliniek). Pimp-exp bepaalt rang (Street Hustler → Ghetto Mogul). Main escort +10% verdediging. Geen slavernijmeters, geen vleesmarkt, geen dwang.
-10. **Spelers** is een klassement (rang, exp, cash, kills). De stad van andere spelers is niet zichtbaar.
-11. Inbox + shoutbox + families. Berichten staat onderaan het menu, boven Logboek.
+8. Open **Casino** in het linkermenu: roulette (Europees, huis op de nul), underground five-card draw (mes-ante + 10% rake, peek 1×/nacht), De Straat (2d6 met extra bust op 4/10) en de hondenkooi (12% vig). Inzetlimiet en 8s cooldown.
+9. Open **Gym** (Grindhouse) in het linkermenu: vijf verdiepingen (Kelder → Slachthuis). Training kost energie + soms cash, geeft kracht/conditie/vechtkunst en een recovery-% energie terug. Gym-rep + eenmalige deurprijs opent de volgende vloer. Eén cooldown voor het hele gebouw. Stats tellen mee in PvP. Energie buiten de gym: +2 per 10 seconden, max 100 (winkeldrank +40).
+10. Open **Hoeren** in het linkermenu (**Dark Red Light Empire**): ronsel via club, **straat** of **stripclub**; wijs escorts toe aan high-class, underground strip, live cams of BDSM-club (consensueel, 21+). Huur ramen, boek Dark Room, stuur **VIP / high-roller / corrupte wethouder** (USB-kompromat op de gast — gezocht omlaag, cash of stoepdekking). Claim **straat-hoeken** tegen NPC-pimps (De Roos, Uncle Vito, Madame K). Risico’s: gastgeweld (conditie), zedenrazzia (gezocht), rival takeover, optionele uitbraak (−35% omzet, kliniek). Pimp-exp bepaalt rang (Street Hustler → Ghetto Mogul). Main escort +10% verdediging. Geen slavernijmeters, geen vleesmarkt, geen dwang.
+11. **Spelers** is een klassement (rang, exp, cash, kills). De stad van andere spelers is niet zichtbaar.
+12. Inbox + shoutbox + families. Berichten staat onderaan het menu, boven Logboek.
 
 Jail en ziekenhuis: wachten of borg/privékliniek betalen.
 
@@ -169,6 +170,7 @@ src/lib/game/player.ts # energy regen, rente, rank-up, timers, pimp-tick
 src/lib/pimp.ts        # pimp-rangen, ramen, payouts
 src/lib/empire.ts      # Dark Red Light Empire (zaken, stoepen, VIP, kompromat)
 src/lib/gym.ts         # Grindhouse: verdiepingen, gym-rep, PvP-bonus
-src/lib/actions/       # server actions (misdaad, economie, PvP, social, pimp, empire, gym)
+src/lib/casino.ts      # Casino Royale: roulette, poker, dobbel, hondenkooi
+src/lib/actions/       # server actions (misdaad, economie, PvP, social, pimp, empire, gym, casino)
 src/app/game/          # beschermde speelomgeving
 ```
