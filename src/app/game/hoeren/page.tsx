@@ -11,6 +11,8 @@ import {
   windowDailyFee,
   windowStatus,
 } from "@/lib/pimp";
+import { rivalByKey, streetClaimCost, streetZoneName, venueByKey, venuePayoutMult } from "@/lib/empire";
+import { ensureStreetZones } from "@/lib/actions/empire";
 import { HoerenClient } from "./hoeren-client";
 import type { EscortDTO, MarketEscortDTO, WindowDTO } from "./types";
 
@@ -25,7 +27,7 @@ export default async function HoerenPage() {
   const cityId = normalizeCityId(player.currentCity);
   const now = Date.now();
 
-  const [escorts, windows, listings, logs] = await Promise.all([
+  const [escorts, windows, listings, logs, zones] = await Promise.all([
     prisma.escort.findMany({
       where: { ownerId: player.id },
       orderBy: { createdAt: "asc" },
@@ -43,8 +45,9 @@ export default async function HoerenPage() {
     prisma.gameLog.findMany({
       where: { userId: player.id, type: "PIMP" },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: 12,
     }),
+    ensureStreetZones(cityId),
   ]);
 
   const escortDtos: EscortDTO[] = escorts.map((row) => ({
@@ -59,13 +62,17 @@ export default async function HoerenPage() {
     windowId: row.windowId,
     listedPrice: row.listedPrice,
     isMain: player.mainEscortId === row.id,
-    hourly: hourlyPayout(row.charm, row.loyalty, row.health, row.cityId),
+    hourly: Math.floor(
+      hourlyPayout(row.charm, row.loyalty, row.health, row.cityId) * venuePayoutMult(row.venueKind),
+    ),
     busy: isEscortBusy(row, now),
     busyUntil: row.busyUntil ? row.busyUntil.toISOString() : null,
     missionKind: row.missionKind,
     missionKey: row.missionKey,
     missionLabel: row.missionKind ? missionLabel(row.missionKind, row.missionKey) : null,
     npcPrice: npcBuyoutPrice(row.charm, row.loyalty, row.health, row.cityId),
+    venueKind: row.venueKind,
+    venueName: venueByKey(row.venueKind).name,
   }));
 
   const windowDtos: WindowDTO[] = Array.from({ length: WINDOWS_PER_CITY }, (_, slotIndex) => {
@@ -109,6 +116,17 @@ export default async function HoerenPage() {
       escorts={escortDtos}
       windows={windowDtos}
       market={market}
+      zones={zones.map((row) => ({
+        id: row.id,
+        slotIndex: row.slotIndex,
+        name: streetZoneName(row.slotIndex),
+        rivalName: rivalByKey(row.rivalKey).name,
+        ownerId: row.ownerId,
+        mine: row.ownerId === player.id && row.claimedUntil.getTime() > now,
+        claimedUntil: row.claimedUntil.toISOString(),
+        heat: row.heat,
+        fee: streetClaimCost(cityId),
+      }))}
       logs={logs.map((row) => ({
         id: row.id,
         message: row.message,

@@ -6,7 +6,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const destDir = join(root, "public/game/hoeren");
 const artDir = join(root, "scripts/hoeren-art");
 mkdirSync(destDir, { recursive: true });
-const names = ["dark-vip","dark-fetish","dark-duo","dark-casino","dark-suite","mission-drugs","handel"];
+const names = ["dark-vip","dark-fetish","dark-duo","dark-casino","dark-suite","mission-drugs","handel","venue-high","venue-strip","venue-cam","venue-bdsm","empire-kompromat"];
 
 function loadB64(name) {
   const whole = join(artDir, `${name}.b64`);

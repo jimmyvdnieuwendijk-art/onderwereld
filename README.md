@@ -152,7 +152,7 @@ Then open `https://<project>.vercel.app`, register or log in with the demo accou
 5. **Steel auto's** (o.a. Opel Corsa, Audi RS6, Range Rover, Ferrari Roma, Bugatti Chiron), verkoop of repareer ze in de garage, of zet ze op de markt.
 6. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven.
 7. Koop wapens/vesten/kogels, rust uit, val andere spelers aan (niet tijdens een vlucht).
-8. Open **Hoeren** in het linkermenu: ronsel escorts (21+), huur ramen, boek **Dark Room**-avonden (consensuele clubprogramma's), stuur iemand **op pad** voor een drugpickup, of doe een **contractoverdracht** naar een NPC-club / de escortbeurs. Transfer naar andere vliegveld-steden (Miami hoogste uurprijs). Pimp-exp bepaalt je rang (Street Hustler → Ghetto Mogul) en crewplafond. Main escort geeft +10% verdediging. Razzia bij hoog gezocht vreet de raam-omzet. Geen dwang, geen geweldsthema's.
+8. Open **Hoeren** in het linkermenu (**Dark Red Light Empire**): ronsel via club, **straat** of **stripclub**; wijs escorts toe aan high-class, underground strip, live cams of BDSM-club (consensueel, 21+). Huur ramen, boek Dark Room, stuur **VIP / high-roller / corrupte wethouder** (USB-kompromat op de gast — gezocht omlaag, cash of stoepdekking). Claim **straat-hoeken** tegen NPC-pimps (De Roos, Uncle Vito, Madame K). Risico’s: gastgeweld (conditie), zedenrazzia (gezocht), rival takeover, optionele uitbraak (−35% omzet, kliniek). Pimp-exp bepaalt rang (Street Hustler → Ghetto Mogul). Main escort +10% verdediging. Geen slavernijmeters, geen vleesmarkt, geen dwang.
 9. **Spelers** is een klassement (rang, exp, cash, kills). De stad van andere spelers is niet zichtbaar.
 10. Inbox + shoutbox + families. Berichten staat onderaan het menu, boven Logboek.
 
@@ -166,6 +166,7 @@ prisma/seed.ts         # rangen, misdaden, voertuigen, winkel, demo-spelers
 src/auth.ts            # Auth.js
 src/lib/game/player.ts # energy regen, rente, rank-up, timers, pimp-tick
 src/lib/pimp.ts        # pimp-rangen, ramen, payouts
-src/lib/actions/       # server actions (misdaad, economie, PvP, social, pimp)
+src/lib/empire.ts      # Dark Red Light Empire (zaken, stoepen, VIP, kompromat)
+src/lib/actions/       # server actions (misdaad, economie, PvP, social, pimp, empire)
 src/app/game/          # beschermde speelomgeving
 ```

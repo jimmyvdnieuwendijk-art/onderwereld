@@ -17,6 +17,8 @@ export type EscortDTO = {
   missionKey: string | null;
   missionLabel: string | null;
   npcPrice: number;
+  venueKind: string;
+  venueName: string;
 };
 
 export type WindowDTO = {
@@ -39,4 +41,16 @@ export type MarketEscortDTO = {
   cityName: string;
   listedPrice: number;
   seller: string;
+};
+
+export type StreetZoneDTO = {
+  id: string;
+  slotIndex: number;
+  name: string;
+  rivalName: string;
+  ownerId: string | null;
+  mine: boolean;
+  claimedUntil: string;
+  heat: number;
+  fee: number;
 };
