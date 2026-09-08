@@ -16,6 +16,15 @@ import {
   unlistEscortForm,
 } from "@/lib/actions/pimp";
 import {
+  claimStreetZoneForm,
+  recruitStreetForm,
+  recruitStripclubForm,
+  setEscortVenueForm,
+  spendBlackmailForm,
+  startVipJobForm,
+  treatOutbreakForm,
+} from "@/lib/actions/empire";
+import {
   DARK_ROOMS,
   DRUG_RUN,
   PIMP_RANKS,
@@ -24,6 +33,14 @@ import {
   durationLabelNl,
   pimpRankProgress,
 } from "@/lib/pimp";
+import {
+  BLACKMAIL_WANTED_DROP,
+  OUTBREAK_CLINIC_FEE,
+  STREET_RECRUIT_COST,
+  STRIP_RECRUIT_COST,
+  VENUES,
+  VIP_JOBS,
+} from "@/lib/empire";
 import { hoerenArt } from "@/lib/game-art";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -38,7 +55,7 @@ import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import type { EscortDTO, MarketEscortDTO, WindowDTO } from "./types";
+import type { EscortDTO, MarketEscortDTO, StreetZoneDTO, WindowDTO } from "./types";
 
 function Meter({ label, value, barClass }: { label: string; value: number; barClass: string }) {
   const pct = Math.max(0, Math.min(100, value));
@@ -64,12 +81,14 @@ export function HoerenClient({
   escorts,
   windows,
   market,
+  zones,
   logs,
 }: {
   initialPlayer: PlayerSnapshot;
   escorts: EscortDTO[];
   windows: WindowDTO[];
   market: MarketEscortDTO[];
+  zones: StreetZoneDTO[];
   logs: { id: string; message: string; createdAt: string }[];
 }) {
   const { data: player } = usePlayer(initialPlayer);
@@ -97,6 +116,13 @@ export function HoerenClient({
   const [sellState, sellAction, selling] = useFormAction(sellEscortToNpcForm);
   const [drugState, drugAction, sendingDrug] = useFormAction(sendDrugRunForm);
   const [darkState, darkAction, bookingDark] = useFormAction(startDarkRoomForm);
+  const [streetRecruitState, streetRecruitAction, recruitingStreet] = useFormAction(recruitStreetForm);
+  const [stripRecruitState, stripRecruitAction, recruitingStrip] = useFormAction(recruitStripclubForm);
+  const [venueState, venueAction, settingVenue] = useFormAction(setEscortVenueForm);
+  const [vipState, vipAction, bookingVip] = useFormAction(startVipJobForm);
+  const [zoneState, zoneAction, claimingZone] = useFormAction(claimStreetZoneForm);
+  const [tapeState, tapeAction, spendingTape] = useFormAction(spendBlackmailForm);
+  const [clinicState, clinicAction, treating] = useFormAction(treatOutbreakForm);
 
   const states = [
     recruitState,
@@ -112,6 +138,13 @@ export function HoerenClient({
     sellState,
     drugState,
     darkState,
+    streetRecruitState,
+    stripRecruitState,
+    venueState,
+    vipState,
+    zoneState,
+    tapeState,
+    clinicState,
   ];
 
   useEffect(() => {
@@ -131,6 +164,13 @@ export function HoerenClient({
     sellState,
     drugState,
     darkState,
+    streetRecruitState,
+    stripRecruitState,
+    venueState,
+    vipState,
+    zoneState,
+    tapeState,
+    clinicState,
   ]);
 
   useEffect(() => {
@@ -162,8 +202,18 @@ export function HoerenClient({
     collecting ||
     selling ||
     sendingDrug ||
-    bookingDark;
+    bookingDark ||
+    recruitingStreet ||
+    recruitingStrip ||
+    settingVenue ||
+    bookingVip ||
+    claimingZone ||
+    spendingTape ||
+    treating;
   const razziaCity = p.wantedLevel >= 40;
+  const outbreakActive = !!(p.outbreakUntil && new Date(p.outbreakUntil).getTime() > Date.now());
+  const streetCover = !!(p.streetProtectUntil && new Date(p.streetProtectUntil).getTime() > Date.now());
+  const vipReady = idleAny.filter((row) => row.health >= 28);
 
   return (
     <div className="space-y-5">
@@ -174,11 +224,13 @@ export function HoerenClient({
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-transparent" />
         <div className="relative space-y-3 px-5 py-8 md:px-8">
-          <p className="text-[11px] tracking-[0.25em] text-red-300 uppercase">Rosse buurt · {p.currentCityName}</p>
+          <p className="text-[11px] tracking-[0.25em] text-red-300 uppercase">
+            Dark Red Light Empire · {p.currentCityName}
+          </p>
           <h1 className="font-heading text-3xl text-white md:text-4xl">Hoeren</h1>
           <p className="max-w-xl text-sm text-zinc-200">
-            Clubwerk, niet geweld. Ramen, Dark Room-avonden, drugpickups en contractoverdracht — iedereen is volwassen
-            en mag nee zeggen.
+            Stoep, stripclub, cams en BDSM-club — volwassen, vrijwillig, 21+. Geen slavernijmeters, geen vleesmarkt.
+            VIP-gasten kunnen USB-kompromat achterlaten. Rivalen (De Roos, Uncle Vito, Madame K) vechten om je hoeken.
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge className="bg-red-700 text-white">{rank.name}</Badge>
@@ -186,8 +238,11 @@ export function HoerenClient({
               Crew {p.workerCount}/{cap}
             </Badge>
             <Badge variant="outline">Pimp-exp {p.pimpExp}</Badge>
+            <Badge variant="outline">Kompromat {p.blackmailTapes}</Badge>
             <Badge variant="outline">Drugs {p.drugs}</Badge>
             <Badge variant={razziaCity ? "destructive" : "outline"}>Gezocht {p.wantedLevel}/100</Badge>
+            {streetCover && <Badge className="bg-emerald-800 text-white">Stoepdekking</Badge>}
+            {outbreakActive && <Badge variant="destructive">Uitbraak</Badge>}
           </div>
           <div className="max-w-md">
             <Meter label={`Rang ${progress.label}`} value={progress.value} barClass="bg-red-400" />
@@ -215,12 +270,41 @@ export function HoerenClient({
             Ronsel escort ({formatMoney(RECRUIT_COST)})
           </Button>
         </form>
-        <form action={collectAction}>
+        <form action={streetRecruitAction}>
           <Button type="submit" variant="secondary" disabled={busy}>
+            Straat-ronselen ({formatMoney(STREET_RECRUIT_COST)})
+          </Button>
+        </form>
+        <form action={stripRecruitAction}>
+          <Button type="submit" variant="secondary" disabled={busy}>
+            Stripclub-ronselen ({formatMoney(STRIP_RECRUIT_COST)})
+          </Button>
+        </form>
+        <form action={collectAction}>
+          <Button type="submit" variant="outline" disabled={busy}>
             Incasseer omzet
           </Button>
         </form>
       </div>
+
+      {outbreakActive && (
+        <Card className="border-amber-500/50 bg-amber-950/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Uitbraak in de stalling</CardTitle>
+            <CardDescription>
+              Omzet −35% tot de testdag klaar is. Geen marteling — een ziekte-event. Privékliniek {formatMoney(OUTBREAK_CLINIC_FEE)}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3">
+            {p.outbreakUntil && <Countdown until={p.outbreakUntil} label="Actief tot:" />}
+            <form action={clinicAction}>
+              <Button type="submit" size="sm" disabled={busy}>
+                Kliniek {formatMoney(OUTBREAK_CLINIC_FEE)}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-red-500/20">
@@ -242,6 +326,7 @@ export function HoerenClient({
                     <p className="font-heading text-xl">{main.name}</p>
                     <Badge>Main</Badge>
                     <Badge variant="outline">{main.cityName}</Badge>
+                    <Badge variant="outline">{main.venueName}</Badge>
                     {main.busy && <Badge variant="secondary">{main.missionLabel}</Badge>}
                   </div>
                   <Meter label="Loyaliteit" value={main.loyalty} barClass="bg-primary" />
@@ -283,11 +368,164 @@ export function HoerenClient({
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              Een speeluur is 10 minuten echte tijd. Miami betaalt het meest. Dark Room is clubwerk, geen kelder.
+              Een speeluur is 10 minuten echte tijd. Miami betaalt het meest. Street-hoek, VIP en cams tellen mee voor
+              pimp-exp. Dark Room blijft clubwerk, geen kelder.
             </p>
           </CardContent>
         </Card>
       </div>
+
+      <div>
+        <h2 className="font-heading mb-2 text-xl">Zaken</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Vier consensuele businesslijnen. Live cams verdienen ook zonder raam. Zet per escort de zaak via haar
+          crewkaart. Zij mag de boeking weigeren.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {VENUES.map((venue) => (
+            <Card key={venue.key} className="overflow-hidden border-red-500/20">
+              <CardArt src={venue.image} alt={venue.name} />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{venue.name}</CardTitle>
+                <CardDescription>{venue.blurb}</CardDescription>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground">
+                Uur-multiplier ×{venue.payoutMult.toString().replace(".", ",")}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-heading mb-2 text-xl">Straatterrein — {p.currentCityName}</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Drie hoeken. NPC-pimps houden ze vast tot jij overneemt. Risico: klap van de rival (gezondheid), zedenpolitie
+          (gezocht), takeover als je dekking verliest. Cash + pimp-exp per speeluur.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {zones.map((zone) => (
+            <Card
+              key={zone.id}
+              className={cn(zone.mine ? "border-emerald-500/40" : "border-red-500/25")}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span>{zone.name}</span>
+                  {zone.mine ? <Badge>Jouw hoek</Badge> : <Badge variant="secondary">{zone.rivalName}</Badge>}
+                </CardTitle>
+                <CardDescription>
+                  Heat {zone.heat} · overname {formatMoney(zone.fee)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Countdown until={zone.claimedUntil} label={zone.mine ? "Claim tot:" : "Vrij na:"} />
+                {streetCover && zone.mine && (
+                  <p className="text-xs text-emerald-400">Wethouder-dekking actief op deze stoep.</p>
+                )}
+                <form action={zoneAction}>
+                  <input type="hidden" name="slotIndex" value={zone.slotIndex} />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="w-full"
+                    disabled={
+                      busy ||
+                      zone.mine ||
+                      (!!zone.ownerId && !zone.mine && new Date(zone.claimedUntil).getTime() > Date.now())
+                    }
+                  >
+                    {zone.mine
+                      ? "Al van jou"
+                      : zone.ownerId && new Date(zone.claimedUntil).getTime() > Date.now()
+                        ? "Andere speler"
+                        : `Neem over van ${zone.rivalName}`}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-heading mb-2 text-xl">VIP / high-roller</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Gasten met te veel geld. Kompromat zit op de corrupte gast, nooit op je crew. Zij mag nee zeggen. Conditie
+          28+.
+        </p>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {VIP_JOBS.map((job) => (
+            <Card key={job.key} className="overflow-hidden border-fuchsia-500/25">
+              <CardArt src={job.image} alt={job.name} />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{job.name}</CardTitle>
+                <CardDescription>{job.blurb}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  {durationLabelNl(job.durationMs)} · basis {formatMoney(job.cashBase)} · +{job.pimpExp} exp ·
+                  USB-kans {job.blackmailChance}% · zeden {job.wantedChance}% · uitbraak {job.outbreakChance}%
+                </p>
+                <form action={vipAction} className="space-y-2">
+                  <input type="hidden" name="jobKey" value={job.key} />
+                  <select
+                    name="workerId"
+                    required
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      Kies vrije escort (G28+)
+                    </option>
+                    {vipReady.map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.name} · {row.venueName} · G{row.health}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" size="sm" className="w-full" disabled={busy || vipReady.length === 0}>
+                    Stuur op VIP
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <Card className="border-red-500/30">
+        <CardHeader>
+          <CardTitle className="font-heading">Kompromat</CardTitle>
+          <CardDescription>
+            USB van een high-roller of wethouder. Sextortion op hém: gezocht −{BLACKMAIL_WANTED_DROP}, cash, of 30 min
+            stoepdekking. Niet op je crew.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <form action={tapeAction}>
+            <input type="hidden" name="mode" value="wanted" />
+            <Button type="submit" size="sm" variant="secondary" disabled={busy || p.blackmailTapes < 1}>
+              Koop zeden af
+            </Button>
+          </form>
+          <form action={tapeAction}>
+            <input type="hidden" name="mode" value="cash" />
+            <Button type="submit" size="sm" variant="secondary" disabled={busy || p.blackmailTapes < 1}>
+              Verkoop de tape
+            </Button>
+          </form>
+          <form action={tapeAction}>
+            <input type="hidden" name="mode" value="protect" />
+            <Button type="submit" size="sm" variant="secondary" disabled={busy || p.blackmailTapes < 1}>
+              Stoepdekking
+            </Button>
+          </form>
+          {streetCover && p.streetProtectUntil && (
+            <Countdown until={p.streetProtectUntil} label="Dekking tot:" />
+          )}
+        </CardContent>
+      </Card>
 
       <div>
         <h2 className="font-heading mb-2 text-xl">Red Light — {p.currentCityName}</h2>
@@ -509,6 +747,7 @@ export function HoerenClient({
                       {row.isMain && <Badge>Main</Badge>}
                       {row.listedPrice ? <Badge variant="outline">Te koop {formatMoney(row.listedPrice)}</Badge> : null}
                       {row.busy && <Badge variant="secondary">{row.missionLabel}</Badge>}
+                      <Badge variant="outline">{row.venueName}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {row.cityName}
@@ -519,6 +758,26 @@ export function HoerenClient({
                     <Meter label="Charme" value={row.charm} barClass="bg-red-500" />
                     <Meter label="Loyaliteit" value={row.loyalty} barClass="bg-primary" />
                     <Meter label="Gezondheid" value={row.health} barClass="bg-emerald-500" />
+
+                    {!row.listedPrice && !row.busy && (
+                      <form action={venueAction} className="flex gap-2">
+                        <input type="hidden" name="workerId" value={row.id} />
+                        <select
+                          name="venueKind"
+                          className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+                          defaultValue={row.venueKind}
+                        >
+                          {VENUES.map((venue) => (
+                            <option key={venue.key} value={venue.key}>
+                              {venue.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" size="sm" variant="outline" disabled={busy}>
+                          Zaak
+                        </Button>
+                      </form>
+                    )}
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       {!row.isMain && !row.listedPrice && (
