@@ -7,17 +7,31 @@ import {
   hireWindowForm,
   listEscortForm,
   recruitEscortForm,
+  sellEscortToNpcForm,
+  sendDrugRunForm,
   setMainEscortForm,
+  startDarkRoomForm,
   transferToStateForm,
   unassignFromWindowForm,
   unlistEscortForm,
 } from "@/lib/actions/pimp";
-import { PIMP_RANKS, RECRUIT_COST, TRANSFER_CITIES, nextPimpRank, pimpRankFor } from "@/lib/pimp";
+import {
+  DARK_ROOMS,
+  DRUG_RUN,
+  PIMP_RANKS,
+  RECRUIT_COST,
+  TRANSFER_CITIES,
+  durationLabelNl,
+  pimpRankProgress,
+} from "@/lib/pimp";
+import { hoerenArt } from "@/lib/game-art";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { CardArt } from "@/components/game/card-art";
+import { Countdown } from "@/components/game/countdown";
 import { usePlayer } from "@/hooks/use-player";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PlayerSnapshot } from "@/types/game";
@@ -41,6 +55,10 @@ function Meter({ label, value, barClass }: { label: string; value: number; barCl
   );
 }
 
+function freeEscorts(escorts: EscortDTO[]) {
+  return escorts.filter((row) => !row.listedPrice && !row.windowId && !row.busy);
+}
+
 export function HoerenClient({
   initialPlayer,
   escorts,
@@ -57,11 +75,14 @@ export function HoerenClient({
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
   const router = useRouter();
-  const rank = pimpRankFor(p.pimpExp);
-  const next = nextPimpRank(p.pimpExp);
+  const progress = pimpRankProgress(p.pimpExp);
+  const rank = progress.current;
+  const next = progress.next;
   const cap = rank.maxWorkers === 0 ? "onbeperkt" : String(rank.maxWorkers);
   const main = escorts.find((row) => row.id === p.mainEscortId) ?? escorts.find((row) => row.isMain) ?? null;
   const localEscorts = escorts.filter((row) => row.cityId === p.currentCity && !row.listedPrice);
+  const idleLocal = freeEscorts(localEscorts);
+  const idleAny = freeEscorts(escorts);
 
   const [recruitState, recruitAction, recruiting] = useFormAction(recruitEscortForm);
   const [hireState, hireAction, hiring] = useFormAction(hireWindowForm);
@@ -73,6 +94,9 @@ export function HoerenClient({
   const [unlistState, unlistAction, unlisting] = useFormAction(unlistEscortForm);
   const [buyState, buyAction, buying] = useFormAction(buyListedEscortForm);
   const [collectState, collectAction, collecting] = useFormAction(collectPimpIncomeForm);
+  const [sellState, sellAction, selling] = useFormAction(sellEscortToNpcForm);
+  const [drugState, drugAction, sendingDrug] = useFormAction(sendDrugRunForm);
+  const [darkState, darkAction, bookingDark] = useFormAction(startDarkRoomForm);
 
   const states = [
     recruitState,
@@ -85,14 +109,60 @@ export function HoerenClient({
     unlistState,
     buyState,
     collectState,
+    sellState,
+    drugState,
+    darkState,
   ];
 
   useEffect(() => {
     if (states.some((row) => row?.ok)) router.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recruitState, hireState, assignState, unassignState, transferState, mainState, listState, unlistState, buyState, collectState]);
+  }, [
+    recruitState,
+    hireState,
+    assignState,
+    unassignState,
+    transferState,
+    mainState,
+    listState,
+    unlistState,
+    buyState,
+    collectState,
+    sellState,
+    drugState,
+    darkState,
+  ]);
 
-  const busy = recruiting || hiring || assigning || unassigning || transferring || settingMain || listing || unlisting || buying || collecting;
+  useEffect(() => {
+    const timers = escorts
+      .filter((row) => row.busyUntil)
+      .map((row) => {
+        const ms = new Date(row.busyUntil!).getTime() - Date.now() + 500;
+        if (ms <= 0) {
+          router.refresh();
+          return null;
+        }
+        return setTimeout(() => router.refresh(), ms);
+      });
+    return () => {
+      for (const timer of timers) if (timer) clearTimeout(timer);
+    };
+  }, [escorts, router]);
+
+  const busy =
+    recruiting ||
+    hiring ||
+    assigning ||
+    unassigning ||
+    transferring ||
+    settingMain ||
+    listing ||
+    unlisting ||
+    buying ||
+    collecting ||
+    selling ||
+    sendingDrug ||
+    bookingDark;
   const razziaCity = p.wantedLevel >= 40;
 
   return (
@@ -100,15 +170,15 @@ export function HoerenClient({
       <section className="relative overflow-hidden rounded-xl border border-red-500/30">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url(/game/hoeren/header.jpg)" }}
+          style={{ backgroundImage: `url(${hoerenArt("header")})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-transparent" />
         <div className="relative space-y-3 px-5 py-8 md:px-8">
           <p className="text-[11px] tracking-[0.25em] text-red-300 uppercase">Rosse buurt · {p.currentCityName}</p>
           <h1 className="font-heading text-3xl text-white md:text-4xl">Hoeren</h1>
           <p className="max-w-xl text-sm text-zinc-200">
-            Glamour aan de voorkant, afdracht achter de schermen. Huur ramen in deze stad, zet je crew erachter,
-            en houd de zwaailichten in de gaten.
+            Clubwerk, niet geweld. Ramen, Dark Room-avonden, drugpickups en contractoverdracht — iedereen is volwassen
+            en mag nee zeggen.
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge className="bg-red-700 text-white">{rank.name}</Badge>
@@ -116,14 +186,20 @@ export function HoerenClient({
               Crew {p.workerCount}/{cap}
             </Badge>
             <Badge variant="outline">Pimp-exp {p.pimpExp}</Badge>
+            <Badge variant="outline">Drugs {p.drugs}</Badge>
             <Badge variant={razziaCity ? "destructive" : "outline"}>Gezocht {p.wantedLevel}/100</Badge>
           </div>
-          {next && (
-            <p className="text-xs text-zinc-400">
-              Volgende rang {next.name} bij {next.minExp} exp
-              {next.maxWorkers === 0 ? " (onbeperkte crew)." : ` (max ${next.maxWorkers} escorts).`}
-            </p>
-          )}
+          <div className="max-w-md">
+            <Meter label={`Rang ${progress.label}`} value={progress.value} barClass="bg-red-400" />
+            {next ? (
+              <p className="mt-1 text-xs text-zinc-400">
+                Volgende rang {next.name}
+                {next.maxWorkers === 0 ? " (onbeperkte crew)." : ` (max ${next.maxWorkers} escorts).`}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-zinc-400">Ghetto Mogul — geen crewplafond.</p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -155,6 +231,7 @@ export function HoerenClient({
           <CardContent>
             {main ? (
               <div className="flex gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={main.avatar}
                   alt=""
@@ -165,10 +242,14 @@ export function HoerenClient({
                     <p className="font-heading text-xl">{main.name}</p>
                     <Badge>Main</Badge>
                     <Badge variant="outline">{main.cityName}</Badge>
+                    {main.busy && <Badge variant="secondary">{main.missionLabel}</Badge>}
                   </div>
                   <Meter label="Loyaliteit" value={main.loyalty} barClass="bg-primary" />
                   <Meter label="Charme" value={main.charm} barClass="bg-red-500" />
-                  <p className="text-xs text-muted-foreground">Buff: +10% defense · raming {formatMoney(main.hourly)}/uur</p>
+                  <p className="text-xs text-muted-foreground">
+                    Buff: +10% defense · raming {formatMoney(main.hourly)}/uur
+                  </p>
+                  {main.busyUntil && <Countdown until={main.busyUntil} label="Terug:" />}
                 </div>
               </div>
             ) : (
@@ -182,7 +263,9 @@ export function HoerenClient({
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Pimp-rangen</CardTitle>
-            <CardDescription>Exp komt van ramen en ronselen. Razzia&apos;s vreten je dagomzet.</CardDescription>
+            <CardDescription>
+              Exp van ramen, Dark Room, drugruns, transfers en verkopen. Razzia&apos;s vreten raam-omzet.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {PIMP_RANKS.map((row) => (
@@ -200,7 +283,7 @@ export function HoerenClient({
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              Een speeluur is 10 minuten echte tijd. Miami betaalt het meest. Gezocht hoog = razzia-kans omhoog.
+              Een speeluur is 10 minuten echte tijd. Miami betaalt het meest. Dark Room is clubwerk, geen kelder.
             </p>
           </CardContent>
         </Card>
@@ -209,7 +292,8 @@ export function HoerenClient({
       <div>
         <h2 className="font-heading mb-2 text-xl">Red Light — {p.currentCityName}</h2>
         <p className="mb-3 text-sm text-muted-foreground">
-          Zes ramen in deze stad. Huur per etmaal, zet een escort uit deze stad achter het glas, wacht op de afdracht.
+          Zes ramen in deze stad. Huur per etmaal, zet een vrije escort uit deze stad achter het glas. Niet tegelijk
+          met Dark Room of een drugrun.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {windows.map((win) => (
@@ -241,10 +325,11 @@ export function HoerenClient({
               <CardContent className="space-y-3 p-0">
                 <div
                   className="relative aspect-[4/3] overflow-hidden border-b border-red-500/30 bg-cover bg-center"
-                  style={{ backgroundImage: "url(/game/hoeren/window.jpg)" }}
+                  style={{ backgroundImage: `url(${hoerenArt("window")})` }}
                 >
                   {win.escort ? (
                     <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={win.escort.avatar}
                         alt=""
@@ -263,45 +348,146 @@ export function HoerenClient({
                   )}
                 </div>
                 <div className="space-y-3 px-4 pb-4">
-                {!win.hired && (
-                  <form action={hireAction}>
-                    <input type="hidden" name="slotIndex" value={win.slotIndex} />
-                    <Button type="submit" size="sm" className="w-full" disabled={busy}>
-                      Huur raam
-                    </Button>
-                  </form>
-                )}
+                  {!win.hired && (
+                    <form action={hireAction}>
+                      <input type="hidden" name="slotIndex" value={win.slotIndex} />
+                      <Button type="submit" size="sm" className="w-full" disabled={busy}>
+                        Huur raam
+                      </Button>
+                    </form>
+                  )}
 
-                {win.hired && win.id && !win.escort && (
-                  <form action={assignAction} className="space-y-2">
-                    <input type="hidden" name="windowId" value={win.id} />
-                    <select
-                      name="workerId"
-                      required
-                      className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Kies escort in {p.currentCityName}
-                      </option>
-                      {localEscorts
-                        .filter((row) => !row.windowId)
-                        .map((row) => (
+                  {win.hired && win.id && !win.escort && (
+                    <form action={assignAction} className="space-y-2">
+                      <input type="hidden" name="windowId" value={win.id} />
+                      <select
+                        name="workerId"
+                        required
+                        className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>
+                          Kies vrije escort in {p.currentCityName}
+                        </option>
+                        {idleLocal.map((row) => (
                           <option key={row.id} value={row.id}>
                             {row.name} · charme {row.charm}
                           </option>
                         ))}
-                    </select>
-                    <Button type="submit" size="sm" className="w-full" disabled={busy || localEscorts.filter((r) => !r.windowId).length === 0}>
-                      Zet op het raam
-                    </Button>
-                  </form>
-                )}
+                      </select>
+                      <Button type="submit" size="sm" className="w-full" disabled={busy || idleLocal.length === 0}>
+                        Zet op het raam
+                      </Button>
+                    </form>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      </div>
+
+      <div>
+        <h2 className="font-heading mb-2 text-xl">Dark Room</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Premium clubboekingen naast het raam. Consensueel, 21+, met huisregels. Geen dwang, geen kelder. Kies een
+          programma en een vrije escort — niet tegelijk achter glas.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {DARK_ROOMS.map((room) => (
+            <Card key={room.key} className="overflow-hidden border-fuchsia-500/25">
+              <CardArt src={room.image} alt={room.name} />
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{room.name}</CardTitle>
+                <CardDescription>{room.blurb}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  {durationLabelNl(room.durationMs)} · basis {formatMoney(room.cashBase)} · +{room.pimpExp} exp ·
+                  loyaliteit {room.loyaltyDelta > 0 ? "+" : ""}
+                  {room.loyaltyDelta} · conditie {room.healthDelta} · razzia-kans {room.wantedChance}%
+                </p>
+                <form action={darkAction} className="space-y-2">
+                  <input type="hidden" name="roomKey" value={room.key} />
+                  <select
+                    name="workerId"
+                    required
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      Kies vrije escort
+                    </option>
+                    {idleAny.map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.name} · {row.cityName} · G{row.health}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit" size="sm" className="w-full" disabled={busy || idleAny.length === 0}>
+                    Boek Dark Room
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="overflow-hidden border-amber-500/25">
+          <CardArt src={DRUG_RUN.image} alt={DRUG_RUN.name} />
+          <CardHeader>
+            <CardTitle className="font-heading">{DRUG_RUN.name}</CardTitle>
+            <CardDescription>{DRUG_RUN.blurb}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Duur {durationLabelNl(DRUG_RUN.durationMs)}. Succes: drugs + cash + pimp-exp. Mislukt: gezocht of 2 min
+              cel voor jou. Niet tegelijk op een raam of in de Dark Room.
+            </p>
+            <form action={drugAction} className="space-y-2">
+              <select
+                name="workerId"
+                required
+                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Kies vrije escort (conditie 30+)
+                </option>
+                {idleAny
+                  .filter((row) => row.health >= 30)
+                  .map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.name} · {row.cityName} · G{row.health}
+                    </option>
+                  ))}
+              </select>
+              <Button type="submit" size="sm" disabled={busy || idleAny.filter((row) => row.health >= 30).length === 0}>
+                Stuur op pad
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-emerald-500/20">
+          <CardArt src={hoerenArt("handel")} alt="Contractoverdracht" />
+          <CardHeader>
+            <CardTitle className="font-heading">Vrouwenhandel — contracten</CardTitle>
+            <CardDescription>
+              Geen ontvoering. Een NPC-club koopt een contract over: instant cash, zij verdwijnt van je loonlijst,
+              jij krijgt pimp-exp. Of zet haar op de escortbeurs voor andere spelers. Transfer naar Miami voor hogere
+              uurprijs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">
+            <p>
+              NPC-bod staat op elke crewkaart. Beurs = speler-tot-speler. Export via transfer hergebruikt de
+              vliegveld-steden.
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <div>
@@ -315,17 +501,21 @@ export function HoerenClient({
             {escorts.map((row) => (
               <Card key={row.id} className={cn(row.isMain && "border-primary/50")}>
                 <CardContent className="flex gap-3 pt-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={row.avatar} alt="" className="h-40 w-28 shrink-0 rounded-md object-cover object-top" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-heading text-lg">{row.name}</p>
                       {row.isMain && <Badge>Main</Badge>}
                       {row.listedPrice ? <Badge variant="outline">Te koop {formatMoney(row.listedPrice)}</Badge> : null}
+                      {row.busy && <Badge variant="secondary">{row.missionLabel}</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {row.cityName}
-                      {row.windowId ? " · op een raam" : " · vrij"} · {formatMoney(row.hourly)}/uur
+                      {row.windowId ? " · op een raam" : row.busy ? " · onderweg" : " · vrij"} ·{" "}
+                      {formatMoney(row.hourly)}/uur
                     </p>
+                    {row.busyUntil && <Countdown until={row.busyUntil} label="Klaar:" />}
                     <Meter label="Charme" value={row.charm} barClass="bg-red-500" />
                     <Meter label="Loyaliteit" value={row.loyalty} barClass="bg-primary" />
                     <Meter label="Gezondheid" value={row.health} barClass="bg-emerald-500" />
@@ -349,7 +539,7 @@ export function HoerenClient({
                       )}
                     </div>
 
-                    {!row.listedPrice && (
+                    {!row.listedPrice && !row.busy && (
                       <form action={transferAction} className="flex gap-2">
                         <input type="hidden" name="workerId" value={row.id} />
                         <select
@@ -377,12 +567,21 @@ export function HoerenClient({
                           Van de beurs
                         </Button>
                       </form>
-                    ) : (
+                    ) : row.busy ? null : (
                       <form action={listAction} className="flex gap-2">
                         <input type="hidden" name="workerId" value={row.id} />
                         <Input name="price" type="number" min={500} placeholder="Vraagprijs" className="h-8" />
                         <Button type="submit" size="sm" variant="ghost" disabled={busy}>
-                          Verkoop
+                          Beurs
+                        </Button>
+                      </form>
+                    )}
+
+                    {!row.listedPrice && !row.busy && !row.windowId && (
+                      <form action={sellAction}>
+                        <input type="hidden" name="workerId" value={row.id} />
+                        <Button type="submit" size="sm" variant="destructive" disabled={busy}>
+                          NPC-club {formatMoney(row.npcPrice)}
                         </Button>
                       </form>
                     )}
@@ -397,7 +596,7 @@ export function HoerenClient({
       <div>
         <h2 className="font-heading mb-2 text-xl">Escortbeurs</h2>
         <p className="mb-3 text-sm text-muted-foreground">
-          Koop crew van andere spelers. Zij landen in jouw huidige stad, zonder raam.
+          Speler-tot-speler contracten. Zij landen in jouw huidige stad, zonder raam.
         </p>
         {market.length === 0 ? (
           <p className="text-sm text-muted-foreground">Geen listings. Zet zelf iemand te koop via de crew-kaart.</p>
@@ -406,6 +605,7 @@ export function HoerenClient({
             {market.map((row) => (
               <Card key={row.id}>
                 <CardContent className="flex gap-3 pt-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={row.avatar} alt="" className="h-28 w-20 rounded object-cover object-top" />
                   <div className="flex-1 space-y-2">
                     <p className="font-heading">{row.name}</p>
