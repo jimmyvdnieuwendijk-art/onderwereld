@@ -8,14 +8,15 @@ Source of truth is **Origin**, not GitHub. Do not mirror this repo to GitHub jus
 
 - Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui
 - Auth.js (NextAuth) credentials + JWT, wachtwoorden via bcryptjs
-- Prisma ORM + **SQLite locally** / **PostgreSQL in production** (required on Vercel)
+- Prisma ORM + **PostgreSQL** (Neon / Supabase / Vercel Postgres). SQLite is a local-only alternative, not for Vercel.
 - TanStack React Query voor live stats / shoutbox
 
 ## Snel starten
 
 ```bash
 cp .env.example .env
-# zet AUTH_SECRET op een lange random string
+# zet AUTH_SECRET (openssl rand -base64 32)
+# zet DATABASE_URL op een echte Postgres-URL (lokaal of Neon/Supabase)
 npm install
 npm run setup
 npm run dev
@@ -35,24 +36,25 @@ Andere gezaaide rivalen (zelfde wachtwoord): DeNachtjager, Bloedhond, SilentSjaa
 
 | Variabele | Local | Production (Vercel) | Uitleg |
 |-----------|-------|---------------------|--------|
-| `DATABASE_URL` | `file:./dev.db` | `postgresql://…` (Neon / Supabase / Vercel Postgres) | SQLite locally; **Postgres required on Vercel** |
+| `DATABASE_URL` | `postgresql://USER:PASSWORD@localhost:5432/onderwereld` | `postgresql://…?sslmode=require` (Neon / Supabase / Vercel Postgres) | Prisma provider is **postgresql**. SQLite (`file:./dev.db`) only if you switch the provider back. |
 | `AUTH_SECRET` | long random string | **required**, `openssl rand -base64 32` | JWT signing secret |
 | `AUTH_TRUST_HOST` | `true` | `true` | Auth.js trusts the Host header |
 | `AUTH_URL` | omit | `https://<your-public-host>` (optional but recommended) | Canonical public origin |
 | `FORCE_SEED` | unset | **do not set** on a live game | Seed wipes all tables when `1` |
 | `SKIP_DEMO_USERS` | unset | `1` if you do not want demo accounts | Skip DonDemo / rival seed users |
 
-### PostgreSQL (production)
+### PostgreSQL (default)
 
-SQLite is **unsuitable for Vercel/serverless**: each lambda has an ephemeral disk, the file is not shared, and writes are lost between invocations.
+The Prisma datasource provider is `"postgresql"`. SQLite is **unsuitable for Vercel/serverless**: each lambda has an ephemeral disk, the file is not shared, and writes are lost between invocations.
 
-1. Create a hosted Postgres database (Neon, Supabase, or Vercel Postgres).
-2. In `prisma/schema.prisma`, set datasource `provider` to `"postgresql"`.
-3. Set `DATABASE_URL` to the pooled connection string (`sslmode=require`).
-4. Apply schema once: `npx prisma db push` (or `prisma migrate deploy` once you add migrations).
-5. Seed **once** on an empty database: `npx prisma db seed`. Seed refuses to wipe an existing catalog unless `FORCE_SEED=1`.
+1. Create a hosted Postgres database (Neon, Supabase, or Vercel Postgres) — this repo does not include credentials.
+2. Set `DATABASE_URL` to the connection string (`sslmode=require` on hosted providers). Prisma generate / `next build` do not need a live DB; `db push` and seed do.
+3. Apply schema once: `npx prisma db push` (or `prisma migrate deploy` once you add migrations).
+4. Seed **once** on an empty database: `npx prisma db seed`. Seed refuses to wipe an existing catalog unless `FORCE_SEED=1`.
 
-Schema types are SQLite-portable (no native enums, `Int` for money) so the same models work on Postgres.
+Models avoid native enums and use `Int` for money so they stay portable.
+
+**Local SQLite (optional):** set `provider = "sqlite"` in `prisma/schema.prisma` and `DATABASE_URL="file:./dev.db"`. Do not use that on Vercel.
 
 ## Deploy on Vercel (Origin is source of truth)
 
@@ -65,18 +67,17 @@ Repo view: `https://origin.cursor.com/jkfd/tmp-7986da93878ae014.git`
 ### Blockers you must clear yourself
 
 1. **Vercel team plan** — Origin repositories are private. [Vercel for Origin](https://vercel.com/docs/git/vercel-for-origin) cannot deploy from a **Hobby** team. You need Owner/Member on a Vercel team, then **Continue with Origin** (or Origin repo → Apps → Vercel).
-2. **Hosted Postgres** — set `DATABASE_URL` *before* the first production build. Keep `provider = "postgresql"` in `schema.prisma` for that deploy (local SQLite stays the default in git until you switch).
-3. **Env vars on the Vercel project** — see the table above. `AUTH_SECRET` is mandatory; a missing secret fails Auth.js at runtime.
+2. **Hosted Postgres** — create Neon/Supabase/Vercel Postgres yourself and set `DATABASE_URL` on the Vercel project. Prisma provider is already `"postgresql"`.
+3. **Env vars on the Vercel project** — see the table above. `AUTH_SECRET` is mandatory; a missing secret fails Auth.js at runtime. `DATABASE_URL` must be a Postgres URL at build time (Prisma reads it during `generate`).
 4. **Do not run seed on every deploy.** `vercel.json` only runs `prisma generate && next build`. After the first successful deploy, run `db push` + one seed against production (Vercel → Storage / a one-off `npx prisma db push && npx prisma db seed` with production env).
 
 ### Steps
 
-1. Switch Prisma provider to `postgresql` (commit that change when you are ready to go live).
-2. In Vercel: **New Project → Continue with Origin** → this repository.
-3. Framework preset: Next.js (also set in `vercel.json`).
-4. Add environment variables for Production (and Preview if you want preview deploys to work).
-5. Deploy. After the build succeeds, apply schema + seed once against `DATABASE_URL`.
-6. Set `AUTH_URL` to the resulting `https://….vercel.app` (or custom domain) and redeploy if Auth.js CSRF complains.
+1. In Vercel: **New Project → Continue with Origin** → this repository.
+2. Framework preset: Next.js (also set in `vercel.json`).
+3. Add environment variables for Production (and Preview if you want preview deploys to work), including a real Postgres `DATABASE_URL`.
+4. Deploy. After the build succeeds, apply schema + seed once against `DATABASE_URL`.
+5. Set `AUTH_URL` to the resulting `https://….vercel.app` (or custom domain) and redeploy if Auth.js CSRF complains.
 
 This agent cannot create the Vercel project, provision Postgres, or emit a public play URL — those need your Vercel + Origin accounts.
 
