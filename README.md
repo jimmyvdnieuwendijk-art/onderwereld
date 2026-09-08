@@ -146,14 +146,15 @@ Then open `https://<project>.vercel.app`, register or log in with the demo accou
 ## Spelen
 
 1. Registreer of log in met het demo-account. Je start in **Amsterdam (Schiphol)**.
-2. Pleeg **misdaden** voor cash/exp (energie + cooldown + celkans). Gezocht-niveau loopt op bij mislukte klussen.
+2. Pleeg **misdaden** voor cash/exp (energie + cooldown + celkans). Gezocht-niveau loopt op bij mislukte klussen. Nieuw: pinautomaat, havencontainer, beschermingsgeld, museumroof, legerarsenaal.
 3. Open **Vliegveld** in het linkermenu: boek een lijnvlucht of privéjet naar 10 steden. Onderweg zijn misdaden, PvP en handel geblokkeerd.
 4. **Smokkel** op het vliegveld: drugs, wapenkisten en kogels hebben per stad andere prijzen (Medellín goedkoop in drugs, Tokyo duur; Miami goedkoop in kogels).
-5. **Steel auto's**, verkoop of repareer ze in de garage, of zet ze op de markt.
+5. **Steel auto's** (o.a. Opel Corsa, Audi RS6, Range Rover, Ferrari Roma, Bugatti Chiron), verkoop of repareer ze in de garage, of zet ze op de markt.
 6. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven.
 7. Koop wapens/vesten/kogels, rust uit, val andere spelers aan (niet tijdens een vlucht).
 8. Open **Hoeren** in het linkermenu: ronsel escorts (21+), huur ramen, boek **Dark Room**-avonden (consensuele clubprogramma's), stuur iemand **op pad** voor een drugpickup, of doe een **contractoverdracht** naar een NPC-club / de escortbeurs. Transfer naar andere vliegveld-steden (Miami hoogste uurprijs). Pimp-exp bepaalt je rang (Street Hustler → Ghetto Mogul) en crewplafond. Main escort geeft +10% verdediging. Razzia bij hoog gezocht vreet de raam-omzet. Geen dwang, geen geweldsthema's.
-9. Inbox + shoutbox + families.
+9. **Spelers** is een klassement (rang, exp, cash, kills). De stad van andere spelers is niet zichtbaar.
+10. Inbox + shoutbox + families. Berichten staat onderaan het menu, boven Logboek.
 
 Jail en ziekenhuis: wachten of borg/privékliniek betalen.
 
