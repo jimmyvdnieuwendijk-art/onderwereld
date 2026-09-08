@@ -57,6 +57,9 @@ export function DashboardClient({
                 Verdediging {p.defense}
                 {p.hasMainEscort ? " (+10% escort)" : ""}
               </Badge>
+              <Badge variant="outline">
+                Gym K{p.strength} C{p.condition} V{p.fightSkill}
+              </Badge>
               <Badge variant="secondary">{p.vehicleCount} auto&apos;s</Badge>
               <Badge variant="outline">{formatMoney(p.cash)} cash</Badge>
             </div>
