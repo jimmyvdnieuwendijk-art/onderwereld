@@ -2,6 +2,9 @@
   "name": "onderwereld",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev -p 43147 -H 0.0.0.0",
     "build": "prisma generate && next build",
@@ -10,8 +13,9 @@
     "postinstall": "prisma generate",
     "setup": "prisma generate && prisma db push && prisma db seed",
     "db:push": "prisma db push",
+    "db:deploy": "prisma db push",
     "db:seed": "prisma db seed",
-    "db:reset": "prisma db push --force-reset && prisma db seed"
+    "db:reset": "prisma db push --force-reset && FORCE_SEED=1 prisma db seed"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

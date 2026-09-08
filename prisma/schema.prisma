@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // native = local machines; rhel-openssl-3.0.x = Vercel / AWS Lambda (AL2023)
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 // Default: SQLite for zero-friction local/demo.
-// To use PostgreSQL, change provider to "postgresql" and set
-// DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
+// SQLite is NOT suitable on Vercel (ephemeral, not shared across lambdas).
+// Production: change provider to "postgresql" and set DATABASE_URL to Neon/Supabase/Vercel Postgres.
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")

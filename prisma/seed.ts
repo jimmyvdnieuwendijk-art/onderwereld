@@ -187,6 +187,14 @@ const shopItems = [
 ];
 
 async function main() {
+  const existingRanks = await prisma.rank.count();
+  if (existingRanks > 0 && process.env.FORCE_SEED !== "1") {
+    console.log(
+      "Catalog already present; skipping destructive seed. Set FORCE_SEED=1 to wipe and reseed.",
+    );
+    return;
+  }
+
   await prisma.attackLog.deleteMany();
   await prisma.gameLog.deleteMany();
   await prisma.shoutboxMessage.deleteMany();
@@ -207,6 +215,11 @@ async function main() {
   await prisma.crime.createMany({ data: crimes });
   await prisma.vehicleType.createMany({ data: vehicleTypes });
   await prisma.shopItem.createMany({ data: shopItems });
+
+  if (process.env.SKIP_DEMO_USERS === "1") {
+    console.log("Seed klaar (catalog only; SKIP_DEMO_USERS=1).");
+    return;
+  }
 
   const allRanks = await prisma.rank.findMany();
   const rankByOrder = Object.fromEntries(allRanks.map((r) => [r.order, r]));
