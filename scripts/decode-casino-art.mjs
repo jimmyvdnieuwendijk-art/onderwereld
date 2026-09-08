@@ -26,6 +26,6 @@ for (const name of names) {
   const dest = join(destDir, `${name}.jpg`);
   if (existsSync(dest) && readFileSync(dest).length > 1000) continue;
   const b64 = loadB64(name);
-  if (b64.length < 1000) return text;
+  if (b64.length < 1000) continue;
   writeFileSync(dest, Buffer.from(b64, "base64"));
 }
