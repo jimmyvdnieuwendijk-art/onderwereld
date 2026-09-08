@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev -p 43147 -H 0.0.0.0",
-    "build": "node scripts/decode-hoeren-art.mjs && node scripts/decode-game-art.mjs && node scripts/decode-gym-art.mjs && prisma generate && next build",
+    "build": "node scripts/decode-hoeren-art.mjs && node scripts/decode-game-art.mjs && node scripts/decode-gym-art.mjs && node scripts/decode-casino-art.mjs && prisma generate && next build",
     "start": "next start -p 43147 -H 0.0.0.0",
     "lint": "eslint",
     "postinstall": "prisma generate",

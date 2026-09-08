@@ -16,6 +16,10 @@ export function vehicleArt(slug: string) {
   return `/game/vehicles/${slug}.jpg`;
 }
 
+export function casinoArt(kind: "header" | "roulette" | "poker" | "street" | "pit") {
+  return kind === "header" ? "/game/casino/casino-header.jpg" : `/game/casino/casino-${kind}.jpg`;
+}
+
 export function gymArt(kind: "header" | `l${number}`) {
   if (kind === "header") return "/game/gym/gym-header.jpg";
   return `/game/gym/gym-${kind}.jpg`;

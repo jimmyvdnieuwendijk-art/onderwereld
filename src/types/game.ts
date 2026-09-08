@@ -72,6 +72,15 @@ export type PlayerSnapshot = {
   gymExp: number;
   gymFloor: number;
   gymCooldownUntil: string | null;
+  casinoCooldownUntil: string | null;
+  casinoPeekUntil: string | null;
+  casinoPoker: {
+    ante: number;
+    knife: number;
+    cards: string[];
+    peeked: boolean;
+    dealerPeek: string[];
+  } | null;
 };
 
 export type PublicPlayer = {
