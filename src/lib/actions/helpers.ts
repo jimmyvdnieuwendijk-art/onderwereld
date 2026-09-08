@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tickPlayer } from "@/lib/game/player";
@@ -22,6 +23,10 @@ export function fail(message: string, variant: ActionResult["variant"] = "error"
 
 export function ok(message: string, variant: ActionResult["variant"] = "success", data?: unknown): ActionResult {
   return { ok: true, message, variant, data };
+}
+
+export function revalidateGame() {
+  revalidatePath("/game", "layout");
 }
 
 export async function logEvent(userId: string, type: string, message: string) {

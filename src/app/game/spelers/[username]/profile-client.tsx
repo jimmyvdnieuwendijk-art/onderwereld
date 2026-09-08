@@ -1,21 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { attackPlayer } from "@/lib/actions/combat";
-import { sendMessage } from "@/lib/actions/social";
+import { attackPlayerForm } from "@/lib/actions/combat";
+import { sendMessageForm } from "@/lib/actions/social";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useGameAction } from "@/hooks/use-player";
+import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PublicPlayer } from "@/types/game";
 
 export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
-  const { run, pending } = useGameAction();
-  const [bullets, setBullets] = useState("5");
-  const [subject, setSubject] = useState("Bericht");
-  const [body, setBody] = useState("");
+  const [attackState, attackAction, attacking] = useFormAction(attackPlayerForm);
+  const [msgState, msgAction, messaging] = useFormAction(sendMessageForm);
 
   return (
     <div className="mx-auto grid max-w-3xl gap-4">
@@ -33,22 +30,14 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
             {target.inJail && <Badge variant="destructive">Cel</Badge>}
             {target.inHospital && <Badge variant="destructive">Ziekenhuis</Badge>}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Input
-              type="number"
-              min={1}
-              max={25}
-              value={bullets}
-              onChange={(e) => setBullets(e.target.value)}
-              className="w-24"
-            />
-            <Button
-              disabled={pending || target.inJail || target.inHospital || target.isDead}
-              onClick={() => run(() => attackPlayer(target.id, Number(bullets)))}
-            >
+          <form action={attackAction} method="post" className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="defenderId" value={target.id} />
+            <Input type="number" min={1} max={25} name="bullets" defaultValue="5" className="w-24" />
+            <Button type="submit" disabled={attacking || target.inJail || target.inHospital || target.isDead}>
               Aanvallen
             </Button>
-          </div>
+          </form>
+          <ActionFeedback state={attackState} />
           <p className="text-xs text-muted-foreground">
             Vereist een uitgerust wapen en kogels. Cash op zak van het slachtoffer kan worden geroofd.
             Banksaldo blijft veilig.
@@ -60,12 +49,16 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
         <CardHeader>
           <CardTitle>Stuur een bericht</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Onderwerp" />
-          <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Tekst" rows={4} />
-          <Button disabled={pending} onClick={() => run(() => sendMessage(target.username, subject, body))}>
-            Versturen
-          </Button>
+        <CardContent>
+          <form action={msgAction} method="post" className="space-y-2">
+            <input type="hidden" name="to" value={target.username} />
+            <Input name="subject" defaultValue="Bericht" placeholder="Onderwerp" />
+            <Textarea name="body" placeholder="Tekst" rows={4} />
+            <Button type="submit" disabled={messaging}>
+              Versturen
+            </Button>
+            <ActionFeedback state={msgState} />
+          </form>
         </CardContent>
       </Card>
     </div>

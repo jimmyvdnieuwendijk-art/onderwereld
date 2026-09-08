@@ -1,12 +1,13 @@
 "use client";
 
-import { attemptCrime } from "@/lib/actions/crime";
+import { attemptCrimeForm } from "@/lib/actions/crime";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
+import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PlayerSnapshot } from "@/types/game";
 
 type CrimeRow = {
@@ -33,7 +34,7 @@ export function CrimesClient({
 }) {
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
-  const { run, pending, feedback } = useGameAction();
+  const [state, action, pending] = useFormAction(attemptCrimeForm);
 
   return (
     <div className="space-y-4">
@@ -45,9 +46,9 @@ export function CrimesClient({
         <p className="mt-1 text-sm">
           <Countdown until={p.crimeCooldownUntil} label="Wachten:" />
         </p>
-        {feedback && (
-          <p className={`mt-2 text-sm ${feedback.ok ? "text-primary" : "text-destructive"}`}>{feedback.message}</p>
-        )}
+        <div className="mt-2">
+          <ActionFeedback state={state} />
+        </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {crimes.map((crime) => {
@@ -69,13 +70,12 @@ export function CrimesClient({
                   <Badge variant="outline">{crime.successChance}% basis</Badge>
                   <Badge variant="destructive">{crime.jailRiskChance}% cel</Badge>
                 </div>
-                <Button
-                  type="button"
-                  disabled={pending || locked}
-                  onClick={() => run(() => attemptCrime(crime.id))}
-                >
-                  {locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}
-                </Button>
+                <form action={action} method="post">
+                  <input type="hidden" name="crimeId" value={crime.id} />
+                  <Button type="submit" disabled={pending || locked}>
+                    {locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           );

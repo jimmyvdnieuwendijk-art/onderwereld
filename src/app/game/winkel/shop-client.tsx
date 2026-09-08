@@ -1,6 +1,6 @@
 "use client";
 
-import { buyItem, equipItem, consumeItem } from "@/lib/actions/economy";
+import { buyItemForm, equipItem, consumeItem } from "@/lib/actions/economy";
 import { ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { useRouter } from "next/navigation";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -39,6 +40,7 @@ export function ShopClient({
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
   const { run, pending } = useGameAction();
+  const [buyState, buyAction, buying] = useFormAction(buyItemForm);
   const router = useRouter();
   const refresh = (r: { ok: boolean }) => {
     if (r.ok) router.refresh();
@@ -58,6 +60,9 @@ export function ShopClient({
         <p className="text-sm text-muted-foreground">
           Koop wapens en vesten, rust ze uit, gebruik verband. Kogels gaan direct naar je voorraad.
         </p>
+        <div className="mt-2">
+          <ActionFeedback state={buyState} />
+        </div>
       </div>
       <Card>
         <CardHeader>
@@ -131,12 +136,12 @@ export function ShopClient({
                         {item.energyAmount > 0 && <Badge variant="outline">+{item.energyAmount} energie</Badge>}
                         {item.bulletsAmount > 0 && <Badge variant="outline">+{item.bulletsAmount} kogels</Badge>}
                       </div>
-                      <Button
-                        disabled={pending || locked}
-                        onClick={() => run(() => buyItem(item.id, 1), refresh)}
-                      >
-                        {locked ? "Rang te laag" : "Kopen"}
-                      </Button>
+                      <form action={buyAction} method="post">
+                        <input type="hidden" name="itemId" value={item.id} />
+                        <Button type="submit" disabled={buying || locked}>
+                          {locked ? "Rang te laag" : "Kopen"}
+                        </Button>
+                      </form>
                     </CardContent>
                   </Card>
                 );

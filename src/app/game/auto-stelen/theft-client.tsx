@@ -1,12 +1,13 @@
 "use client";
 
-import { stealCar } from "@/lib/actions/garage";
+import { stealCarForm } from "@/lib/actions/garage";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
+import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PlayerSnapshot } from "@/types/game";
 
 type TypeRow = {
@@ -27,7 +28,7 @@ export function TheftClient({
 }) {
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
-  const { run, pending } = useGameAction();
+  const [state, action, pending] = useFormAction(stealCarForm);
 
   return (
     <div className="space-y-4">
@@ -37,6 +38,9 @@ export function TheftClient({
           Kost 10 energie. Moeilijkere auto&apos;s vragen een hogere rang.
         </p>
         <Countdown until={p.carTheftCooldownUntil} label="Wachten:" />
+        <div className="mt-2">
+          <ActionFeedback state={state} />
+        </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {types.map((type) => {
@@ -51,11 +55,12 @@ export function TheftClient({
               </CardHeader>
               <CardContent className="space-y-3">
                 <Badge variant="secondary">{type.rarity}</Badge>
-                <div>
-                  <Button disabled={pending || locked} onClick={() => run(() => stealCar(type.id))}>
+                <form action={action} method="post">
+                  <input type="hidden" name="vehicleTypeId" value={type.id} />
+                  <Button type="submit" disabled={pending || locked}>
                     {locked ? "Rang te laag" : "Stelen"}
                   </Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
           );

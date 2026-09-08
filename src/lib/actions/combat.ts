@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { clamp, remainingMs } from "@/lib/format";
-import { fail, logEvent, ok, requireUserId } from "@/lib/actions/helpers";
+import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
 export async function attackPlayer(defenderId: string, bulletsUsed: number): Promise<ActionResult> {
@@ -131,5 +131,17 @@ export async function payHospital(): Promise<ActionResult> {
   const message = `Je betaalt ${cost} euro aan de privékliniek en staat weer op straat.`;
   await logEvent(userId, "HOSPITAL", message);
   return ok(message);
+}
+
+export async function attackPlayerForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const result = await attackPlayer(
+    String(formData.get("defenderId") ?? ""),
+    Number(formData.get("bullets") ?? 1),
+  );
+  revalidateGame();
+  return result;
 }
 

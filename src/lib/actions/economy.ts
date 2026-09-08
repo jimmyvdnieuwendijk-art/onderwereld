@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { BASE_ATTACK, CITIES, ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON, LISTING_BULLETS, LISTING_ITEM, LISTING_VEHICLE, MAX_ENERGY, MAX_HEALTH, TRAVEL_ENERGY_COST } from "@/lib/constants";
-import { fail, logEvent, ok, requireUserId } from "@/lib/actions/helpers";
+import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
 export async function bankDeposit(amount: number): Promise<ActionResult> {
@@ -345,4 +345,30 @@ export async function cancelListing(listingId: string): Promise<ActionResult> {
     }
   });
   return ok("Advertentie ingetrokken.");
+}
+
+export async function bankForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const op = String(formData.get("op") ?? "deposit");
+  const amount = Number(formData.get("amount") ?? 0);
+  let result;
+  if (op === "withdraw") result = await bankWithdraw(amount);
+  else if (op === "all") {
+    const userId = await requireUserId();
+    const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+    result = await bankDeposit(user?.cash ?? 0);
+  } else result = await bankDeposit(amount);
+  revalidateGame();
+  return result;
+}
+
+export async function buyItemForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const result = await buyItem(String(formData.get("itemId") ?? ""), 1);
+  revalidateGame();
+  return result;
 }

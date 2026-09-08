@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { FAMILY_CREATE_COST, ROLE_LEADER, ROLE_MEMBER, ROLE_OFFICER } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { fail, logEvent, ok, requireUserId } from "@/lib/actions/helpers";
+import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
 export async function sendMessage(toUsername: string, subject: string, body: string): Promise<ActionResult> {
@@ -30,6 +30,19 @@ export async function sendMessage(toUsername: string, subject: string, body: str
     },
   });
   return ok(`Bericht verzonden naar ${target.username}.`);
+}
+
+export async function sendMessageForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const result = await sendMessage(
+    String(formData.get("to") ?? ""),
+    String(formData.get("subject") ?? ""),
+    String(formData.get("body") ?? ""),
+  );
+  revalidateGame();
+  return result;
 }
 
 export async function markMessageRead(messageId: string): Promise<ActionResult> {

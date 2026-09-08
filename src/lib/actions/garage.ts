@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { clamp, randomInt } from "@/lib/format";
-import { fail, logEvent, ok, requireUserId } from "@/lib/actions/helpers";
+import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
 export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
@@ -126,4 +126,13 @@ export async function repairVehicle(vehicleId: string): Promise<ActionResult> {
   const message = `Je laat de ${vehicle.vehicleType.name} repareren voor ${cost} euro.`;
   await logEvent(userId, "GARAGE", message);
   return ok(message);
+}
+
+export async function stealCarForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const result = await stealCar(String(formData.get("vehicleTypeId") ?? ""));
+  revalidateGame();
+  return result;
 }

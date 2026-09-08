@@ -1,20 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { bankDeposit, bankWithdraw } from "@/lib/actions/economy";
+import { bankForm } from "@/lib/actions/economy";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { usePlayer } from "@/hooks/use-player";
+import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PlayerSnapshot } from "@/types/game";
 
 export function BankClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
-  const { run, pending, feedback } = useGameAction();
-  const [amount, setAmount] = useState("100");
-  const value = Number(amount) || 0;
+  const [state, action, pending] = useFormAction(bankForm);
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -34,30 +32,21 @@ export function BankClient({ initialPlayer }: { initialPlayer: PlayerSnapshot })
           <p>
             Bank: <span className="text-primary">{formatMoney(p.bankBalance)}</span>
           </p>
-          <Input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-            {feedback && (
-              <p className={`text-sm ${feedback.ok ? "text-primary" : "text-destructive"}`}>{feedback.message}</p>
-            )}
-            <div className="flex gap-2">
-            <Button disabled={pending || value < 1} onClick={() => run(() => bankDeposit(value))}>
-              Storten
-            </Button>
-            <Button
-              variant="outline"
-              disabled={pending || value < 1}
-              onClick={() => run(() => bankWithdraw(value))}
-            >
-              Opnemen
-            </Button>
-            <Button variant="secondary" disabled={pending} onClick={() => run(() => bankDeposit(p.cash))}>
-              Alles storten
-            </Button>
-          </div>
+          <form action={action} method="post" className="space-y-3">
+            <Input type="number" min={1} name="amount" defaultValue="100" />
+            <ActionFeedback state={state} />
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" name="op" value="deposit" disabled={pending}>
+                Storten
+              </Button>
+              <Button type="submit" name="op" value="withdraw" variant="outline" disabled={pending}>
+                Opnemen
+              </Button>
+              <Button type="submit" name="op" value="all" variant="secondary" disabled={pending}>
+                Alles storten
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>

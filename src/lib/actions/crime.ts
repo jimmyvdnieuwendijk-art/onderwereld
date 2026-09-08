@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { blockedReason } from "@/lib/game/player";
 import { clamp, randomInt } from "@/lib/format";
-import { fail, logEvent, ok, requireUserId } from "@/lib/actions/helpers";
+import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { tickPlayer } from "@/lib/game/player";
 import type { ActionResult } from "@/types/game";
 
@@ -87,4 +87,13 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
   const message = `Mislukt: ${crime.name}. Je komt met de schrik vrij.`;
   await logEvent(userId, "CRIME", message);
   return fail(message, "warning");
+}
+
+export async function attemptCrimeForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const result = await attemptCrime(String(formData.get("crimeId") ?? ""));
+  revalidateGame();
+  return result;
 }
