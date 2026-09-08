@@ -16,6 +16,15 @@ import {
   hourlyPayout,
   nextPimpRank,
   pimpRankFor,
+  TRANSFER_PIMP_EXP,
+  SALE_PIMP_EXP,
+  LIST_PIMP_EXP,
+  MISSION_DRUG_RUN,
+  MISSION_DARK_ROOM,
+  DRUG_RUN,
+  darkRoomByKey,
+  isEscortBusy,
+  npcBuyoutPrice,
   transferFee,
   windowDailyFee,
   workerCapReached,
@@ -140,6 +149,9 @@ export async function assignToWindow(workerId: string, windowId: string): Promis
   if (!window) return fail("Dit raam is niet van jou.");
   if (window.hiredUntil.getTime() <= now.getTime()) return fail("De huur van dit raam is verlopen.");
   if (escort.listedPrice) return fail("Eerst van de markt halen.");
+  if (isEscortBusy(escort)) {
+    return fail(`${escort.name} is nog op een drugrun of in een Dark Room. Raam en boeking lopen niet tegelijk.`);
+  }
   if (escort.health < 20) return fail(`${escort.name} is te zwak voor het raam.`);
   if (escort.cityId !== window.cityId) {
     return fail(`${escort.name} zit in ${cityDisplayName(escort.cityId)}. Transfer eerst naar ${cityDisplayName(window.cityId)}.`);
@@ -182,13 +194,17 @@ export async function transferToState(workerId: string, targetState: string): Pr
   const to = normalizeCityId(targetState);
   if (from === to) return fail(`${escort.name} is al in ${cityDisplayName(to)}.`);
   if (escort.listedPrice) return fail("Eerst van de markt halen.");
+  if (isEscortBusy(escort)) return fail(`${escort.name} is nog onderweg of in een Dark Room.`);
 
   const fee = transferFee(from, to);
   const user = await prisma.user.findUnique({ where: { id: g.userId } });
   if (!user || user.cash < fee) return fail(`Transfer naar ${cityDisplayName(to)} kost ${fee} euro.`);
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: g.userId }, data: { cash: { decrement: fee } } }),
+    prisma.user.update({
+      where: { id: g.userId },
+      data: { cash: { decrement: fee }, pimpExp: { increment: TRANSFER_PIMP_EXP } },
+    }),
     prisma.escort.update({
       where: { id: escort.id },
       data: { cityId: to, windowId: null },
@@ -221,13 +237,21 @@ export async function listEscort(workerId: string, price: number): Promise<Actio
   if (ask < MIN_LIST_PRICE) return fail(`Vraagprijs minstens ${MIN_LIST_PRICE} euro.`);
   const escort = await prisma.escort.findFirst({ where: { id: workerId, ownerId: g.userId } });
   if (!escort) return fail("Onbekende escort.");
+  if (escort.listedPrice) return fail("Ze staat al op de escortbeurs.");
+  if (isEscortBusy(escort)) return fail(`${escort.name} is nog bezet. Wacht tot de boeking klaar is.`);
   if (g.player.mainEscortId === escort.id) {
     await prisma.user.update({ where: { id: g.userId }, data: { mainEscortId: null } });
   }
-  await prisma.escort.update({
-    where: { id: escort.id },
-    data: { listedPrice: ask, windowId: null },
-  });
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: g.userId },
+      data: { pimpExp: { increment: LIST_PIMP_EXP } },
+    }),
+    prisma.escort.update({
+      where: { id: escort.id },
+      data: { listedPrice: ask, windowId: null },
+    }),
+  ]);
   const message = `${escort.name} staat op de escortbeurs voor ${ask} euro.`;
   await logEvent(g.userId, "PIMP", message);
   return ok(message);
@@ -267,7 +291,10 @@ export async function buyListedEscort(escortId: string): Promise<ActionResult> {
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({ where: { id: g.userId }, data: { cash: { decrement: price } } });
-    await tx.user.update({ where: { id: listing.ownerId }, data: { cash: { increment: price } } });
+    await tx.user.update({
+      where: { id: listing.ownerId },
+      data: { cash: { increment: price }, pimpExp: { increment: SALE_PIMP_EXP } },
+    });
     const seller = await tx.user.findUnique({
       where: { id: listing.ownerId },
       select: { mainEscortId: true },
@@ -298,6 +325,97 @@ export async function buyListedEscort(escortId: string): Promise<ActionResult> {
   return ok(message);
 }
 
+export async function sellEscortToNpc(workerId: string): Promise<ActionResult> {
+  const g = await gate();
+  if (!g.ok) return g.error;
+
+  const escort = await prisma.escort.findFirst({ where: { id: workerId, ownerId: g.userId } });
+  if (!escort) return fail("Onbekende escort.");
+  if (escort.listedPrice) return fail("Haal haar eerst van de escortbeurs.");
+  if (isEscortBusy(escort)) return fail(`${escort.name} is nog op een boeking of drugrun.`);
+  if (escort.windowId) return fail("Haal haar eerst van het raam. Contractoverdracht gaat niet achter glas.");
+
+  const price = npcBuyoutPrice(escort.charm, escort.loyalty, escort.health, escort.cityId);
+  const wasMain = g.player.mainEscortId === escort.id;
+
+  await prisma.$transaction([
+    prisma.escort.delete({ where: { id: escort.id } }),
+    prisma.user.update({
+      where: { id: g.userId },
+      data: {
+        cash: { increment: price },
+        pimpExp: { increment: SALE_PIMP_EXP },
+        mainEscortId: wasMain ? null : undefined,
+      },
+    }),
+  ]);
+
+  const message = `Contractoverdracht: een rivaliserende club koopt ${escort.name} over voor ${price} euro. Zij gaat vrijwillig mee. +${SALE_PIMP_EXP} pimp-exp.`;
+  await logEvent(g.userId, "PIMP", message);
+  return ok(message);
+}
+
+export async function sendDrugRun(workerId: string): Promise<ActionResult> {
+  const g = await gate();
+  if (!g.ok) return g.error;
+
+  const escort = await prisma.escort.findFirst({ where: { id: workerId, ownerId: g.userId } });
+  if (!escort) return fail("Onbekende escort.");
+  if (escort.listedPrice) return fail("Haal haar eerst van de escortbeurs.");
+  if (escort.windowId) {
+    return fail(`${escort.name} staat achter het glas. Haal haar van het raam voordat ze op pad gaat.`);
+  }
+  if (isEscortBusy(escort)) return fail(`${escort.name} is nog onderweg of in een Dark Room.`);
+  if (escort.health < 30) return fail(`${escort.name} heeft te weinig conditie voor een pickup.`);
+
+  const until = new Date(Date.now() + DRUG_RUN.durationMs);
+  await prisma.escort.update({
+    where: { id: escort.id },
+    data: {
+      busyUntil: until,
+      missionKind: MISSION_DRUG_RUN,
+      missionKey: DRUG_RUN.key,
+      windowId: null,
+    },
+  });
+
+  const message = `${escort.name} rijdt de afgesproken pickup. Vrijwillig werk. Ze is ${Math.round(DRUG_RUN.durationMs / 60000)} minuten onderweg.`;
+  await logEvent(g.userId, "PIMP", message);
+  return ok(message);
+}
+
+export async function startDarkRoom(workerId: string, roomKey: string): Promise<ActionResult> {
+  const g = await gate();
+  if (!g.ok) return g.error;
+
+  const room = darkRoomByKey(roomKey);
+  if (!room) return fail("Onbekend Dark Room-programma.");
+
+  const escort = await prisma.escort.findFirst({ where: { id: workerId, ownerId: g.userId } });
+  if (!escort) return fail("Onbekende escort.");
+  if (escort.listedPrice) return fail("Haal haar eerst van de escortbeurs.");
+  if (escort.windowId) {
+    return fail(`${escort.name} staat achter het glas. Dark Room en raam lopen niet tegelijk — haal haar eerst van het raam.`);
+  }
+  if (isEscortBusy(escort)) return fail(`${escort.name} is nog bezet.`);
+  if (escort.health < 25) return fail(`${escort.name} heeft te weinig conditie voor een Dark Room-avond.`);
+
+  const until = new Date(Date.now() + room.durationMs);
+  await prisma.escort.update({
+    where: { id: escort.id },
+    data: {
+      busyUntil: until,
+      missionKind: MISSION_DARK_ROOM,
+      missionKey: room.key,
+      windowId: null,
+    },
+  });
+
+  const message = `${escort.name} boekt ${room.name}. Iedereen is er vrijwillig; zij mag nee zeggen. Klaar over ${Math.round(room.durationMs / 1000)} seconden.`;
+  await logEvent(g.userId, "PIMP", message);
+  return ok(message);
+}
+
 export async function collectPimpIncome(): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
@@ -305,8 +423,8 @@ export async function collectPimpIncome(): Promise<ActionResult> {
   const player = await tickPlayer(userId);
   if (!player || !before) return fail("Speler niet gevonden.");
   const gained = player.cash - before.cash;
-  if (gained > 0) return ok(`Stand bijgewerkt. ${gained} euro van de ramen bijgeschreven.`);
-  return ok("Geen nieuwe omzet. Zet iemand achter een gehuurd raam en wacht een speeluur (10 minuten).");
+  if (gained > 0) return ok(`Stand bijgewerkt. ${gained} euro bijgeschreven (ramen, Dark Room of pickups).`);
+  return ok("Geen nieuwe omzet. Zet iemand achter een raam, boek een Dark Room, of wacht tot een drugrun klaar is.");
 }
 
 function formId(data: FormData, key: string) {
@@ -373,3 +491,20 @@ export async function collectPimpIncomeForm(_prev: ActionResult | null, _form: F
   return result;
 }
 
+export async function sellEscortToNpcForm(_prev: ActionResult | null, form: FormData) {
+  const result = await sellEscortToNpc(formId(form, "workerId"));
+  revalidateGame();
+  return result;
+}
+
+export async function sendDrugRunForm(_prev: ActionResult | null, form: FormData) {
+  const result = await sendDrugRun(formId(form, "workerId"));
+  revalidateGame();
+  return result;
+}
+
+export async function startDarkRoomForm(_prev: ActionResult | null, form: FormData) {
+  const result = await startDarkRoom(formId(form, "workerId"), formId(form, "roomKey"));
+  revalidateGame();
+  return result;
+}

@@ -152,7 +152,7 @@ Then open `https://<project>.vercel.app`, register or log in with the demo accou
 5. **Steel auto's**, verkoop of repareer ze in de garage, of zet ze op de markt.
 6. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven.
 7. Koop wapens/vesten/kogels, rust uit, val andere spelers aan (niet tijdens een vlucht).
-8. Open **Hoeren** in het linkermenu: ronsel escorts, huur ramen in je huidige stad, zet crew achter het glas voor omzet per speeluur (10 minuten). Main escort geeft +10% verdediging. Razzia bij hoog gezocht vreet de omzet.
+8. Open **Hoeren** in het linkermenu: ronsel escorts (21+), huur ramen, boek **Dark Room**-avonden (consensuele clubprogramma's), stuur iemand **op pad** voor een drugpickup, of doe een **contractoverdracht** naar een NPC-club / de escortbeurs. Transfer naar andere vliegveld-steden (Miami hoogste uurprijs). Pimp-exp bepaalt je rang (Street Hustler → Ghetto Mogul) en crewplafond. Main escort geeft +10% verdediging. Razzia bij hoog gezocht vreet de raam-omzet. Geen dwang, geen geweldsthema's.
 9. Inbox + shoutbox + families.
 
 Jail en ziekenhuis: wachten of borg/privékliniek betalen.

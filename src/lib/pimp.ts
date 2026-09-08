@@ -138,3 +138,135 @@ export function windowStatus(args: {
 }
 
 export const TRANSFER_CITIES = AIRPORTS.map((row) => ({ id: row.id, city: row.city }));
+
+export const TRANSFER_PIMP_EXP = 6;
+export const SALE_PIMP_EXP = 18;
+export const LIST_PIMP_EXP = 4;
+export const DRUG_RUN_PIMP_EXP = 12;
+
+export const MISSION_DRUG_RUN = "DRUG_RUN";
+export const MISSION_DARK_ROOM = "DARK_ROOM";
+
+export const DRUG_RUN = {
+  key: "pickup",
+  name: "Op pad — drugs ophalen",
+  blurb:
+    "Zij rijdt een afgesproken pickup. Vrijwillig werk, geen ontvoering. Risico: controles, gezocht, gezondheid. Beloning: drugs en cash.",
+  durationMs: 2.5 * 60 * 1000,
+  image: "/game/hoeren/mission-drugs.jpg",
+} as const;
+
+export type DarkRoomSession = {
+  key: string;
+  name: string;
+  blurb: string;
+  durationMs: number;
+  cashBase: number;
+  loyaltyDelta: number;
+  healthDelta: number;
+  pimpExp: number;
+  wantedChance: number;
+  image: string;
+};
+
+/** Consensual club VIP rooms — never framed as assault or coercion. */
+export const DARK_ROOMS: DarkRoomSession[] = [
+  {
+    key: "vip",
+    name: "Privé VIP-nacht",
+    blurb: "Afgesproken privénacht in de lounge. Champagne, muziek, afgesloten deur — iedereen is er vrijwillig.",
+    durationMs: 90 * 1000,
+    cashBase: 420,
+    loyaltyDelta: 4,
+    healthDelta: -4,
+    pimpExp: 8,
+    wantedChance: 4,
+    image: "/game/hoeren/dark-vip.jpg",
+  },
+  {
+    key: "fetish",
+    name: "Fetish club special",
+    blurb: "Een themaset in de club, met huisregels en een safeword. Podium, leer, neon — geen dwang.",
+    durationMs: 2 * 60 * 1000,
+    cashBase: 560,
+    loyaltyDelta: 2,
+    healthDelta: -8,
+    pimpExp: 11,
+    wantedChance: 6,
+    image: "/game/hoeren/dark-fetish.jpg",
+  },
+  {
+    key: "duo",
+    name: "Duo / party room",
+    blurb: "Twee gasten, één suite, een geboekte avond. Zij kiest of de boeking doorgaat.",
+    durationMs: 2.5 * 60 * 1000,
+    cashBase: 780,
+    loyaltyDelta: 1,
+    healthDelta: -10,
+    pimpExp: 14,
+    wantedChance: 8,
+    image: "/game/hoeren/dark-duo.jpg",
+  },
+  {
+    key: "casino",
+    name: "High-roller afterparty",
+    blurb: "Na de tafels: een penthouse-afterparty voor high rollers. Glamour, geen kelder.",
+    durationMs: 3 * 60 * 1000,
+    cashBase: 980,
+    loyaltyDelta: 6,
+    healthDelta: -6,
+    pimpExp: 16,
+    wantedChance: 10,
+    image: "/game/hoeren/dark-casino.jpg",
+  },
+  {
+    key: "suite",
+    name: "Overnight suite",
+    blurb: "Een nacht in een suite, ontbijt inbegrepen. Langste boeking, hoogste afdracht, zij mag nee zeggen.",
+    durationMs: 4 * 60 * 1000,
+    cashBase: 1320,
+    loyaltyDelta: 8,
+    healthDelta: -12,
+    pimpExp: 20,
+    wantedChance: 7,
+    image: "/game/hoeren/dark-suite.jpg",
+  },
+];
+
+export function darkRoomByKey(key: string) {
+  return DARK_ROOMS.find((row) => row.key === key) ?? null;
+}
+
+export function npcBuyoutPrice(charm: number, loyalty: number, health: number, cityId: string) {
+  const raw = 380 + charm * 14 + loyalty * 5 + health * 4;
+  return Math.max(500, Math.round(raw * cityPimpStats(cityId).payoutMult));
+}
+
+export function isEscortBusy(escort: { busyUntil?: Date | string | null }, now = Date.now()) {
+  if (!escort.busyUntil) return false;
+  const ts = typeof escort.busyUntil === "string" ? new Date(escort.busyUntil).getTime() : escort.busyUntil.getTime();
+  return ts > now;
+}
+
+export function pimpRankProgress(exp: number) {
+  const current = pimpRankFor(exp);
+  const next = nextPimpRank(exp);
+  if (!next) return { current, next: null, value: 100, label: "Maximale rang" };
+  const span = Math.max(1, next.minExp - current.minExp);
+  const value = Math.min(100, Math.round(((exp - current.minExp) / span) * 100));
+  return { current, next, value, label: `${exp} / ${next.minExp} exp` };
+}
+
+export function durationLabelNl(ms: number) {
+  const sec = Math.max(1, Math.round(ms / 1000));
+  if (sec < 60) return `${sec} sec`;
+  const min = sec / 60;
+  if (Number.isInteger(min)) return `${min} min`;
+  return `${String(min).replace(".", ",")} min`;
+}
+
+export function missionLabel(kind: string | null | undefined, key: string | null | undefined) {
+  if (kind === MISSION_DRUG_RUN) return DRUG_RUN.name;
+  if (kind === MISSION_DARK_ROOM) return darkRoomByKey(key ?? "")?.name ?? "Dark Room";
+  return "Bezet";
+}

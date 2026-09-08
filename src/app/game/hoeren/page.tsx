@@ -2,7 +2,15 @@ import { requirePlayer } from "@/lib/actions/helpers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { cityDisplayName, normalizeCityId } from "@/lib/airports";
-import { WINDOWS_PER_CITY, hourlyPayout, windowDailyFee, windowStatus } from "@/lib/pimp";
+import {
+  WINDOWS_PER_CITY,
+  hourlyPayout,
+  isEscortBusy,
+  missionLabel,
+  npcBuyoutPrice,
+  windowDailyFee,
+  windowStatus,
+} from "@/lib/pimp";
 import { HoerenClient } from "./hoeren-client";
 import type { EscortDTO, MarketEscortDTO, WindowDTO } from "./types";
 
@@ -52,6 +60,12 @@ export default async function HoerenPage() {
     listedPrice: row.listedPrice,
     isMain: player.mainEscortId === row.id,
     hourly: hourlyPayout(row.charm, row.loyalty, row.health, row.cityId),
+    busy: isEscortBusy(row, now),
+    busyUntil: row.busyUntil ? row.busyUntil.toISOString() : null,
+    missionKind: row.missionKind,
+    missionKey: row.missionKey,
+    missionLabel: row.missionKind ? missionLabel(row.missionKind, row.missionKey) : null,
+    npcPrice: npcBuyoutPrice(row.charm, row.loyalty, row.health, row.cityId),
   }));
 
   const windowDtos: WindowDTO[] = Array.from({ length: WINDOWS_PER_CITY }, (_, slotIndex) => {
