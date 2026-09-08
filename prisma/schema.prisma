@@ -50,6 +50,9 @@ model User {
   gymExp                Int       @default(0)
   gymFloor              Int       @default(1)
   gymCooldownUntil      DateTime?
+  casinoCooldownUntil   DateTime?
+  casinoPeekUntil       DateTime?
+  casinoPokerJson       String?
   familyId              String?
   family                Family?   @relation("FamilyRoster", fields: [familyId], references: [id])
   lastCrimeAt           DateTime?
@@ -219,7 +222,7 @@ model Message {
   subject    String
   body       String
   read       Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([toUserId, read])
   @@index([fromUserId])
@@ -230,7 +233,7 @@ model ShoutboxMessage {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   body      String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([createdAt])
 }
@@ -241,7 +244,7 @@ model GameLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String
   message   String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
   @@index([createdAt])
@@ -256,7 +259,7 @@ model AttackLog {
   bulletsUsed Int
   damage      Int
   outcome     String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@index([attackerId, createdAt])
   @@index([defenderId, createdAt])
@@ -295,7 +298,7 @@ model StreetZone {
   rivalKey     String   @default("roos")
   claimedUntil DateTime
   heat         Int      @default(0)
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
   @@unique([cityId, slotIndex])
   @@index([ownerId])
@@ -310,7 +313,7 @@ model RedLightWindow {
   slotIndex  Int
   hiredUntil DateTime
   escort     Escort?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@unique([ownerId, cityId, slotIndex])
   @@index([ownerId, cityId])

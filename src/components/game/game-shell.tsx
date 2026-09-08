@@ -174,6 +174,7 @@ export function GameShell({
                 <Countdown until={p.crimeCooldownUntil} label="Misdaad:" />
                 <Countdown until={p.carTheftCooldownUntil} label="Auto:" />
                 <Countdown until={p.gymCooldownUntil} label="Gym:" />
+                <Countdown until={p.casinoCooldownUntil} label="Casino:" />
                 <Countdown until={p.inJailUntil} label="Cel:" />
                 <Countdown until={p.inHospitalUntil} label="Ziekenhuis:" />
                 <Countdown until={p.travelEndAt} label="Vlucht:" clock />
