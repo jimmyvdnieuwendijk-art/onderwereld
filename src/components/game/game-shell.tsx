@@ -173,6 +173,7 @@ export function GameShell({
               <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
                 <Countdown until={p.crimeCooldownUntil} label="Misdaad:" />
                 <Countdown until={p.carTheftCooldownUntil} label="Auto:" />
+                <Countdown until={p.gymCooldownUntil} label="Gym:" />
                 <Countdown until={p.inJailUntil} label="Cel:" />
                 <Countdown until={p.inHospitalUntil} label="Ziekenhuis:" />
                 <Countdown until={p.travelEndAt} label="Vlucht:" clock />
