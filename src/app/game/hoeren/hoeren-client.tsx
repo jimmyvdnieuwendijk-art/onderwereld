@@ -102,7 +102,7 @@ export function HoerenClient({
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url(/game/hoeren/header.jpg)" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-red-950/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-transparent" />
         <div className="relative space-y-3 px-5 py-8 md:px-8">
           <p className="text-[11px] tracking-[0.25em] text-red-300 uppercase">Rosse buurt · {p.currentCityName}</p>
           <h1 className="font-heading text-3xl text-white md:text-4xl">Hoeren</h1>
