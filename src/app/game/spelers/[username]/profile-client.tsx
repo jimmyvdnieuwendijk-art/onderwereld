@@ -23,18 +23,19 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Badge>{target.rankName}</Badge>
-            <Badge variant="secondary">{target.currentCity}</Badge>
+            <Badge variant="secondary">{target.currentCityName}</Badge>
             <Badge variant="outline">HP {target.health}</Badge>
             <Badge variant="outline">{target.killCount} kills</Badge>
             {target.familyName && <Badge variant="secondary">{target.familyName}</Badge>}
             {target.inJail && <Badge variant="destructive">Cel</Badge>}
             {target.inHospital && <Badge variant="destructive">Ziekenhuis</Badge>}
+            {target.isTraveling && <Badge variant="secondary">In de lucht</Badge>}
           </div>
           <form action={attackAction} method="post" className="flex flex-wrap items-end gap-2">
             <input type="hidden" name="defenderId" value={target.id} />
             <Input type="number" min={1} max={25} name="bullets" defaultValue="5" className="w-24" />
-            <Button type="submit" disabled={attacking || target.inJail || target.inHospital || target.isDead}>
-              Aanvallen
+            <Button type="submit" disabled={attacking || target.inJail || target.inHospital || target.isDead || target.isTraveling}>
+              {target.isTraveling ? "In de lucht" : "Aanvallen"}
             </Button>
           </form>
           <ActionFeedback state={attackState} />

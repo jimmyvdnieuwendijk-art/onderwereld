@@ -2,9 +2,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import Link from "next/link";
 import { postShout } from "@/lib/actions/social";
-import { travelTo } from "@/lib/actions/economy";
-import { CITIES } from "@/lib/constants";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +48,7 @@ export function DashboardClient({
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              Rang <span className="text-primary">{p.rank.name}</span> in {p.currentCity}.{" "}
+              Rang <span className="text-primary">{p.rank.name}</span> in {p.currentCityName}.{" "}
               {p.family ? `Familie ${p.family.name}.` : "Je loopt solo."}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -69,34 +68,20 @@ export function DashboardClient({
                   Ziekenhuis: <Countdown until={p.inHospitalUntil} />
                 </p>
               )}
+              {p.travelEndAt && (
+                <p>
+                  Vlucht naar {p.travelDestinationName}: <Countdown until={p.travelEndAt} clock />
+                </p>
+              )}
               {p.equippedWeapon && <p>Wapen: {p.equippedWeapon.name}</p>}
               {p.equippedArmor && <p>Bescherming: {p.equippedArmor.name}</p>}
             </div>
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="text-xs text-muted-foreground">
-                Reis naar
-                <select
-                  className="mt-1 block h-8 rounded-lg border border-input bg-input/30 px-2 text-sm text-foreground"
-                  defaultValue={p.currentCity}
-                  id="travel-city"
-                >
-                  {CITIES.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button
-                disabled={pending}
-                onClick={() => {
-                  const select = document.getElementById("travel-city") as HTMLSelectElement;
-                  run(() => travelTo(select.value));
-                }}
-              >
-                Reizen (12 energie)
-              </Button>
-            </div>
+            <p className="text-sm">
+              <Link href="/game/vliegveld" className="text-primary underline">
+                Naar het vliegveld
+              </Link>{" "}
+              — tickets, privéjet, smokkelmarkt.
+            </p>
           </CardContent>
         </Card>
 

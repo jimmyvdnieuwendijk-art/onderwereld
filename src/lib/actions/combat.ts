@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { clamp, remainingMs } from "@/lib/format";
-import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
 export async function attackPlayer(defenderId: string, bulletsUsed: number): Promise<ActionResult> {
@@ -28,6 +28,9 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   }
   if (defenderLive.inJailUntil && new Date(defenderLive.inJailUntil).getTime() > Date.now()) {
     return fail("Dit slachtoffer zit achter de tralies.");
+  }
+  if (defenderLive.isTraveling) {
+    return fail("Dit doelwit zit in de lucht. Wacht tot het vliegtuig landt.");
   }
 
   const attackScore = attacker.attackPower * bullets * (0.85 + Math.random() * 0.3);
@@ -75,6 +78,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
     ? `Je schakelt ${defenderLive.username} uit (${applied} schade) en rooft ${stolen} euro.`
     : `Je raakt ${defenderLive.username} voor ${applied} schade en rooft ${stolen} euro.`;
   await logEvent(userId, "ATTACK", outcome);
+  await bumpWanted(userId, killed ? 12 : 7);
   await logEvent(
     defenderId,
     "ATTACK",

@@ -1,15 +1,3 @@
-export const CITIES = [
-  "Amsterdam",
-  "Rotterdam",
-  "Den Haag",
-  "Utrecht",
-  "Eindhoven",
-  "Groningen",
-  "Maastricht",
-] as const;
-
-export type City = (typeof CITIES)[number];
-
 export const STARTER_CASH = 500;
 export const STARTER_ENERGY = 100;
 export const STARTER_HEALTH = 100;
@@ -27,7 +15,6 @@ export const BANK_INTEREST_RATE = 0.01;
 export const BANK_INTEREST_INTERVAL_MS = 60 * 60 * 1000;
 
 export const FAMILY_CREATE_COST = 25_000;
-export const TRAVEL_ENERGY_COST = 12;
 export const BAIL_PER_MINUTE = 80;
 export const HOSPITAL_PER_MINUTE = 60;
 

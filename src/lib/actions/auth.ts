@@ -4,7 +4,7 @@ import { hash } from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { CITIES, STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
+import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
 import { fail, ok } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
@@ -39,7 +39,7 @@ export async function registerAction(
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
   const username = String(formData.get("username") ?? "").trim();
-  const city = String(formData.get("city") ?? "Amsterdam");
+  const city = "ams";
 
   if (!email.includes("@")) return fail("Vul een geldig e-mailadres in.");
   if (password.length < 6) return fail("Wachtwoord moet minstens 6 tekens zijn.");
@@ -49,9 +49,6 @@ export async function registerAction(
   }
   if (!USERNAME_PATTERN.test(username)) {
     return fail("Alleen letters, cijfers en underscore zijn toegestaan.");
-  }
-  if (!CITIES.includes(city as (typeof CITIES)[number])) {
-    return fail("Kies een geldige stad.");
   }
 
   const [emailTaken, nameTaken] = await Promise.all([
@@ -82,7 +79,7 @@ export async function registerAction(
     data: {
       userId: created.id,
       type: "SYSTEM",
-      message: `Welkom in ${city}, ${username}. Je start als ${starterRank.name}.`,
+      message: `Welkom in Amsterdam, ${username}. Je start als ${starterRank.name}.`,
     },
   });
 

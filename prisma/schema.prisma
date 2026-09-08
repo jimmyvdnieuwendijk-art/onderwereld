@@ -28,10 +28,15 @@ model User {
   defense               Int       @default(0)
   attackPower           Int       @default(5)
   killCount             Int       @default(0)
+  wantedLevel           Int       @default(0)
   inJailUntil           DateTime?
   inHospitalUntil       DateTime?
   isDead                Boolean   @default(false)
-  currentCity           String    @default("Amsterdam")
+  currentCity           String    @default("ams")
+  travelEndAt           DateTime?
+  travelDestinationId   String?
+  drugs                 Int       @default(0)
+  weaponCrates          Int       @default(0)
   familyId              String?
   family                Family?   @relation("FamilyRoster", fields: [familyId], references: [id])
   lastCrimeAt           DateTime?
@@ -62,6 +67,7 @@ model User {
   @@index([familyId])
   @@index([isDead])
   @@index([currentCity])
+  @@index([travelEndAt])
   @@index([inJailUntil])
   @@index([inHospitalUntil])
 }

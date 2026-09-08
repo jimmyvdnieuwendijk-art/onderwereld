@@ -235,16 +235,16 @@ async function main() {
       bullets: 80,
       exp: 120,
       rankId: rankByOrder[1].id,
-      currentCity: "Amsterdam",
+      currentCity: "ams",
       attackPower: 5,
     },
   });
 
   const rivals = [
-    { email: "nachtjager@onderwereld.nl", username: "DeNachtjager", city: "Rotterdam", exp: 900, cash: 1400, bullets: 40, health: 100 },
-    { email: "bloedhond@onderwereld.nl", username: "Bloedhond", city: "Amsterdam", exp: 2200, cash: 3200, bullets: 25, health: 85 },
-    { email: "sjaak@onderwereld.nl", username: "SilentSjaak", city: "Den Haag", exp: 5200, cash: 900, bullets: 120, health: 100 },
-    { email: "kira@onderwereld.nl", username: "KiraVanZuid", city: "Utrecht", exp: 400, cash: 600, bullets: 10, health: 100 },
+    { email: "nachtjager@onderwereld.nl", username: "DeNachtjager", city: "lon", exp: 900, cash: 1400, bullets: 40, health: 100 },
+    { email: "bloedhond@onderwereld.nl", username: "Bloedhond", city: "ams", exp: 2200, cash: 3200, bullets: 25, health: 85 },
+    { email: "sjaak@onderwereld.nl", username: "SilentSjaak", city: "rom", exp: 5200, cash: 900, bullets: 120, health: 100 },
+    { email: "kira@onderwereld.nl", username: "KiraVanZuid", city: "nyc", exp: 400, cash: 600, bullets: 10, health: 100 },
   ];
 
   const createdRivals = [];

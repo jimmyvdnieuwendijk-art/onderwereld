@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatDuration, remainingMs } from "@/lib/format";
+import { formatClock, formatDuration, remainingMs } from "@/lib/format";
 
-export function Countdown({ until, label }: { until: string | null | undefined; label?: string }) {
+export function Countdown({
+  until,
+  label,
+  clock,
+}: {
+  until: string | null | undefined;
+  label?: string;
+  clock?: boolean;
+}) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -17,7 +25,7 @@ export function Countdown({ until, label }: { until: string | null | undefined; 
   return (
     <span className="tabular-nums text-primary">
       {label ? `${label} ` : ""}
-      {formatDuration(ms)}
+      {clock ? formatClock(ms) : formatDuration(ms)}
     </span>
   );
 }

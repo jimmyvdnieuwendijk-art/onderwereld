@@ -57,8 +57,8 @@ export function TheftClient({
                 <Badge variant="secondary">{type.rarity}</Badge>
                 <form action={action} method="post">
                   <input type="hidden" name="vehicleTypeId" value={type.id} />
-                  <Button type="submit" disabled={pending || locked}>
-                    {locked ? "Rang te laag" : "Stelen"}
+                  <Button type="submit" disabled={pending || locked || p.isTraveling}>
+                    {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : "Stelen"}
                   </Button>
                 </form>
               </CardContent>

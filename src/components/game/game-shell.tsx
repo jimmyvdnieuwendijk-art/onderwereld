@@ -11,6 +11,7 @@ import { formatMoney, formatNumber } from "@/lib/format";
 import { logoutAction } from "@/lib/actions/session";
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
+import { TravelBanner } from "@/components/game/travel-banner";
 import { MOBILE_PRIMARY, NAV_ITEMS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -79,7 +80,7 @@ export function GameShell({
       <aside className="hidden w-60 shrink-0 border-r border-border/70 bg-sidebar/80 p-4 md:flex md:flex-col">
         <Link href="/game" className="mb-6 px-1">
           <p className="font-heading text-xl tracking-wide text-primary">Onderwereld</p>
-          <p className="text-xs text-muted-foreground">{p.username} · {p.currentCity}</p>
+          <p className="text-xs text-muted-foreground">{p.username} · {p.currentCityName}</p>
         </Link>
         <div className="flex-1 overflow-y-auto">
           <NavLinks />
@@ -174,12 +175,17 @@ export function GameShell({
                 <Countdown until={p.carTheftCooldownUntil} label="Auto:" />
                 <Countdown until={p.inJailUntil} label="Cel:" />
                 <Countdown until={p.inHospitalUntil} label="Ziekenhuis:" />
+                <Countdown until={p.travelEndAt} label="Vlucht:" clock />
+                {p.wantedLevel > 0 && <span>Gezocht {p.wantedLevel}</span>}
               </div>
             </div>
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 md:px-6 md:py-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 md:px-6 md:py-6">
+          <TravelBanner player={p} />
+          {children}
+        </main>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border/70 bg-background/95 md:hidden">

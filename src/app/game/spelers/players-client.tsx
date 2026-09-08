@@ -53,13 +53,14 @@ export function PlayersClient({ initial }: { initial: PublicPlayer[] }) {
                   {row.username}
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  {row.rankName} · {row.currentCity}
+                  {row.rankName} · {row.currentCityName}
                   {row.familyName ? ` · ${row.familyName}` : ""}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {row.inJail && <Badge variant="destructive">Cel</Badge>}
                 {row.inHospital && <Badge variant="destructive">Ziekenhuis</Badge>}
+                {row.isTraveling && <Badge variant="secondary">In de lucht</Badge>}
                 <Badge variant="secondary">HP {row.health}</Badge>
                 <Badge variant="outline">{row.killCount} kills</Badge>
               </div>

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Mail,
   MessageSquare,
+  Plane,
   Search,
   Shield,
   ShoppingBag,
@@ -19,6 +20,7 @@ import {
 export const NAV_ITEMS = [
   { href: "/game", label: "Overzicht", icon: LayoutDashboard },
   { href: "/game/misdaden", label: "Misdaden", icon: Skull },
+  { href: "/game/vliegveld", label: "Vliegveld", icon: Plane },
   { href: "/game/auto-stelen", label: "Auto stelen", icon: Car },
   { href: "/game/garage", label: "Garage", icon: Home },
   { href: "/game/bank", label: "Bank", icon: Banknote },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { toPublicPlayer } from "@/lib/game/public-player";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -20,20 +21,5 @@ export async function GET(request: Request) {
     take: 30,
   });
 
-  const now = Date.now();
-  return NextResponse.json(
-    users.map((user) => ({
-      id: user.id,
-      username: user.username,
-      rankName: user.rank.name,
-      rankOrder: user.rank.order,
-      currentCity: user.currentCity,
-      health: user.health,
-      isDead: user.isDead,
-      inJail: !!(user.inJailUntil && user.inJailUntil.getTime() > now),
-      inHospital: !!(user.inHospitalUntil && user.inHospitalUntil.getTime() > now),
-      killCount: user.killCount,
-      familyName: user.family?.name ?? null,
-    })),
-  );
+  return NextResponse.json(users.map((user) => toPublicPlayer(user)));
 }

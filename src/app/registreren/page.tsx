@@ -3,7 +3,6 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { registerAction } from "@/lib/actions/auth";
-import { CITIES } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +19,7 @@ export default function RegisterPage() {
           <p className="font-heading text-sm tracking-[0.25em] text-primary">ONDERWERELD</p>
           <CardTitle className="font-heading text-2xl">Nieuw in de stad</CardTitle>
           <CardDescription>
-            Kies een naam, een stad en een wachtwoord. Je start als Schooier met €500 cash.
+            Kies een naam en een wachtwoord. Je start als Schooier in Amsterdam (Schiphol) met €500 cash.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -28,21 +27,6 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="username">Gebruikersnaam</Label>
               <Input id="username" name="username" required minLength={3} maxLength={16} placeholder="DonDemo" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="city">Startstad</Label>
-              <select
-                id="city"
-                name="city"
-                className="h-8 w-full rounded-lg border border-input bg-input/30 px-2.5 text-sm"
-                defaultValue="Amsterdam"
-              >
-                {CITIES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>

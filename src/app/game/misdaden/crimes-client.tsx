@@ -72,8 +72,8 @@ export function CrimesClient({
                 </div>
                 <form action={action} method="post">
                   <input type="hidden" name="crimeId" value={crime.id} />
-                  <Button type="submit" disabled={pending || locked}>
-                    {locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}
+                  <Button type="submit" disabled={pending || locked || p.isTraveling}>
+                    {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}
                   </Button>
                 </form>
               </CardContent>

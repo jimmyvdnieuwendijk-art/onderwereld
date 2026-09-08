@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { blockedReason } from "@/lib/game/player";
 import { clamp, randomInt } from "@/lib/format";
-import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { tickPlayer } from "@/lib/game/player";
 import type { ActionResult } from "@/types/game";
 
@@ -55,6 +55,7 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
     });
     const message = `Gelukt: ${crime.name}. Je pakt ${cash} euro en ${crime.expReward} ervaring.`;
     await logEvent(userId, "CRIME", message);
+    await bumpWanted(userId, 2);
     await tickPlayer(userId);
     return ok(message);
   }
@@ -71,6 +72,7 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
         inJailUntil: until,
       },
     });
+    await bumpWanted(userId, 14);
     const message = `Mislukt: ${crime.name}. De politie pakt je. Je zit ${crime.jailMinutes} minuten vast.`;
     await logEvent(userId, "JAIL", message);
     return fail(message, "warning");
@@ -84,6 +86,7 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
       crimeCooldownUntil: cooldownUntil,
     },
   });
+  await bumpWanted(userId, 5);
   const message = `Mislukt: ${crime.name}. Je komt met de schrik vrij.`;
   await logEvent(userId, "CRIME", message);
   return fail(message, "warning");

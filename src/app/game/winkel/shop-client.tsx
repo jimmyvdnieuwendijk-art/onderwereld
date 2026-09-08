@@ -138,8 +138,8 @@ export function ShopClient({
                       </div>
                       <form action={buyAction} method="post">
                         <input type="hidden" name="itemId" value={item.id} />
-                        <Button type="submit" disabled={buying || locked}>
-                          {locked ? "Rang te laag" : "Kopen"}
+                        <Button type="submit" disabled={buying || locked || p.isTraveling}>
+                          {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : "Kopen"}
                         </Button>
                       </form>
                     </CardContent>

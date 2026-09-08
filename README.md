@@ -145,12 +145,14 @@ Then open `https://<project>.vercel.app`, register or log in with the demo accou
 
 ## Spelen
 
-1. Registreer (gebruikersnaam + startstad) of log in met het demo-account.
-2. Pleeg **misdaden** voor cash/exp (energie + cooldown + celkans).
-3. **Steel auto's**, verkoop of repareer ze in de garage, of zet ze op de markt.
-4. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven — geen cron nodig. Voor een echte hourly job: cron `GET`/script dat `lastInterestAt` afhandelt.
-5. Koop wapens/vesten/kogels, rust uit, val andere spelers aan.
-6. Inbox + shoutbox + families.
+1. Registreer of log in met het demo-account. Je start in **Amsterdam (Schiphol)**.
+2. Pleeg **misdaden** voor cash/exp (energie + cooldown + celkans). Gezocht-niveau loopt op bij mislukte klussen.
+3. Open **Vliegveld** in het linkermenu: boek een lijnvlucht of privéjet naar 10 steden. Onderweg zijn misdaden, PvP en handel geblokkeerd.
+4. **Smokkel** op het vliegveld: drugs, wapenkisten en kogels hebben per stad andere prijzen (Medellín goedkoop in drugs, Tokyo duur; Miami goedkoop in kogels).
+5. **Steel auto's**, verkoop of repareer ze in de garage, of zet ze op de markt.
+6. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven.
+7. Koop wapens/vesten/kogels, rust uit, val andere spelers aan (niet tijdens een vlucht).
+8. Inbox + shoutbox + families.
 
 Jail en ziekenhuis: wachten of borg/privékliniek betalen.
 

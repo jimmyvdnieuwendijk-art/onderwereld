@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { BASE_ATTACK, CITIES, ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON, LISTING_BULLETS, LISTING_ITEM, LISTING_VEHICLE, MAX_ENERGY, MAX_HEALTH, TRAVEL_ENERGY_COST } from "@/lib/constants";
+import { BASE_ATTACK, ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON, LISTING_BULLETS, LISTING_ITEM, LISTING_VEHICLE, MAX_ENERGY, MAX_HEALTH } from "@/lib/constants";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
@@ -11,7 +11,7 @@ export async function bankDeposit(amount: number): Promise<ActionResult> {
   if (!userId) return fail("Je bent niet ingelogd.");
   const player = await tickPlayer(userId);
   if (!player) return fail("Speler niet gevonden.");
-  const blocked = blockedReason(player);
+  const blocked = blockedReason(player, { travel: false });
   if (blocked) return fail(blocked, "warning");
 
   const value = Math.floor(amount);
@@ -33,7 +33,7 @@ export async function bankWithdraw(amount: number): Promise<ActionResult> {
   if (!userId) return fail("Je bent niet ingelogd.");
   const player = await tickPlayer(userId);
   if (!player) return fail("Speler niet gevonden.");
-  const blocked = blockedReason(player);
+  const blocked = blockedReason(player, { travel: false });
   if (blocked) return fail(blocked, "warning");
 
   const value = Math.floor(amount);
@@ -149,23 +149,8 @@ export async function consumeItem(itemId: string): Promise<ActionResult> {
 }
 
 export async function travelTo(city: string): Promise<ActionResult> {
-  const userId = await requireUserId();
-  if (!userId) return fail("Je bent niet ingelogd.");
-  const player = await tickPlayer(userId);
-  if (!player) return fail("Speler niet gevonden.");
-  const blocked = blockedReason(player);
-  if (blocked) return fail(blocked, "warning");
-  if (!CITIES.includes(city as (typeof CITIES)[number])) return fail("Onbekende stad.");
-  if (player.currentCity === city) return fail("Je bent daar al.");
-  if (player.energy < TRAVEL_ENERGY_COST) return fail("Niet genoeg energie om te reizen.");
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { currentCity: city, energy: { decrement: TRAVEL_ENERGY_COST } },
-  });
-  const message = `Je reist naar ${city}.`;
-  await logEvent(userId, "TRAVEL", message);
-  return ok(message);
+  const { bookFlight } = await import("@/lib/actions/travel");
+  return bookFlight(city, false);
 }
 
 export async function createListing(input: {

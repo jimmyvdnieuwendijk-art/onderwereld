@@ -6,6 +6,7 @@ import {
   ENERGY_TICK_MS,
   MAX_ENERGY,
 } from "@/lib/constants";
+import { cityDisplayName, getAirport, normalizeCityId } from "@/lib/airports";
 import type { PlayerSnapshot } from "@/types/game";
 
 function toIso(value: Date | null | undefined) {
@@ -40,7 +41,34 @@ export async function tickPlayer(userId: string) {
     isDead?: boolean;
     health?: number;
     rankId?: string;
+    currentCity?: string;
+    travelEndAt?: Date | null;
+    travelDestinationId?: string | null;
+    wantedLevel?: number;
   } = {};
+
+  const cityId = normalizeCityId(user.currentCity);
+  if (cityId !== user.currentCity) {
+    patch.currentCity = cityId;
+  }
+
+  if (user.wantedLevel < 0) patch.wantedLevel = 0;
+  if (user.wantedLevel > 100) patch.wantedLevel = 100;
+
+  const arriving =
+    !!user.travelEndAt &&
+    user.travelEndAt.getTime() <= now.getTime() &&
+    !!user.travelDestinationId;
+
+  if (arriving) {
+    const dest = normalizeCityId(user.travelDestinationId);
+    patch.currentCity = dest;
+    patch.travelEndAt = null;
+    patch.travelDestinationId = null;
+  } else if (user.travelEndAt && user.travelEndAt.getTime() <= now.getTime()) {
+    patch.travelEndAt = null;
+    patch.travelDestinationId = null;
+  }
 
   const energyElapsed = now.getTime() - user.lastEnergyAt.getTime();
   const energyTicks = Math.floor(energyElapsed / ENERGY_TICK_MS);
@@ -109,6 +137,17 @@ export async function tickPlayer(userId: string) {
     });
   }
 
+  if (arriving) {
+    const dest = getAirport(user.travelDestinationId ?? "ams");
+    await prisma.gameLog.create({
+      data: {
+        userId,
+        type: "TRAVEL",
+        message: `Je landt op ${dest.airport} in ${dest.city}. De douane wuift je door — of kijkt de andere kant op.`,
+      },
+    });
+  }
+
   return toSnapshot(updated, ranks);
 }
 
@@ -139,7 +178,16 @@ function toSnapshot(
     defense: user.defense,
     attackPower: user.attackPower,
     killCount: user.killCount,
-    currentCity: user.currentCity,
+    wantedLevel: user.wantedLevel,
+    currentCity: normalizeCityId(user.currentCity),
+    currentCityName: cityDisplayName(user.currentCity),
+    currentAirport: getAirport(user.currentCity).airport,
+    isTraveling: !!(user.travelEndAt && user.travelEndAt.getTime() > Date.now()),
+    travelEndAt: toIso(user.travelEndAt),
+    travelDestinationId: user.travelDestinationId,
+    travelDestinationName: user.travelDestinationId ? cityDisplayName(user.travelDestinationId) : null,
+    drugs: user.drugs,
+    weaponCrates: user.weaponCrates,
     isDead: user.isDead,
     inJailUntil: toIso(user.inJailUntil),
     inHospitalUntil: toIso(user.inHospitalUntil),
@@ -157,11 +205,26 @@ function toSnapshot(
   };
 }
 
-export function blockedReason(player: {
-  isDead: boolean;
-  inJailUntil: Date | string | null;
-  inHospitalUntil: Date | string | null;
-}) {
+export function isPlayerTraveling(player: { travelEndAt?: Date | string | null }) {
+  const now = Date.now();
+  if (!player.travelEndAt) return false;
+  const ts =
+    typeof player.travelEndAt === "string"
+      ? new Date(player.travelEndAt).getTime()
+      : player.travelEndAt.getTime();
+  return ts > now;
+}
+
+export function blockedReason(
+  player: {
+    isDead: boolean;
+    inJailUntil: Date | string | null;
+    inHospitalUntil: Date | string | null;
+    travelEndAt?: Date | string | null;
+    isTraveling?: boolean;
+  },
+  opts?: { travel?: boolean },
+) {
   const now = Date.now();
   const jail =
     player.inJailUntil &&
@@ -176,5 +239,8 @@ export function blockedReason(player: {
 
   if (jail) return "Je zit in de gevangenis. Wacht of betaal borg.";
   if (hospital || player.isDead) return "Je ligt in het ziekenhuis en kunt nu niets ondernemen.";
+  if (opts?.travel !== false && isPlayerTraveling(player)) {
+    return "Je zit in het vliegtuig. Misdaden, handel en gevechten moeten wachten tot je landt.";
+  }
   return null;
 }

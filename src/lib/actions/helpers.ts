@@ -29,6 +29,14 @@ export function revalidateGame() {
   revalidatePath("/game", "layout");
 }
 
+export async function bumpWanted(userId: string, amount: number) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { wantedLevel: true } });
+  if (!user) return;
+  const next = Math.max(0, Math.min(100, user.wantedLevel + amount));
+  if (next === user.wantedLevel) return;
+  await prisma.user.update({ where: { id: userId }, data: { wantedLevel: next } });
+}
+
 export async function logEvent(userId: string, type: string, message: string) {
   await prisma.gameLog.create({ data: { userId, type, message } });
 }
