@@ -168,6 +168,9 @@ function toSnapshot(
     pimpExp: number;
     mainEscortId: string | null;
     lastRaidAt: Date | null;
+    blackmailTapes: number;
+    outbreakUntil: Date | null;
+    streetProtectUntil: Date | null;
   },
   ranks: { id: string; slug: string; name: string; minExp: number; order: number }[],
 ): PlayerSnapshot {
@@ -219,6 +222,9 @@ function toSnapshot(
     hasMainEscort: !!user.mainEscortId,
     escortDefenseBonus: user.mainEscortId ? MAIN_ESCORT_DEFENSE_BONUS : 0,
     lastRaidAt: toIso(user.lastRaidAt),
+    blackmailTapes: user.blackmailTapes,
+    outbreakUntil: toIso(user.outbreakUntil),
+    streetProtectUntil: toIso(user.streetProtectUntil),
   };
 }
 

@@ -63,6 +63,9 @@ export type PlayerSnapshot = {
   hasMainEscort: boolean;
   escortDefenseBonus: number;
   lastRaidAt: string | null;
+  blackmailTapes: number;
+  outbreakUntil: string | null;
+  streetProtectUntil: string | null;
 };
 
 export type PublicPlayer = {

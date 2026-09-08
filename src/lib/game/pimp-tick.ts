@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { cityDisplayName } from "@/lib/airports";
 import { clamp, randomInt } from "@/lib/format";
 import {
   DARK_ROOMS,
@@ -14,6 +13,18 @@ import {
   pimpRankFor,
   raidChancePercent,
 } from "@/lib/pimp";
+import {
+  MISSION_VIP_JOB,
+  OUTBREAK_MS,
+  VENUE_LIVE_CAM,
+  pickEmpireToast,
+  randomRivalKey,
+  rivalByKey,
+  streetHourlyIncome,
+  streetZoneName,
+  venuePayoutMult,
+  vipJobByKey,
+} from "@/lib/empire";
 
 type TickResult = {
   changed: boolean;
@@ -33,12 +44,16 @@ async function resolveMissions(userId: string, now: Date) {
       busyUntil: { lte: now },
     },
   });
-  if (due.length === 0) return { changed: false, cash: 0, drugs: 0, pimpExp: 0, wanted: 0, jailUntil: null as Date | null, logs: [] as string[] };
+  if (due.length === 0) {
+    return { changed: false, cash: 0, drugs: 0, pimpExp: 0, wanted: 0, jailUntil: null as Date | null, tapes: 0, outbreak: false, logs: [] as string[] };
+  }
 
   let cash = 0;
   let drugs = 0;
   let pimpExp = 0;
   let wanted = 0;
+  let tapes = 0;
+  let outbreak = false;
   let jailUntil: Date | null = null;
   const logs: string[] = [];
 
@@ -96,13 +111,35 @@ async function resolveMissions(userId: string, now: Date) {
       continue;
     }
 
+    if (escort.missionKind === MISSION_VIP_JOB) {
+      const job = vipJobByKey(escort.missionKey ?? "") ?? vipJobByKey("highroller")!;
+      const payout = Math.max(
+        50,
+        Math.floor(job.cashBase * (0.55 + escort.charm / 140) * (0.7 + escort.loyalty / 250)),
+      );
+      cash += payout;
+      pimpExp += job.pimpExp;
+      if (randomInt(1, 100) <= job.wantedChance) wanted += 6;
+      if (randomInt(1, 100) <= job.blackmailChance) {
+        tapes += 1;
+        logs.push(pickEmpireToast("politicianOk"));
+      }
+      if (randomInt(1, 100) <= job.outbreakChance) outbreak = true;
+      await prisma.escort.update({
+        where: { id: escort.id },
+        data: { ...clearMission(), health: clamp(escort.health - randomInt(3, 10), 8, 100) },
+      });
+      logs.push(`${escort.name} sluit ${job.name} af. Afdracht ${payout} euro. Vrijwillig, klaar, volgende gast.`);
+      continue;
+    }
+
     await prisma.escort.update({
       where: { id: escort.id },
       data: clearMission(),
     });
   }
 
-  return { changed: true, cash, drugs, pimpExp, wanted, jailUntil, logs };
+  return { changed: true, cash, drugs, pimpExp, wanted, jailUntil, tapes, outbreak, logs };
 }
 
 export async function tickPimpEconomy(userId: string, now = new Date()): Promise<TickResult> {
@@ -115,6 +152,9 @@ export async function tickPimpEconomy(userId: string, now = new Date()): Promise
       mainEscortId: true,
       pimpExp: true,
       inJailUntil: true,
+      outbreakUntil: true,
+      streetProtectUntil: true,
+      blackmailTapes: true,
     },
   });
   if (!user) return { changed: false, cashDelta: 0, raided: false };
@@ -142,13 +182,22 @@ export async function tickPimpEconomy(userId: string, now = new Date()): Promise
     listedPrice: row.listedPrice,
     busyUntil: row.busyUntil,
     missionKind: row.missionKind,
+    venueKind: row.venueKind,
     gone: false,
     unassign: false,
   }));
 
+  const outbreakActive = !!(user.outbreakUntil && user.outbreakUntil.getTime() > now.getTime()) || missions.outbreak;
+  const protectedStreet = !!(user.streetProtectUntil && user.streetProtectUntil.getTime() > now.getTime());
+  const zones = await prisma.streetZone.findMany({
+    where: { ownerId: userId, claimedUntil: { gt: now } },
+  });
+
   let income = 0;
+  let streetIncome = 0;
   let pimpExpGain = missions.pimpExp;
   const logs: string[] = [...missions.logs];
+  const lostZoneIds: string[] = [];
 
   for (let h = 0; h < hours; h++) {
     let hourIncome = 0;
@@ -174,7 +223,11 @@ export async function tickPimpEconomy(userId: string, now = new Date()): Promise
         escort.loyalty = clamp(escort.loyalty - randomInt(1, 3), 0, 100);
         if (Math.random() < 0.08) {
           escort.health = clamp(escort.health - randomInt(8, 22), 0, 100);
-          logs.push(`${escort.name} raakt aangeslagen op het raam. Gezondheid ${escort.health}.`);
+          logs.push(`${escort.name} vecht een gast van de deur. Conditie ${escort.health}. Geen verkrachting — een klap.`);
+        }
+        if (Math.random() < 0.04) {
+          escort.health = clamp(escort.health - 6, 8, 100);
+          logs.push(`Uitbraak-risico op het raam. ${escort.name} naar de test. Conditie ${escort.health}.`);
         }
         if (escort.loyalty <= 12 && Math.random() < 0.22) {
           escort.gone = true;
@@ -189,11 +242,33 @@ export async function tickPimpEconomy(userId: string, now = new Date()): Promise
           logs.push(`${escort.name} is uit de running. Eerst herstellen, dan weer het raam.`);
           continue;
         }
-        hourIncome += hourlyPayout(escort.charm, escort.loyalty, escort.health, escort.cityId);
+        hourIncome += Math.floor(
+          hourlyPayout(escort.charm, escort.loyalty, escort.health, escort.cityId) * venuePayoutMult(escort.venueKind),
+        );
         earningWorkers += 1;
+      } else if (escort.venueKind === VENUE_LIVE_CAM && !escort.listedPrice) {
+        hourIncome += Math.floor(
+          hourlyPayout(escort.charm, escort.loyalty, escort.health, escort.cityId) * venuePayoutMult(VENUE_LIVE_CAM) * 0.55,
+        );
+        earningWorkers += 1;
+        escort.health = clamp(escort.health - 1, 8, 100);
       } else if (!escort.listedPrice) {
         escort.loyalty = clamp(escort.loyalty + 1, 0, 100);
         escort.health = clamp(escort.health + 2, 0, 100);
+      }
+    }
+
+    for (const zone of zones) {
+      if (lostZoneIds.includes(zone.id)) continue;
+      if (zone.claimedUntil.getTime() < hourEnd) continue;
+      streetIncome += streetHourlyIncome(zone.cityId);
+      pimpExpGain += 1;
+      if (!protectedStreet && Math.random() < 0.08) {
+        lostZoneIds.push(zone.id);
+        const rival = rivalByKey(zone.rivalKey);
+        logs.push(
+          `${rival.name} neemt ${streetZoneName(zone.slotIndex)} terug. Jouw neon is van hem. Rival takeover.`,
+        );
       }
     }
 
@@ -201,25 +276,36 @@ export async function tickPimpEconomy(userId: string, now = new Date()): Promise
     pimpExpGain += earningWorkers;
   }
 
+  if (outbreakActive) {
+    income = Math.floor(income * 0.65);
+    streetIncome = Math.floor(streetIncome * 0.65);
+    logs.unshift("Uitbraak in de stalling. Condooms, testdag, omzet -35%. Geen marteling — een ziekte-event.");
+  }
+
   const raidRoll = randomInt(1, 100);
-  const raidChance = raidChancePercent(user.wantedLevel, user.currentCity);
+  const raidChance = raidChancePercent(user.wantedLevel, user.currentCity) + (protectedStreet ? -8 : 0);
   const raided = income > 0 && raidRoll <= raidChance;
-  const cashDelta = (raided ? 0 : income) + missions.cash;
+  if (raided) logs.unshift(pickEmpireToast("raid"));
+  const cashDelta = (raided ? 0 : income) + streetIncome + missions.cash;
   const wantedNext = Math.min(100, user.wantedLevel + (raided ? RAID_WANTED_BUMP : 0) + missions.wanted);
   const lastTickAt =
     hours > 0 ? new Date(user.lastPimpTickAt.getTime() + hours * PIMP_HOUR_MS) : user.lastPimpTickAt;
 
-  if (raided) {
-    logs.unshift(
-      `Razzia in ${cityDisplayName(user.currentCity)}. De wijk is rood van de zwaailichten — raam-omzet van deze ronde kwijt. Gezocht +${RAID_WANTED_BUMP}.`,
-    );
-  } else if (income > 0) {
-    logs.unshift(`Ramen: ${income} euro binnen over ${hours === 1 ? "een speeluur" : `${hours} speeluren`}.`);
+  if (!raided && income > 0) {
+    logs.unshift(`Ramen/cams: ${income} euro binnen over ${hours === 1 ? "een speeluur" : `${hours} speeluren`}.`);
+  }
+  if (streetIncome > 0) {
+    logs.unshift(`Stoepen: ${streetIncome} euro van je hoeken.`);
   }
 
   const jailUntil =
     missions.jailUntil && (!user.inJailUntil || missions.jailUntil > user.inJailUntil)
       ? missions.jailUntil
+      : undefined;
+
+  const outbreakUntil =
+    missions.outbreak || (outbreakActive && hours > 0 && Math.random() < 0.15)
+      ? new Date(now.getTime() + OUTBREAK_MS)
       : undefined;
 
   await prisma.$transaction(async (tx) => {
@@ -234,8 +320,21 @@ export async function tickPimpEconomy(userId: string, now = new Date()): Promise
         lastRaidAt: raided ? now : undefined,
         inJailUntil: jailUntil,
         mainEscortId: state.some((row) => row.gone && row.id === user.mainEscortId) ? null : undefined,
+        blackmailTapes: missions.tapes > 0 ? { increment: missions.tapes } : undefined,
+        outbreakUntil,
       },
     });
+
+    for (const zoneId of lostZoneIds) {
+      await tx.streetZone.update({
+        where: { id: zoneId },
+        data: {
+          ownerId: null,
+          rivalKey: randomRivalKey(),
+          claimedUntil: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+        },
+      });
+    }
 
     for (const escort of state) {
       if (escort.gone) {
