@@ -71,25 +71,41 @@ git remote add github https://github.com/YOUR_USER/onderwereld.git
 git push -u github main
 ```
 
-Do not invent a GitHub remote until that repo exists. Origin (`origin`) can stay as a Cursor remote; Vercel should import **GitHub**, not Origin.
+Do not invent a GitHub remote until that repo exists. This project is already at [https://github.com/jimmyvdnieuwendijk-art/onderwereld](https://github.com/jimmyvdnieuwendijk-art/onderwereld). Origin (`origin`) can stay as a Cursor remote; Vercel should import **GitHub**, not Origin.
 
-### 2. Create free Postgres on Neon
+### 2. Neon Postgres (`sparkling-mouse-47508820`)
 
-1. Sign up at [https://neon.tech](https://neon.tech) and create a project (e.g. `onderwereld`).
-2. Open **Dashboard → Connection details**.
-3. Copy the **pooled** connection string for the Vercel `DATABASE_URL` (include `sslmode=require`).
-4. Copy the **direct** (unpooled) connection string for the one-time `prisma db push` / seed from your laptop.
+This repo is pointed at Neon project **`sparkling-mouse-47508820`**, branch **`production`**.
 
-Placeholder only — replace with the strings Neon shows you:
+Config in the repo:
+
+- [`neon.ts`](./neon.ts) — Neon config-as-code (`defineConfig({})`)
+- [`.neon`](./.neon) — project/branch context (IDs only, no passwords)
+- Prisma `provider` is `"postgresql"`; Vercel `DATABASE_URL` must be this project's **pooled** connection string
+
+**CLI (needs a browser login on your machine — this agent cannot finish OAuth to `127.0.0.1`):**
+
+```bash
+npm i -g neon@latest
+neon login
+neon link --project-id sparkling-mouse-47508820 --branch production -y
+neon deploy
+# writes DATABASE_URL into .env.local (gitignored)
+neon env pull
+```
+
+**Vercel Hobby env:** in the Neon console for this project → Connection details → copy the **pooled** URI into Vercel `DATABASE_URL` (keep `sslmode=require`). Use the **direct** (unpooled) URI only on your laptop for `npx prisma db push` and `npx prisma db seed`. Never commit the URI.
+
+Placeholder shape only:
 
 ```
-postgresql://USER:PASSWORD@HOST/onderwereld?sslmode=require
+postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
 ```
 
 ### 3. Import on Vercel Hobby
 
 1. [vercel.com](https://vercel.com) → **Add New… → Project**.
-2. Import the **GitHub** repository `YOUR_USER/onderwereld` (install the Vercel GitHub app if asked).
+2. Import the **GitHub** repository [`jimmyvdnieuwendijk-art/onderwereld`](https://github.com/jimmyvdnieuwendijk-art/onderwereld) (install the Vercel GitHub app if asked).
 3. Framework: **Next.js** (also set in `vercel.json`). Root directory: `.`
 4. **Hobby** is enough. Do not use “Continue with Origin”.
 5. Add environment variables **before** the first deploy (Production; add Preview too if you want preview URLs to work):
