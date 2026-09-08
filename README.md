@@ -35,7 +35,7 @@ Andere gezaaide rivalen (zelfde wachtwoord): DeNachtjager, Bloedhond, SilentSjaa
 |-----------------|------------------------|--------|
 | `DATABASE_URL`  | `file:./dev.db`        | SQLite-bestand (relatief t.o.v. `prisma/`) |
 | `AUTH_SECRET`   | lange random string    | verplicht voor JWT-sessies |
-| `AUTH_URL`      | `http://localhost:43147` | optioneel, handig lokaal |
+| `AUTH_TRUST_HOST` | `true`               | laat Auth.js de Host-header vertrouwen |
 
 ### PostgreSQL
 

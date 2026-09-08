@@ -8,8 +8,14 @@ import { CITIES, STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } fr
 import { fail, ok } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
-export async function loginAction(emailInput: string, password: string): Promise<ActionResult> {
-  const email = emailInput.trim().toLowerCase();
+export async function loginAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const password = String(formData.get("password") ?? "");
   if (!email || !password) return fail("Vul e-mail en wachtwoord in.");
 
   try {
@@ -23,18 +29,17 @@ export async function loginAction(emailInput: string, password: string): Promise
   }
 }
 
-export async function registerAction(input: {
-  email: string;
-  password: string;
-  confirm: string;
-  username: string;
-  city: string;
-}): Promise<ActionResult> {
-  const email = input.email.trim().toLowerCase();
-  const password = input.password;
-  const confirm = input.confirm;
-  const username = input.username.trim();
-  const city = input.city || "Amsterdam";
+export async function registerAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+  const username = String(formData.get("username") ?? "").trim();
+  const city = String(formData.get("city") ?? "Amsterdam");
 
   if (!email.includes("@")) return fail("Vul een geldig e-mailadres in.");
   if (password.length < 6) return fail("Wachtwoord moet minstens 6 tekens zijn.");

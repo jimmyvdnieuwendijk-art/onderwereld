@@ -1,29 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import { loginAction } from "@/lib/actions/auth";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(null);
-    const result = await loginAction(email, password);
-    if (!result.ok) {
-      setError(result.message);
-      setPending(false);
-    }
-  }
+  const [state, action, pending] = useActionState(loginAction, null);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -34,18 +21,17 @@ export default function LoginPage() {
           <CardDescription>Betreed de straat. Kies je naam. Houd je mond.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form action={action} method="post" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="username"
                 required
+                defaultValue="demo@onderwereld.nl"
                 placeholder="jij@onderwereld.nl"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -56,14 +42,13 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                defaultValue="demo1234"
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={pending}>
+            {state && !state.ok && <p className="text-sm text-destructive">{state.message}</p>}
+            <button type="submit" className={cn(buttonVariants(), "w-full")} disabled={pending}>
               {pending ? "Bezig…" : "Naar binnen"}
-            </Button>
+            </button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Nog geen crimineel?{" "}

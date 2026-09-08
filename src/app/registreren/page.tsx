@@ -1,33 +1,17 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import { registerAction } from "@/lib/actions/auth";
 import { CITIES } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [username, setUsername] = useState("");
-  const [city, setCity] = useState("Amsterdam");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError(null);
-    const result = await registerAction({ email, password, confirm, username, city });
-    if (!result.ok) {
-      setError(result.message);
-      setPending(false);
-    }
-  }
+  const [state, action, pending] = useActionState(registerAction, null);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -40,19 +24,10 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form action={action} method="post" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Gebruikersnaam</Label>
-              <Input
-                id="username"
-                name="username"
-                required
-                minLength={3}
-                maxLength={16}
-                placeholder="DonDemo"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-              />
+              <Input id="username" name="username" required minLength={3} maxLength={16} placeholder="DonDemo" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="city">Startstad</Label>
@@ -60,8 +35,7 @@ export default function RegisterPage() {
                 id="city"
                 name="city"
                 className="h-8 w-full rounded-lg border border-input bg-input/30 px-2.5 text-sm"
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
+                defaultValue="Amsterdam"
               >
                 {CITIES.map((item) => (
                   <option key={item} value={item}>
@@ -72,15 +46,7 @@ export default function RegisterPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
+              <Input id="email" name="email" type="email" autoComplete="email" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Wachtwoord</Label>
@@ -91,8 +57,6 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -104,14 +68,12 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                value={confirm}
-                onChange={(event) => setConfirm(event.target.value)}
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={pending}>
+            {state && !state.ok && <p className="text-sm text-destructive">{state.message}</p>}
+            <button type="submit" className={cn(buttonVariants(), "w-full")} disabled={pending}>
               {pending ? "Bezig…" : "Treed toe"}
-            </Button>
+            </button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Al een account?{" "}
