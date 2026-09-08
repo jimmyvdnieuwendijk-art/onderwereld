@@ -41,6 +41,9 @@ model User {
   mainEscortId          String?
   lastPimpTickAt        DateTime  @default(now())
   lastRaidAt            DateTime?
+  blackmailTapes        Int       @default(0)
+  outbreakUntil         DateTime?
+  streetProtectUntil    DateTime?
   familyId              String?
   family                Family?   @relation("FamilyRoster", fields: [familyId], references: [id])
   lastCrimeAt           DateTime?
@@ -68,6 +71,7 @@ model User {
   attacksReceived  AttackLog[]      @relation("Defender")
   escorts          Escort[]
   redLightWindows  RedLightWindow[]
+  streetZones      StreetZone[]
 
   @@index([rankId])
   @@index([familyId])
@@ -130,15 +134,15 @@ model Vehicle {
 model ShopItem {
   id               String          @id @default(cuid())
   slug             String          @unique
-  name             String
-  description      String
-  type             String
-  attack           Int             @default(0)
-  defense          Int             @default(0)
-  healAmount       Int             @default(0)
-  energyAmount     Int             @default(0)
+  name              String
+  description       String
+  type              String
+  attack            Int             @default(0)
+  defense           Int             @default(0)
+  healAmount        Int             @default(0)
+  energyAmount      Int             @default(0)
   bulletsAmount    Int             @default(0)
-  price            Int
+  price              Int
   minRankOrder     Int             @default(1)
   inventory        InventoryItem[]
   listings         MarketListing[]
@@ -268,11 +272,28 @@ model Escort {
   busyUntil   DateTime?
   missionKind String?
   missionKey  String?
+  venueKind   String           @default("HIGH_CLASS")
   createdAt   DateTime         @default(now())
 
   @@index([ownerId])
   @@index([cityId])
   @@index([listedPrice])
+}
+
+model StreetZone {
+  id           String   @id @default(cuid())
+  cityId       String
+  slotIndex    Int
+  ownerId      String?
+  owner        User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  rivalKey     String   @default("roos")
+  claimedUntil DateTime
+  heat         Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@unique([cityId, slotIndex])
+  @@index([ownerId])
+  @@index([cityId])
 }
 
 model RedLightWindow {

@@ -268,5 +268,11 @@ export function durationLabelNl(ms: number) {
 export function missionLabel(kind: string | null | undefined, key: string | null | undefined) {
   if (kind === MISSION_DRUG_RUN) return DRUG_RUN.name;
   if (kind === MISSION_DARK_ROOM) return darkRoomByKey(key ?? "")?.name ?? "Dark Room";
+  if (kind === "VIP_JOB") {
+    if (key === "highroller") return "High-roller penthouse";
+    if (key === "politician") return "Corrupte wethouder";
+    if (key === "livecam") return "Private cam-show";
+    return "VIP-klus";
+  }
   return "Bezet";
 }
