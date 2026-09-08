@@ -11,6 +11,12 @@ export type EscortDTO = {
   listedPrice: number | null;
   isMain: boolean;
   hourly: number;
+  busy: boolean;
+  busyUntil: string | null;
+  missionKind: string | null;
+  missionKey: string | null;
+  missionLabel: string | null;
+  npcPrice: number;
 };
 
 export type WindowDTO = {

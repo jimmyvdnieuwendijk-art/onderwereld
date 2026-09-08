@@ -15,3 +15,11 @@ export function airportArt(id: string) {
 export function vehicleArt(slug: string) {
   return `/game/vehicles/${slug}.jpg`;
 }
+
+export function hoerenArt(kind: "header" | "window" | "drugs" | "handel" | `dark-${string}` | `escort-${number}`) {
+  if (kind === "header") return "/game/hoeren/header.jpg";
+  if (kind === "window") return "/game/hoeren/window.jpg";
+  if (kind === "drugs") return "/game/hoeren/mission-drugs.jpg";
+  if (kind === "handel") return "/game/hoeren/handel.jpg";
+  return `/game/hoeren/${kind}.jpg`;
+}
