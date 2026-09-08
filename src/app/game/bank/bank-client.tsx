@@ -12,7 +12,7 @@ import type { PlayerSnapshot } from "@/types/game";
 export function BankClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
-  const { run, pending } = useGameAction();
+  const { run, pending, feedback } = useGameAction();
   const [amount, setAmount] = useState("100");
   const value = Number(amount) || 0;
 
@@ -40,7 +40,10 @@ export function BankClient({ initialPlayer }: { initialPlayer: PlayerSnapshot })
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-          <div className="flex gap-2">
+            {feedback && (
+              <p className={`text-sm ${feedback.ok ? "text-primary" : "text-destructive"}`}>{feedback.message}</p>
+            )}
+            <div className="flex gap-2">
             <Button disabled={pending || value < 1} onClick={() => run(() => bankDeposit(value))}>
               Storten
             </Button>

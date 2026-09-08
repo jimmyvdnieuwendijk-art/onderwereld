@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crosshair, Landmark, Skull, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   return (
@@ -9,10 +10,12 @@ export default function LandingPage() {
       <header className="flex items-center justify-between px-4 py-4 md:px-10">
         <p className="font-heading text-lg tracking-[0.2em] text-primary">ONDERWERELD</p>
         <div className="flex gap-2">
-          <Button variant="ghost" render={<Link href="/inloggen" />}>
+          <Link href="/inloggen" className={cn(buttonVariants({ variant: "ghost" }))}>
             Inloggen
-          </Button>
-          <Button render={<Link href="/registreren" />}>Spelen</Button>
+          </Link>
+          <Link href="/registreren" className={cn(buttonVariants())}>
+            Spelen
+          </Link>
         </div>
       </header>
 
@@ -29,12 +32,12 @@ export default function LandingPage() {
             Steel, schiet, spaar en sticht een familie — of eindig in de cel.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button size="lg" render={<Link href="/registreren" />}>
+            <Link href="/registreren" className={cn(buttonVariants({ size: "lg" }))}>
               Maak een crimineel
-            </Button>
-            <Button size="lg" variant="outline" render={<Link href="/inloggen" />}>
+            </Link>
+            <Link href="/inloggen" className={cn(buttonVariants({ size: "lg", variant: "outline" }))}>
               Ik heb al een naam
-            </Button>
+            </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
             Demo: <span className="text-foreground">demo@onderwereld.nl</span> /{" "}

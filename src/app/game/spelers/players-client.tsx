@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { PublicPlayer } from "@/types/game";
 
-export function PlayersClient() {
+export function PlayersClient({ initial }: { initial: PublicPlayer[] }) {
   const [q, setQ] = useState("");
   const [submitted, setSubmitted] = useState("");
 
@@ -20,25 +20,32 @@ export function PlayersClient() {
       if (!res.ok) throw new Error("Laden mislukt");
       return res.json() as Promise<PublicPlayer[]>;
     },
+    initialData: submitted ? undefined : initial,
+    enabled: submitted.length > 0,
   });
+
+  const rows = submitted ? (query.data ?? []) : initial;
 
   return (
     <div className="space-y-4">
       <h1 className="font-heading text-3xl">Spelers</h1>
       <form
         className="flex gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
+        onSubmit={(event) => {
+          event.preventDefault();
           setSubmitted(q.trim());
         }}
       >
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Zoek op naam…" />
         <Button type="submit">Zoeken</Button>
       </form>
-      {query.isLoading && <p className="text-muted-foreground">Laden…</p>}
+      {submitted && query.isPending && <p className="text-muted-foreground">Laden…</p>}
       {query.isError && <p className="text-destructive">Kon spelers niet laden.</p>}
+      {rows.length === 0 && !query.isPending && (
+        <p className="text-muted-foreground">Geen spelers gevonden.</p>
+      )}
       <div className="grid gap-3">
-        {(query.data ?? []).map((row) => (
+        {rows.map((row) => (
           <Card key={row.id}>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
               <div>

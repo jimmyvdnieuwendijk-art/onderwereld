@@ -33,22 +33,26 @@ export function CrimesClient({
 }) {
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
-  const { run, pending } = useGameAction();
+  const { run, pending, feedback } = useGameAction();
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="font-heading text-3xl">Misdaden</h1>
         <p className="text-sm text-muted-foreground">
-          Alleen klussen vanaf jouw rang. Energie kost, cel dreigt, cooldown telt.
+          Alleen klussen vanaf jouw rang. Energie kost, cel dreigt, cooldown telt. Energie: {p.energy}/100.
         </p>
         <p className="mt-1 text-sm">
           <Countdown until={p.crimeCooldownUntil} label="Wachten:" />
         </p>
+        {feedback && (
+          <p className={`mt-2 text-sm ${feedback.ok ? "text-primary" : "text-destructive"}`}>{feedback.message}</p>
+        )}
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {crimes.map((crime) => {
           const locked = p.rank.order < crime.minRankOrder;
+          const tired = p.energy < crime.energyCost;
           return (
             <Card key={crime.id} className={locked ? "opacity-60" : ""}>
               <CardHeader>
@@ -66,10 +70,11 @@ export function CrimesClient({
                   <Badge variant="destructive">{crime.jailRiskChance}% cel</Badge>
                 </div>
                 <Button
+                  type="button"
                   disabled={pending || locked}
                   onClick={() => run(() => attemptCrime(crime.id))}
                 >
-                  {locked ? "Rang te laag" : "Uitvoeren"}
+                  {locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}
                 </Button>
               </CardContent>
             </Card>

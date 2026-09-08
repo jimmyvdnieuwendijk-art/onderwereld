@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
 
@@ -22,22 +22,29 @@ export function usePlayer(initial?: PlayerSnapshot) {
 
 export function useGameAction() {
   const queryClient = useQueryClient();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
+  const [feedback, setFeedback] = useState<ActionResult | null>(null);
 
-  function run(action: () => Promise<ActionResult>, onDone?: (result: ActionResult) => void) {
-    startTransition(async () => {
+  async function run(action: () => Promise<ActionResult>, onDone?: (result: ActionResult) => void) {
+    if (pending) return;
+    setPending(true);
+    try {
       const result = await action();
-      if (result.ok) {
-        toast.success(result.message);
-      } else if (result.variant === "warning") {
-        toast.warning(result.message);
-      } else {
-        toast.error(result.message);
-      }
+      setFeedback(result);
+      if (result.ok) toast.success(result.message);
+      else if (result.variant === "warning") toast.warning(result.message);
+      else toast.error(result.message);
       await queryClient.invalidateQueries({ queryKey: ["player"] });
       onDone?.(result);
-    });
+    } catch (error) {
+      console.error(error);
+      const failed = { ok: false, message: "Er ging iets mis. Probeer opnieuw.", variant: "error" as const };
+      setFeedback(failed);
+      toast.error(failed.message);
+    } finally {
+      setPending(false);
+    }
   }
 
-  return { run, pending };
+  return { run, pending, feedback };
 }

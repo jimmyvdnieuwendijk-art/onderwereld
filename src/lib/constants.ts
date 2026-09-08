@@ -18,9 +18,9 @@ export const MAX_HEALTH = 100;
 export const BASE_ATTACK = 5;
 
 /** Energy points regained per tick interval. */
-export const ENERGY_PER_TICK = 1;
+export const ENERGY_PER_TICK = 2;
 /** Milliseconds between energy ticks. */
-export const ENERGY_TICK_MS = 45_000;
+export const ENERGY_TICK_MS = 10_000;
 
 /** Simple bank interest applied on player tick (not a real cron). */
 export const BANK_INTEREST_RATE = 0.01;
