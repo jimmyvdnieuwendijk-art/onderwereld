@@ -66,6 +66,12 @@ export type PlayerSnapshot = {
   blackmailTapes: number;
   outbreakUntil: string | null;
   streetProtectUntil: string | null;
+  strength: number;
+  condition: number;
+  fightSkill: number;
+  gymExp: number;
+  gymFloor: number;
+  gymCooldownUntil: string | null;
 };
 
 export type PublicPlayer = {

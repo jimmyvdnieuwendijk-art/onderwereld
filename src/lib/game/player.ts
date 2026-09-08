@@ -8,6 +8,7 @@ import {
 } from "@/lib/constants";
 import { cityDisplayName, getAirport, normalizeCityId } from "@/lib/airports";
 import { MAIN_ESCORT_DEFENSE_BONUS, pimpRankFor } from "@/lib/pimp";
+import { gymAttackBonus, gymDefenseBonus } from "@/lib/gym";
 import { tickPimpEconomy } from "@/lib/game/pimp-tick";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -171,6 +172,12 @@ function toSnapshot(
     blackmailTapes: number;
     outbreakUntil: Date | null;
     streetProtectUntil: Date | null;
+    strength: number;
+    condition: number;
+    fightSkill: number;
+    gymExp: number;
+    gymFloor: number;
+    gymCooldownUntil: Date | null;
   },
   ranks: { id: string; slug: string; name: string; minExp: number; order: number }[],
 ): PlayerSnapshot {
@@ -187,8 +194,8 @@ function toSnapshot(
     energy: user.energy,
     exp: user.exp,
     bullets: user.bullets,
-    defense: user.defense,
-    attackPower: user.attackPower,
+    defense: user.defense + gymDefenseBonus(user.condition, user.fightSkill),
+    attackPower: user.attackPower + gymAttackBonus(user.strength, user.fightSkill),
     killCount: user.killCount,
     wantedLevel: user.wantedLevel,
     currentCity: normalizeCityId(user.currentCity),
@@ -225,6 +232,12 @@ function toSnapshot(
     blackmailTapes: user.blackmailTapes,
     outbreakUntil: toIso(user.outbreakUntil),
     streetProtectUntil: toIso(user.streetProtectUntil),
+    strength: user.strength,
+    condition: user.condition,
+    fightSkill: user.fightSkill,
+    gymExp: user.gymExp,
+    gymFloor: user.gymFloor,
+    gymCooldownUntil: toIso(user.gymCooldownUntil),
   };
 }
 
