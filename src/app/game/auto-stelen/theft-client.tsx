@@ -8,10 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
+import { vehicleArt } from "@/lib/game-art";
+import { CardArt } from "@/components/game/card-art";
 import type { PlayerSnapshot } from "@/types/game";
 
 type TypeRow = {
   id: string;
+  slug: string;
   name: string;
   baseValue: number;
   stealDifficulty: number;
@@ -46,8 +49,9 @@ export function TheftClient({
         {types.map((type) => {
           const locked = p.rank.order < type.minRankOrder;
           return (
-            <Card key={type.id}>
-              <CardHeader>
+            <Card key={type.id} className="overflow-hidden">
+              <CardHeader className="space-y-3">
+                <CardArt src={vehicleArt(type.slug)} alt="" />
                 <CardTitle className="font-heading">{type.name}</CardTitle>
                 <CardDescription>
                   Waarde {formatMoney(type.baseValue)} · moeilijkheid {type.stealDifficulty}

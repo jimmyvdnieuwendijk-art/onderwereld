@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
+import { airportArt } from "@/lib/game-art";
+import { CardArt } from "@/components/game/card-art";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -56,8 +58,9 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
           const quote = flightQuote(p.currentCity, row.id, false);
           const jetQuote = flightQuote(p.currentCity, row.id, true);
           return (
-            <Card key={row.id} className={cn(here && "border-primary/50 bg-primary/5")}>
-              <CardHeader>
+            <Card key={row.id} className={cn("overflow-hidden", here && "border-primary/50 bg-primary/5")}>
+              <CardHeader className="space-y-3">
+                <CardArt src={airportArt(row.id)} alt="" />
                 <CardTitle className="font-heading flex items-center justify-between gap-2">
                   {row.city}
                   {here && <Badge>Je bent hier</Badge>}

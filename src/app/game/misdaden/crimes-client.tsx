@@ -8,10 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
+import { crimeArt } from "@/lib/game-art";
+import { CardArt } from "@/components/game/card-art";
 import type { PlayerSnapshot } from "@/types/game";
 
 type CrimeRow = {
   id: string;
+  slug: string;
   name: string;
   description: string;
   minRankOrder: number;
@@ -55,8 +58,9 @@ export function CrimesClient({
           const locked = p.rank.order < crime.minRankOrder;
           const tired = p.energy < crime.energyCost;
           return (
-            <Card key={crime.id} className={locked ? "opacity-60" : ""}>
-              <CardHeader>
+            <Card key={crime.id} className={locked ? "opacity-60" : "overflow-hidden"}>
+              <CardHeader className="space-y-3">
+                <CardArt src={crimeArt(crime.slug)} alt="" />
                 <CardTitle className="font-heading">{crime.name}</CardTitle>
                 <CardDescription>{crime.description}</CardDescription>
               </CardHeader>

@@ -10,10 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGameAction, usePlayer } from "@/hooks/use-player";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { useRouter } from "next/navigation";
+import { shopArt } from "@/lib/game-art";
+import { CardArt } from "@/components/game/card-art";
 import type { PlayerSnapshot } from "@/types/game";
 
 type Item = {
   id: string;
+  slug: string;
   name: string;
   description: string;
   type: string;
@@ -122,8 +125,9 @@ export function ShopClient({
               .map((item) => {
                 const locked = p.rank.order < item.minRankOrder;
                 return (
-                  <Card key={item.id}>
-                    <CardHeader>
+                  <Card key={item.id} className="overflow-hidden">
+                    <CardHeader className="space-y-3">
+                      <CardArt src={shopArt(item.slug)} alt="" aspect="square" />
                       <CardTitle className="font-heading">{item.name}</CardTitle>
                       <CardDescription>{item.description}</CardDescription>
                     </CardHeader>

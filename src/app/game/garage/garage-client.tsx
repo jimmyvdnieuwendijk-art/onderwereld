@@ -9,12 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useGameAction } from "@/hooks/use-player";
 import { useRouter } from "next/navigation";
+import { vehicleArt } from "@/lib/game-art";
+import { CardArt } from "@/components/game/card-art";
 import { useState } from "react";
 
 type VehicleRow = {
   id: string;
   condition: number;
-  vehicleType: { name: string; baseValue: number };
+  vehicleType: { name: string; slug: string; baseValue: number };
 };
 
 export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
@@ -49,8 +51,9 @@ export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
             Math.floor(((100 - car.condition) / 100) * car.vehicleType.baseValue * 0.28),
           );
           return (
-            <Card key={car.id}>
-              <CardHeader>
+            <Card key={car.id} className="overflow-hidden">
+              <CardHeader className="space-y-3">
+                <CardArt src={vehicleArt(car.vehicleType.slug)} alt="" />
                 <CardTitle className="font-heading">{car.vehicleType.name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
