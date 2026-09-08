@@ -53,7 +53,10 @@ export function DashboardClient({
             </p>
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary">Aanval {p.attackPower}</Badge>
-              <Badge variant="secondary">Verdediging {p.defense}</Badge>
+              <Badge variant="secondary">
+                Verdediging {p.defense}
+                {p.hasMainEscort ? " (+10% escort)" : ""}
+              </Badge>
               <Badge variant="secondary">{p.vehicleCount} auto&apos;s</Badge>
               <Badge variant="outline">{formatMoney(p.cash)} cash</Badge>
             </div>
@@ -79,8 +82,12 @@ export function DashboardClient({
             <p className="text-sm">
               <Link href="/game/vliegveld" className="text-primary underline">
                 Naar het vliegveld
+              </Link>
+              {" · "}
+              <Link href="/game/hoeren" className="text-primary underline">
+                Hoeren
               </Link>{" "}
-              — tickets, privéjet, smokkelmarkt.
+              — ramen, crew en main escort.
             </p>
           </CardContent>
         </Card>

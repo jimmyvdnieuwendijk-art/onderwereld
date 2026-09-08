@@ -152,7 +152,8 @@ Then open `https://<project>.vercel.app`, register or log in with the demo accou
 5. **Steel auto's**, verkoop of repareer ze in de garage, of zet ze op de markt.
 6. Stort cash op de **bank** (veilig bij PvP). 1% rente per gespeeld uur wordt bij een player-tick bijgeschreven.
 7. Koop wapens/vesten/kogels, rust uit, val andere spelers aan (niet tijdens een vlucht).
-8. Inbox + shoutbox + families.
+8. Open **Hoeren** in het linkermenu: ronsel escorts, huur ramen in je huidige stad, zet crew achter het glas voor omzet per speeluur (10 minuten). Main escort geeft +10% verdediging. Razzia bij hoog gezocht vreet de omzet.
+9. Inbox + shoutbox + families.
 
 Jail en ziekenhuis: wachten of borg/privékliniek betalen.
 
@@ -162,7 +163,8 @@ Jail en ziekenhuis: wachten of borg/privékliniek betalen.
 prisma/schema.prisma   # alle core models
 prisma/seed.ts         # rangen, misdaden, voertuigen, winkel, demo-spelers
 src/auth.ts            # Auth.js
-src/lib/game/player.ts # energy regen, rente, rank-up, timers
-src/lib/actions/       # server actions (misdaad, economie, PvP, social)
+src/lib/game/player.ts # energy regen, rente, rank-up, timers, pimp-tick
+src/lib/pimp.ts        # pimp-rangen, ramen, payouts
+src/lib/actions/       # server actions (misdaad, economie, PvP, social, pimp)
 src/app/game/          # beschermde speelomgeving
 ```

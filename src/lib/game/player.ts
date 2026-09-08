@@ -7,7 +7,19 @@ import {
   MAX_ENERGY,
 } from "@/lib/constants";
 import { cityDisplayName, getAirport, normalizeCityId } from "@/lib/airports";
+import { MAIN_ESCORT_DEFENSE_BONUS, pimpRankFor } from "@/lib/pimp";
+import { tickPimpEconomy } from "@/lib/game/pimp-tick";
 import type { PlayerSnapshot } from "@/types/game";
+
+const playerInclude = {
+  rank: true,
+  family: true,
+  familyMembership: true,
+  equippedWeapon: true,
+  equippedArmor: true,
+  receivedMessages: { where: { read: false }, select: { id: true } },
+  _count: { select: { vehicles: true, escorts: true } },
+} as const;
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
@@ -18,15 +30,7 @@ export async function tickPlayer(userId: string) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      rank: true,
-      family: true,
-      familyMembership: true,
-      equippedWeapon: true,
-      equippedArmor: true,
-      receivedMessages: { where: { read: false }, select: { id: true } },
-      _count: { select: { vehicles: true } },
-    },
+    include: playerInclude,
   });
 
   if (!user) return null;
@@ -110,20 +114,12 @@ export async function tickPlayer(userId: string) {
     patch.rankId = matching.id;
   }
 
-  const updated =
+  let updated =
     Object.keys(patch).length > 0
       ? await prisma.user.update({
           where: { id: userId },
           data: patch,
-          include: {
-            rank: true,
-            family: true,
-            familyMembership: true,
-            equippedWeapon: true,
-            equippedArmor: true,
-            receivedMessages: { where: { read: false }, select: { id: true } },
-            _count: { select: { vehicles: true } },
-          },
+          include: playerInclude,
         })
       : user;
 
@@ -148,6 +144,15 @@ export async function tickPlayer(userId: string) {
     });
   }
 
+  const pimp = await tickPimpEconomy(userId, now);
+  if (pimp.changed) {
+    const again = await prisma.user.findUnique({
+      where: { id: userId },
+      include: playerInclude,
+    });
+    if (again) updated = again;
+  }
+
   return toSnapshot(updated, ranks);
 }
 
@@ -159,11 +164,15 @@ function toSnapshot(
     equippedWeapon: { id: string; name: string; attack: number; defense: number } | null;
     equippedArmor: { id: string; name: string; attack: number; defense: number } | null;
     receivedMessages: { id: string }[];
-    _count: { vehicles: number };
+    _count: { vehicles: number; escorts: number };
+    pimpExp: number;
+    mainEscortId: string | null;
+    lastRaidAt: Date | null;
   },
   ranks: { id: string; slug: string; name: string; minExp: number; order: number }[],
 ): PlayerSnapshot {
   const nextRank = ranks.find((rank) => rank.order === user.rank.order + 1) ?? null;
+  const pimpRank = pimpRankFor(user.pimpExp);
 
   return {
     id: user.id,
@@ -202,6 +211,14 @@ function toSnapshot(
     equippedWeapon: user.equippedWeapon,
     equippedArmor: user.equippedArmor,
     vehicleCount: user._count.vehicles,
+    pimpExp: user.pimpExp,
+    pimpRankName: pimpRank.name,
+    pimpMaxWorkers: pimpRank.maxWorkers,
+    workerCount: user._count.escorts,
+    mainEscortId: user.mainEscortId,
+    hasMainEscort: !!user.mainEscortId,
+    escortDefenseBonus: user.mainEscortId ? MAIN_ESCORT_DEFENSE_BONUS : 0,
+    lastRaidAt: toIso(user.lastRaidAt),
   };
 }
 

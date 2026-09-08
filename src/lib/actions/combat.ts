@@ -34,7 +34,8 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   }
 
   const attackScore = attacker.attackPower * bullets * (0.85 + Math.random() * 0.3);
-  const defenseScore = (defenderLive.defense + 8) * 1.1;
+  const escortMult = 1 + (defenderLive.escortDefenseBonus ?? 0);
+  const defenseScore = (defenderLive.defense + 8) * 1.1 * escortMult;
   const damage = Math.max(4, Math.round(attackScore - defenseScore / 3));
   const applied = Math.min(defenderLive.health, damage);
   const newHealth = defenderLive.health - applied;

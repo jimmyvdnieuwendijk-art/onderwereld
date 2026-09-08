@@ -26,9 +26,7 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
       <div>
         <h1 className="font-heading text-3xl">Vliegveld</h1>
         <p className="text-sm text-muted-foreground">
-          Je staat op <span className="text-foreground">{p.currentAirport}</span> in{" "}
-          <span className="text-primary">{p.currentCityName}</span>. Tickets lopen via de Schiphol-hub:
-          prijs = |base_cost bestemming − vertrek|, tijd = |vliegtijd bestemming − vertrek|, met een minimum.
+          Je staat op {p.currentAirport} in {p.currentCityName}.
         </p>
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
           <Badge variant="secondary">Gezocht {p.wantedLevel}/100</Badge>

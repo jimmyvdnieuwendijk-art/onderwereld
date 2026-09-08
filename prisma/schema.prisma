@@ -37,6 +37,10 @@ model User {
   travelDestinationId   String?
   drugs                 Int       @default(0)
   weaponCrates          Int       @default(0)
+  pimpExp               Int       @default(0)
+  mainEscortId          String?
+  lastPimpTickAt        DateTime  @default(now())
+  lastRaidAt            DateTime?
   familyId              String?
   family                Family?   @relation("FamilyRoster", fields: [familyId], references: [id])
   lastCrimeAt           DateTime?
@@ -62,6 +66,8 @@ model User {
   gameLogs         GameLog[]
   attacksMade      AttackLog[]      @relation("Attacker")
   attacksReceived  AttackLog[]      @relation("Defender")
+  escorts          Escort[]
+  redLightWindows  RedLightWindow[]
 
   @@index([rankId])
   @@index([familyId])
@@ -244,4 +250,38 @@ model AttackLog {
 
   @@index([attackerId, createdAt])
   @@index([defenderId, createdAt])
+}
+
+model Escort {
+  id          String           @id @default(cuid())
+  ownerId     String
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  avatar      String
+  charm       Int              @default(40)
+  loyalty     Int              @default(70)
+  health      Int              @default(100)
+  cityId      String           @default("ams")
+  windowId    String?          @unique
+  window      RedLightWindow?  @relation(fields: [windowId], references: [id], onDelete: SetNull)
+  listedPrice Int?
+  createdAt   DateTime         @default(now())
+
+  @@index([ownerId])
+  @@index([cityId])
+  @@index([listedPrice])
+}
+
+model RedLightWindow {
+  id         String   @id @default(cuid())
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cityId     String
+  slotIndex  Int
+  hiredUntil DateTime
+  escort     Escort?
+  createdAt  DateTime @default(now())
+
+  @@unique([ownerId, cityId, slotIndex])
+  @@index([ownerId, cityId])
 }

@@ -55,6 +55,14 @@ export type PlayerSnapshot = {
   equippedWeapon: EquippedItem;
   equippedArmor: EquippedItem;
   vehicleCount: number;
+  pimpExp: number;
+  pimpRankName: string;
+  pimpMaxWorkers: number;
+  workerCount: number;
+  mainEscortId: string | null;
+  hasMainEscort: boolean;
+  escortDefenseBonus: number;
+  lastRaidAt: string | null;
 };
 
 export type PublicPlayer = {
