@@ -8,11 +8,8 @@ import { CITIES, STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } fr
 import { fail, ok } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
-export async function loginAction(formData: FormData): Promise<ActionResult> {
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
-  const password = String(formData.get("password") ?? "");
+export async function loginAction(emailInput: string, password: string): Promise<ActionResult> {
+  const email = emailInput.trim().toLowerCase();
   if (!email || !password) return fail("Vul e-mail en wachtwoord in.");
 
   try {
@@ -26,14 +23,18 @@ export async function loginAction(formData: FormData): Promise<ActionResult> {
   }
 }
 
-export async function registerAction(formData: FormData): Promise<ActionResult> {
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  const confirm = String(formData.get("confirm") ?? "");
-  const username = String(formData.get("username") ?? "").trim();
-  const city = String(formData.get("city") ?? "Amsterdam");
+export async function registerAction(input: {
+  email: string;
+  password: string;
+  confirm: string;
+  username: string;
+  city: string;
+}): Promise<ActionResult> {
+  const email = input.email.trim().toLowerCase();
+  const password = input.password;
+  const confirm = input.confirm;
+  const username = input.username.trim();
+  const city = input.city || "Amsterdam";
 
   if (!email.includes("@")) return fail("Vul een geldig e-mailadres in.");
   if (password.length < 6) return fail("Wachtwoord moet minstens 6 tekens zijn.");
@@ -61,7 +62,7 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
   if (!starterRank) return fail("Het spel is nog niet gezaaid. Run prisma db seed.");
 
   const hashedPassword = await hash(password, 10);
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       email,
       hashedPassword,
@@ -72,16 +73,13 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
     },
   });
 
-  const created = await prisma.user.findUnique({ where: { email } });
-  if (created) {
-    await prisma.gameLog.create({
-      data: {
-        userId: created.id,
-        type: "SYSTEM",
-        message: `Welkom in ${city}, ${username}. Je start als ${starterRank.name}.`,
-      },
-    });
-  }
+  await prisma.gameLog.create({
+    data: {
+      userId: created.id,
+      type: "SYSTEM",
+      message: `Welkom in ${city}, ${username}. Je start als ${starterRank.name}.`,
+    },
+  });
 
   try {
     await signIn("credentials", { email, password, redirectTo: "/game" });
