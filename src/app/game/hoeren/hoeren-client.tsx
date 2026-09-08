@@ -102,7 +102,7 @@ export function HoerenClient({
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url(/game/hoeren/header.jpg)" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-red-950/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-red-950/30" />
         <div className="relative space-y-3 px-5 py-8 md:px-8">
           <p className="text-[11px] tracking-[0.25em] text-red-300 uppercase">Rosse buurt · {p.currentCityName}</p>
           <h1 className="font-heading text-3xl text-white md:text-4xl">Hoeren</h1>
@@ -158,7 +158,7 @@ export function HoerenClient({
                 <img
                   src={main.avatar}
                   alt=""
-                  className="h-28 w-20 shrink-0 rounded-lg border border-red-500/40 object-cover"
+                  className="h-44 w-32 shrink-0 rounded-lg border border-red-500/40 object-cover object-top"
                 />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -238,19 +238,31 @@ export function HoerenClient({
                     : `Huur ${formatMoney(win.fee)} / 24u`}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {win.escort ? (
-                  <div className="flex items-center gap-3">
-                    <img src={win.escort.avatar} alt="" className="h-12 w-9 rounded object-cover" />
-                    <div>
-                      <p className="text-sm font-medium">{win.escort.name}</p>
-                      <p className="text-xs text-muted-foreground">Achter het glas</p>
+              <CardContent className="space-y-3 p-0">
+                <div
+                  className="relative aspect-[4/3] overflow-hidden border-b border-red-500/30 bg-cover bg-center"
+                  style={{ backgroundImage: "url(/game/hoeren/window.jpg)" }}
+                >
+                  {win.escort ? (
+                    <>
+                      <img
+                        src={win.escort.avatar}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover object-top"
+                      />
+                      <div className="absolute inset-0 ring-2 ring-inset ring-red-500/70" />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
+                        <p className="text-sm font-medium text-white">{win.escort.name}</p>
+                        <p className="text-xs text-red-200">Achter het glas</p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-end bg-black/35 px-3 py-2">
+                      <p className="text-sm text-zinc-200">Leeg — niemand op post.</p>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Leeg — niemand op post.</p>
-                )}
-
+                  )}
+                </div>
+                <div className="space-y-3 px-4 pb-4">
                 {!win.hired && (
                   <form action={hireAction}>
                     <input type="hidden" name="slotIndex" value={win.slotIndex} />
@@ -285,6 +297,7 @@ export function HoerenClient({
                     </Button>
                   </form>
                 )}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -302,7 +315,7 @@ export function HoerenClient({
             {escorts.map((row) => (
               <Card key={row.id} className={cn(row.isMain && "border-primary/50")}>
                 <CardContent className="flex gap-3 pt-4">
-                  <img src={row.avatar} alt="" className="h-24 w-16 shrink-0 rounded-md object-cover" />
+                  <img src={row.avatar} alt="" className="h-40 w-28 shrink-0 rounded-md object-cover object-top" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-heading text-lg">{row.name}</p>
@@ -393,7 +406,7 @@ export function HoerenClient({
             {market.map((row) => (
               <Card key={row.id}>
                 <CardContent className="flex gap-3 pt-4">
-                  <img src={row.avatar} alt="" className="h-20 w-14 rounded object-cover" />
+                  <img src={row.avatar} alt="" className="h-28 w-20 rounded object-cover object-top" />
                   <div className="flex-1 space-y-2">
                     <p className="font-heading">{row.name}</p>
                     <p className="text-xs text-muted-foreground">
