@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { bookFlightForm, smuggleTradeForm } from "@/lib/actions/travel";
 import { AIRPORTS, CUSTOMS_WANTED_THRESHOLD, SMUGGLE_GOODS, flightQuote, marketFor } from "@/lib/airports";
 import { formatClock, formatMoney } from "@/lib/format";
@@ -17,7 +16,6 @@ import { cn } from "@/lib/utils";
 export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
-  const [jet, setJet] = useState(false);
   const [flightState, flightAction, flying] = useFormAction(bookFlightForm);
   const [tradeState, tradeAction, trading] = useFormAction(smuggleTradeForm);
   const market = marketFor(p.currentCity);
@@ -30,7 +28,7 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         <p className="text-sm text-muted-foreground">
           Je staat op <span className="text-foreground">{p.currentAirport}</span> in{" "}
           <span className="text-primary">{p.currentCityName}</span>. Tickets lopen via de Schiphol-hub:
-          prijs en tijd zijn het absolute verschil t.o.v. Amsterdam, met een minimum.
+          prijs = |base_cost bestemming − vertrek|, tijd = |vliegtijd bestemming − vertrek|, met een minimum.
         </p>
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
           <Badge variant="secondary">Gezocht {p.wantedLevel}/100</Badge>
@@ -54,20 +52,10 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={jet}
-          onChange={(e) => setJet(e.target.checked)}
-          disabled={inAir}
-        />
-        Privéjet (3× ticketprijs, helft van de vliegtijd)
-      </label>
-
       <div className="grid gap-3 md:grid-cols-2">
         {AIRPORTS.map((row) => {
           const here = row.id === p.currentCity;
-          const quote = flightQuote(p.currentCity, row.id, jet);
+          const quote = flightQuote(p.currentCity, row.id, false);
           const jetQuote = flightQuote(p.currentCity, row.id, true);
           return (
             <Card key={row.id} className={cn(here && "border-primary/50 bg-primary/5")}>
@@ -86,16 +74,20 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                 ) : (
                   <>
                     <p>
-                      Ticket {formatMoney(quote.baseCost)} · {formatClock(quote.baseSeconds * 1000)}
+                      Lijnvlucht {formatMoney(quote.cost)} · {formatClock(quote.seconds * 1000)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Privéjet {formatMoney(jetQuote.cost)} · {formatClock(jetQuote.seconds * 1000)}
+                      Privéjet {formatMoney(jetQuote.cost)} · {formatClock(jetQuote.seconds * 1000)} (3× prijs, helft
+                      tijd)
                     </p>
-                    <form action={flightAction} method="post">
+                    <form action={flightAction} method="post" className="space-y-2">
                       <input type="hidden" name="destinationId" value={row.id} />
-                      {jet && <input type="hidden" name="privateJet" value="1" />}
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="checkbox" name="privateJet" value="1" />
+                        Privéjet
+                      </label>
                       <Button type="submit" disabled={flying || inAir}>
-                        {inAir ? "Al onderweg" : jet ? "Boek privéjet" : "Boek vlucht"}
+                        {inAir ? "Al onderweg" : "Boek vlucht"}
                       </Button>
                     </form>
                   </>
@@ -110,15 +102,17 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         <CardHeader>
           <CardTitle>Smokkelmarkt — {p.currentCityName}</CardTitle>
           <CardDescription>
-            Prijzen verschillen per stad. Medellín is goedkoop in drugs, Tokyo duur. Miami dumpt kogels.
-            Handel in de lucht is verboden.
+            Prijzen verschillen per stad. Medellín is goedkoop in drugs, Tokyo duur. Miami dumpt kogels. Handel in de
+            lucht is verboden.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <ActionFeedback state={tradeState} />
           {SMUGGLE_GOODS.map((good) => {
-            const buy = good.id === "drugs" ? market.drugsBuy : good.id === "weapons" ? market.weaponsBuy : market.bulletsBuy;
-            const sell = good.id === "drugs" ? market.drugsSell : good.id === "weapons" ? market.weaponsSell : market.bulletsSell;
+            const buy =
+              good.id === "drugs" ? market.drugsBuy : good.id === "weapons" ? market.weaponsBuy : market.bulletsBuy;
+            const sell =
+              good.id === "drugs" ? market.drugsSell : good.id === "weapons" ? market.weaponsSell : market.bulletsSell;
             const have = good.id === "drugs" ? p.drugs : good.id === "weapons" ? p.weaponCrates : p.bullets;
             return (
               <div key={good.id} className="rounded-lg border border-border/60 p-3">

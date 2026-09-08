@@ -14,11 +14,7 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
   const player = await tickPlayer(userId);
   if (!player) return fail("Speler niet gevonden.");
 
-  const blocked = blockedReason({
-    isDead: player.isDead,
-    inJailUntil: player.inJailUntil,
-    inHospitalUntil: player.inHospitalUntil,
-  });
+  const blocked = blockedReason(player);
   if (blocked) return fail(blocked, "warning");
 
   if (player.crimeCooldownUntil && new Date(player.crimeCooldownUntil).getTime() > Date.now()) {

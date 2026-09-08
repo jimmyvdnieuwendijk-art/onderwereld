@@ -22,6 +22,7 @@ export default async function MarketPage() {
       mine={listings.filter((row) => row.sellerId === player.id)}
       traveling={player.isTraveling}
       cityName={player.currentCityName}
+      cityId={player.currentCity}
     />
   );
 }

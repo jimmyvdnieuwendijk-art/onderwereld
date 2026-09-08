@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { buyListing, cancelListing, createListing } from "@/lib/actions/economy";
 import { LISTING_BULLETS } from "@/lib/constants";
+import { SMUGGLE_GOODS, marketFor } from "@/lib/airports";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +29,14 @@ export function MarketClient({
   userId,
   traveling,
   cityName,
+  cityId,
 }: {
   listings: Listing[];
   mine: Listing[];
   userId: string;
   traveling: boolean;
   cityName: string;
+  cityId: string;
 }) {
   const { run, pending } = useGameAction();
   const router = useRouter();
@@ -59,6 +62,7 @@ export function MarketClient({
         </Link>
         . {traveling ? "Je zit in het vliegtuig — kopen en verkopen zijn gesloten." : ""}
       </p>
+      <CityPrices cityId={cityId} cityName={cityName} />
       <Card>
         <CardHeader>
           <CardTitle>Kogels verkopen</CardTitle>
@@ -114,5 +118,30 @@ export function MarketClient({
         <p className="text-xs text-muted-foreground">{mine.length} van jouw advertenties staan live.</p>
       )}
     </div>
+  );
+}
+
+function CityPrices({ cityId, cityName }: { cityId: string; cityName: string }) {
+  const market = marketFor(cityId);
+  const rows = SMUGGLE_GOODS.map((good) => {
+    const buy = good.id === "drugs" ? market.drugsBuy : good.id === "weapons" ? market.weaponsBuy : market.bulletsBuy;
+    const sell = good.id === "drugs" ? market.drugsSell : good.id === "weapons" ? market.weaponsSell : market.bulletsSell;
+    return { ...good, buy, sell };
+  });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Straatprijzen in {cityName}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        {rows.map((row) => (
+          <p key={row.id}>
+            <span className="font-medium">{row.label}:</span> koop {formatMoney(row.buy)} · verkoop {formatMoney(row.sell)}
+            <span className="block text-xs text-muted-foreground">{row.hint}</span>
+          </p>
+        ))}
+        <p className="text-xs text-muted-foreground">Kopen en verkopen doe je op het vliegveld.</p>
+      </CardContent>
+    </Card>
   );
 }

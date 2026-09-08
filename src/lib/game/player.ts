@@ -205,14 +205,20 @@ function toSnapshot(
   };
 }
 
-export function isPlayerTraveling(player: { travelEndAt?: Date | string | null }) {
+export function isPlayerTraveling(player: {
+  travelEndAt?: Date | string | null;
+  isTraveling?: boolean;
+}) {
   const now = Date.now();
-  if (!player.travelEndAt) return false;
-  const ts =
-    typeof player.travelEndAt === "string"
-      ? new Date(player.travelEndAt).getTime()
-      : player.travelEndAt.getTime();
-  return ts > now;
+  if (player.travelEndAt) {
+    const ts =
+      typeof player.travelEndAt === "string"
+        ? new Date(player.travelEndAt).getTime()
+        : player.travelEndAt.getTime();
+    if (ts > now) return true;
+    return false;
+  }
+  return !!player.isTraveling;
 }
 
 export function blockedReason(

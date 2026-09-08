@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { clamp, randomInt } from "@/lib/format";
-import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
 export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
@@ -61,6 +61,7 @@ export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
         inJailUntil: until,
       },
     });
+    await bumpWanted(userId, 10);
     const message = `Betrapt bij een ${type.name}. 8 minuten cel.`;
     await logEvent(userId, "JAIL", message);
     return fail(message, "warning");
