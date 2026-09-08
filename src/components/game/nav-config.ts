@@ -30,9 +30,9 @@ export const NAV_ITEMS = [
   { href: "/game/markt", label: "Markt", icon: Store },
   { href: "/game/spelers", label: "Spelers", icon: Search },
   { href: "/game/familie", label: "Familie", icon: Users },
-  { href: "/game/berichten", label: "Berichten", icon: Mail },
   { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel },
   { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross },
+  { href: "/game/berichten", label: "Berichten", icon: Mail },
   { href: "/game/logboek", label: "Logboek", icon: MessageSquare },
 ] as const;
 

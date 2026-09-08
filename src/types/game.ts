@@ -70,8 +70,8 @@ export type PublicPlayer = {
   username: string;
   rankName: string;
   rankOrder: number;
-  currentCity: string;
-  currentCityName: string;
+  exp: number;
+  cash: number;
   health: number;
   isDead: boolean;
   inJail: boolean;

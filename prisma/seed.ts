@@ -157,6 +157,76 @@ const crimes = [
     jailMinutes: 180,
     cooldownSeconds: 120,
   },
+  {
+    slug: "pinautomaat",
+    name: "Pinautomaat kraken",
+    description: "Een nachtelijke skimmer en een boor. Klein geld, snel wegwezen.",
+    minRankOrder: 2,
+    successChance: 64,
+    cashMin: 70,
+    cashMax: 160,
+    expReward: 24,
+    energyCost: 12,
+    jailRiskChance: 20,
+    jailMinutes: 10,
+    cooldownSeconds: 28,
+  },
+  {
+    slug: "container",
+    name: "Havencontainer leeghalen",
+    description: "Een zegel knippen in de nacht. Elektronica, sigaretten, of pech.",
+    minRankOrder: 4,
+    successChance: 40,
+    cashMin: 380,
+    cashMax: 860,
+    expReward: 88,
+    energyCost: 26,
+    jailRiskChance: 34,
+    jailMinutes: 32,
+    cooldownSeconds: 42,
+  },
+  {
+    slug: "afpersing",
+    name: "Beschermingsgeld innen",
+    description: "Een rondje langs de zaakjes. Respect kost, weigeren kost meer.",
+    minRankOrder: 5,
+    successChance: 38,
+    cashMin: 700,
+    cashMax: 1600,
+    expReward: 130,
+    energyCost: 32,
+    jailRiskChance: 38,
+    jailMinutes: 40,
+    cooldownSeconds: 50,
+  },
+  {
+    slug: "museum",
+    name: "Museumroof",
+    description: "Alarm, glas, en één schilderij dat de hele nacht waard is.",
+    minRankOrder: 7,
+    successChance: 22,
+    cashMin: 2800,
+    cashMax: 6400,
+    expReward: 310,
+    energyCost: 58,
+    jailRiskChance: 50,
+    jailMinutes: 90,
+    cooldownSeconds: 80,
+  },
+  {
+    slug: "arsenaal",
+    name: "Legerarsenaal",
+    description: "Een depot buiten de stad. Alleen voor wie het leger durft te krenken.",
+    minRankOrder: 9,
+    successChance: 14,
+    cashMin: 8000,
+    cashMax: 18000,
+    expReward: 620,
+    energyCost: 82,
+    jailRiskChance: 58,
+    jailMinutes: 140,
+    cooldownSeconds: 105,
+  },
 ];
 
 const vehicleTypes = [
@@ -167,6 +237,11 @@ const vehicleTypes = [
   { slug: "mercedes", name: "Mercedes S-Klasse", baseValue: 22000, stealDifficulty: 62, rarity: "rare", minRankOrder: 5 },
   { slug: "porsche", name: "Porsche 911", baseValue: 48000, stealDifficulty: 78, rarity: "rare", minRankOrder: 6 },
   { slug: "lambo", name: "Lamborghini Huracán", baseValue: 110000, stealDifficulty: 90, rarity: "legendary", minRankOrder: 8 },
+  { slug: "corsa", name: "Opel Corsa", baseValue: 420, stealDifficulty: 18, rarity: "common", minRankOrder: 1 },
+  { slug: "rs6", name: "Audi RS6", baseValue: 14500, stealDifficulty: 52, rarity: "uncommon", minRankOrder: 4 },
+  { slug: "rover", name: "Range Rover Sport", baseValue: 28000, stealDifficulty: 58, rarity: "rare", minRankOrder: 5 },
+  { slug: "roma", name: "Ferrari Roma", baseValue: 72000, stealDifficulty: 82, rarity: "rare", minRankOrder: 7 },
+  { slug: "chiron", name: "Bugatti Chiron", baseValue: 185000, stealDifficulty: 96, rarity: "legendary", minRankOrder: 9 },
 ];
 
 const shopItems = [
@@ -186,12 +261,28 @@ const shopItems = [
   { slug: "kogels200", name: "Krat kogels (200)", description: "Voor als het serieus wordt.", type: "AMMO", attack: 0, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 200, price: 2100, minRankOrder: 4 },
 ];
 
+async function upsertCatalog() {
+  for (const crime of crimes) {
+    await prisma.crime.upsert({
+      where: { slug: crime.slug },
+      create: crime,
+      update: crime,
+    });
+  }
+  for (const vehicle of vehicleTypes) {
+    await prisma.vehicleType.upsert({
+      where: { slug: vehicle.slug },
+      create: vehicle,
+      update: vehicle,
+    });
+  }
+}
+
 async function main() {
   const existingRanks = await prisma.rank.count();
   if (existingRanks > 0 && process.env.FORCE_SEED !== "1") {
-    console.log(
-      "Catalog already present; skipping destructive seed. Set FORCE_SEED=1 to wipe and reseed.",
-    );
+    await upsertCatalog();
+    console.log("Catalog upserted (non-destructive). New crimes and vehicle types are available.");
     return;
   }
 

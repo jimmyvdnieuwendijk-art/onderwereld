@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
+import { formatMoney, formatNumber } from "@/lib/format";
 import type { PublicPlayer } from "@/types/game";
 
 export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
@@ -23,7 +24,8 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Badge>{target.rankName}</Badge>
-            <Badge variant="secondary">{target.currentCityName}</Badge>
+            <Badge variant="outline">{formatNumber(target.exp)} exp</Badge>
+            <Badge variant="outline">{formatMoney(target.cash)} cash</Badge>
             <Badge variant="outline">HP {target.health}</Badge>
             <Badge variant="outline">{target.killCount} kills</Badge>
             {target.familyName && <Badge variant="secondary">{target.familyName}</Badge>}

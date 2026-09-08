@@ -1,13 +1,14 @@
-import { cityDisplayName, normalizeCityId } from "@/lib/airports";
 import type { PublicPlayer } from "@/types/game";
 
+/** Public dossier for other players — never include city or travel destination. */
 export function toPublicPlayer(user: {
   id: string;
   username: string;
   health: number;
   isDead: boolean;
   killCount: number;
-  currentCity: string;
+  exp: number;
+  cash: number;
   inJailUntil: Date | null;
   inHospitalUntil: Date | null;
   travelEndAt?: Date | null;
@@ -20,8 +21,8 @@ export function toPublicPlayer(user: {
     username: user.username,
     rankName: user.rank.name,
     rankOrder: user.rank.order,
-    currentCity: normalizeCityId(user.currentCity),
-    currentCityName: cityDisplayName(user.currentCity),
+    exp: user.exp,
+    cash: user.cash,
     health: user.health,
     isDead: user.isDead,
     inJail: !!(user.inJailUntil && user.inJailUntil.getTime() > now),

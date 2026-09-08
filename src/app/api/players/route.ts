@@ -14,11 +14,11 @@ export async function GET(request: Request) {
 
   const users = await prisma.user.findMany({
     where: q
-      ? { username: { contains: q } }
-      : { id: { not: session.user.id } },
+      ? { username: { contains: q, mode: "insensitive" } }
+      : undefined,
     include: { rank: true, family: true },
-    orderBy: { exp: "desc" },
-    take: 30,
+    orderBy: [{ exp: "desc" }, { killCount: "desc" }, { cash: "desc" }],
+    take: 50,
   });
 
   return NextResponse.json(users.map((user) => toPublicPlayer(user)));

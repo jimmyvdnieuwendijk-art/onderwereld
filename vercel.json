@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "node scripts/decode-hoeren-art.mjs && prisma generate && next build",
+  "buildCommand": "node scripts/decode-hoeren-art.mjs && node scripts/decode-game-art.mjs && prisma generate && next build",
   "installCommand": "npm install"
 }
