@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Default: SQLite for zero-friction local/demo.
+// To use PostgreSQL, change provider to "postgresql" and set
+// DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  hashedPassword        String
+  username              String    @unique
+  cash                  Int       @default(500)
+  bankBalance           Int       @default(0)
+  health                Int       @default(100)
+  energy                Int       @default(100)
+  rankId                String
+  rank                  Rank      @relation(fields: [rankId], references: [id])
+  exp                   Int       @default(0)
+  bullets               Int       @default(0)
+  defense               Int       @default(0)
+  attackPower           Int       @default(5)
+  killCount             Int       @default(0)
+  inJailUntil           DateTime?
+  inHospitalUntil       DateTime?
+  isDead                Boolean   @default(false)
+  currentCity           String    @default("Amsterdam")
+  familyId              String?
+  family                Family?   @relation("FamilyRoster", fields: [familyId], references: [id])
+  lastCrimeAt           DateTime?
+  crimeCooldownUntil    DateTime?
+  carTheftCooldownUntil DateTime?
+  lastEnergyAt          DateTime  @default(now())
+  lastInterestAt        DateTime  @default(now())
+  equippedWeaponId      String?
+  equippedArmorId       String?
+  equippedWeapon        ShopItem? @relation("EquippedWeapon", fields: [equippedWeaponId], references: [id])
+  equippedArmor         ShopItem? @relation("EquippedArmor", fields: [equippedArmorId], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  ledFamily        Family?          @relation("FamilyLeader")
+  familyMembership FamilyMember?
+  vehicles         Vehicle[]
+  inventory        InventoryItem[]
+  marketListings   MarketListing[]  @relation("SellerListings")
+  sentMessages     Message[]        @relation("SentMessages")
+  receivedMessages Message[]        @relation("ReceivedMessages")
+  shoutboxMessages ShoutboxMessage[]
+  gameLogs         GameLog[]
+  attacksMade      AttackLog[]      @relation("Attacker")
+  attacksReceived  AttackLog[]      @relation("Defender")
+
+  @@index([rankId])
+  @@index([familyId])
+  @@index([isDead])
+  @@index([currentCity])
+  @@index([inJailUntil])
+  @@index([inHospitalUntil])
+}
+
+model Rank {
+  id     String @id @default(cuid())
+  slug   String @unique
+  name   String
+  minExp Int
+  order  Int    @unique
+  users  User[]
+}
+
+model Crime {
+  id              String @id @default(cuid())
+  slug            String @unique
+  name            String
+  description     String
+  minRankOrder    Int
+  successChance   Int
+  cashMin         Int
+  cashMax         Int
+  expReward       Int
+  energyCost      Int
+  jailRiskChance  Int
+  jailMinutes     Int
+  cooldownSeconds Int
+}
+
+model VehicleType {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  name            String
+  baseValue       Int
+  stealDifficulty Int
+  rarity          String
+  minRankOrder    Int       @default(1)
+  vehicles        Vehicle[]
+}
+
+model Vehicle {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleTypeId String
+  vehicleType   VehicleType  @relation(fields: [vehicleTypeId], references: [id])
+  condition     Int          @default(100)
+  createdAt     DateTime     @default(now())
+  listings      MarketListing[]
+
+  @@index([userId])
+}
+
+model ShopItem {
+  id               String          @id @default(cuid())
+  slug             String          @unique
+  name             String
+  description      String
+  type             String
+  attack           Int             @default(0)
+  defense          Int             @default(0)
+  healAmount       Int             @default(0)
+  energyAmount     Int             @default(0)
+  bulletsAmount    Int             @default(0)
+  price            Int
+  minRankOrder     Int             @default(1)
+  inventory        InventoryItem[]
+  listings         MarketListing[]
+  equippedAsWeapon User[]          @relation("EquippedWeapon")
+  equippedAsArmor  User[]          @relation("EquippedArmor")
+}
+
+model InventoryItem {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId   String
+  item     ShopItem @relation(fields: [itemId], references: [id])
+  quantity Int      @default(1)
+
+  @@unique([userId, itemId])
+  @@index([userId])
+}
+
+model Family {
+  id          String         @id @default(cuid())
+  name        String         @unique
+  leaderId    String         @unique
+  leader      User           @relation("FamilyLeader", fields: [leaderId], references: [id])
+  bankBalance Int            @default(0)
+  description String         @default("")
+  createdAt   DateTime       @default(now())
+  members     User[]         @relation("FamilyRoster")
+  memberships FamilyMember[]
+}
+
+model FamilyMember {
+  id       String   @id @default(cuid())
+  familyId String
+  family   Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId   String   @unique
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
+
+  @@index([familyId])
+}
+
+model MarketListing {
+  id        String    @id @default(cuid())
+  sellerId  String
+  seller    User      @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
+  type      String
+  quantity  Int       @default(1)
+  price     Int
+  vehicleId String?
+  vehicle   Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  itemId    String?
+  item      ShopItem? @relation(fields: [itemId], references: [id])
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  @@index([active, type])
+  @@index([sellerId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  fromUserId String
+  fromUser   User     @relation("SentMessages", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("ReceivedMessages", fields: [toUserId], references: [id], onDelete: Cascade)
+  subject    String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([toUserId, read])
+  @@index([fromUserId])
+}
+
+model ShoutboxMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model GameLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model AttackLog {
+  id          String   @id @default(cuid())
+  attackerId  String
+  attacker    User     @relation("Attacker", fields: [attackerId], references: [id], onDelete: Cascade)
+  defenderId  String
+  defender    User     @relation("Defender", fields: [defenderId], references: [id], onDelete: Cascade)
+  bulletsUsed Int
+  damage      Int
+  outcome     String
+  createdAt   DateTime @default(now())
+
+  @@index([attackerId, createdAt])
+  @@index([defenderId, createdAt])
+}
