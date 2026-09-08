@@ -265,6 +265,9 @@ model Escort {
   windowId    String?          @unique
   window      RedLightWindow?  @relation(fields: [windowId], references: [id], onDelete: SetNull)
   listedPrice Int?
+  busyUntil   DateTime?
+  missionKind String?
+  missionKey  String?
   createdAt   DateTime         @default(now())
 
   @@index([ownerId])
