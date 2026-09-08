@@ -9,6 +9,7 @@ import {
 import { cityDisplayName, getAirport, normalizeCityId } from "@/lib/airports";
 import { MAIN_ESCORT_DEFENSE_BONUS, pimpRankFor } from "@/lib/pimp";
 import { gymAttackBonus, gymDefenseBonus } from "@/lib/gym";
+import { parsePoker, publicPoker } from "@/lib/casino";
 import { tickPimpEconomy } from "@/lib/game/pimp-tick";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -178,6 +179,9 @@ function toSnapshot(
     gymExp: number;
     gymFloor: number;
     gymCooldownUntil: Date | null;
+    casinoCooldownUntil: Date | null;
+    casinoPeekUntil: Date | null;
+    casinoPokerJson: string | null;
   },
   ranks: { id: string; slug: string; name: string; minExp: number; order: number }[],
 ): PlayerSnapshot {
@@ -238,6 +242,9 @@ function toSnapshot(
     gymExp: user.gymExp,
     gymFloor: user.gymFloor,
     gymCooldownUntil: toIso(user.gymCooldownUntil),
+    casinoCooldownUntil: toIso(user.casinoCooldownUntil),
+    casinoPeekUntil: toIso(user.casinoPeekUntil),
+    casinoPoker: publicPoker(parsePoker(user.casinoPokerJson)),
   };
 }
 
