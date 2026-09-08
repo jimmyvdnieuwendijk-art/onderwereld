@@ -9,10 +9,11 @@ mkdirSync(destDir, { recursive: true });
 const names = ["casino-header", "casino-roulette", "casino-poker", "casino-street", "casino-pit"];
 
 function loadB64(name) {
-  const whole = join(artDir, `${name}.b64`);
-  if (existsSync(whole)) {
-    const text = readFileSync(whole, "utf8").trim();
-    if (text.length >= 1000) return text;
+  for (const candidate of [join(artDir, `${name}.b64`), join(artDir, "web", `${name}.b64`)]) {
+    if (existsSync(candidate)) {
+      const text = readFileSync(candidate, "utf8").trim();
+      if (text.length >= 1000) return text;
+    }
   }
   const partsDir = join(artDir, "parts", name);
   if (!existsSync(partsDir)) return "";
@@ -25,6 +26,6 @@ for (const name of names) {
   const dest = join(destDir, `${name}.jpg`);
   if (existsSync(dest) && readFileSync(dest).length > 1000) continue;
   const b64 = loadB64(name);
-  if (b64.length < 1000) continue;
+  if (b64.length < 1000) return text;
   writeFileSync(dest, Buffer.from(b64, "base64"));
 }
