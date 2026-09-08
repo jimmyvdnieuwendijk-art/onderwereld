@@ -70,7 +70,7 @@ export function CrimesClient({
                   <Badge variant="outline">{crime.successChance}% basis</Badge>
                   <Badge variant="destructive">{crime.jailRiskChance}% cel</Badge>
                 </div>
-                <form action={action} method="post">
+                <form action={action}>
                   <input type="hidden" name="crimeId" value={crime.id} />
                   <Button type="submit" disabled={pending || locked || p.isTraveling}>
                     {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}

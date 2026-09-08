@@ -32,7 +32,7 @@ export function BankClient({ initialPlayer }: { initialPlayer: PlayerSnapshot })
           <p>
             Bank: <span className="text-primary">{formatMoney(p.bankBalance)}</span>
           </p>
-          <form action={action} method="post" className="space-y-3">
+          <form action={action} className="space-y-3">
             <Input type="number" min={1} name="amount" defaultValue="100" />
             <ActionFeedback state={state} />
             <div className="flex flex-wrap gap-2">

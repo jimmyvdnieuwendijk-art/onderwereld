@@ -23,7 +23,7 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={action} method="post" className="space-y-4">
+          <form action={action} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Gebruikersnaam</Label>
               <Input id="username" name="username" required minLength={3} maxLength={16} placeholder="DonDemo" />

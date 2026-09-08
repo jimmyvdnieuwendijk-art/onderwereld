@@ -136,7 +136,7 @@ export function ShopClient({
                         {item.energyAmount > 0 && <Badge variant="outline">+{item.energyAmount} energie</Badge>}
                         {item.bulletsAmount > 0 && <Badge variant="outline">+{item.bulletsAmount} kogels</Badge>}
                       </div>
-                      <form action={buyAction} method="post">
+                      <form action={buyAction}>
                         <input type="hidden" name="itemId" value={item.id} />
                         <Button type="submit" disabled={buying || locked || p.isTraveling}>
                           {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : "Kopen"}

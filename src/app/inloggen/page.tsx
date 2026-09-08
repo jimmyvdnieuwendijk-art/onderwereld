@@ -21,7 +21,7 @@ export default function LoginPage() {
           <CardDescription>Betreed de straat. Kies je naam. Houd je mond.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={action} method="post" className="space-y-4">
+          <form action={action} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
               <Input

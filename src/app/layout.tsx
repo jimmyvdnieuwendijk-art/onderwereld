@@ -32,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="nl"
+      suppressHydrationWarning
       className={`dark ${heading.variable} ${sans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">

@@ -78,7 +78,7 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                       Privéjet {formatMoney(jetQuote.cost)} · {formatClock(jetQuote.seconds * 1000)} (3× prijs, helft
                       tijd)
                     </p>
-                    <form action={flightAction} method="post" className="space-y-2">
+                    <form action={flightAction} className="space-y-2">
                       <input type="hidden" name="destinationId" value={row.id} />
                       <label className="flex items-center gap-2 text-xs">
                         <input type="checkbox" name="privateJet" value="1" />
@@ -123,7 +123,7 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                   Koop {formatMoney(buy)} · Verkoop {formatMoney(sell)}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <form action={tradeAction} method="post" className="flex gap-2">
+                  <form action={tradeAction} className="flex gap-2">
                     <input type="hidden" name="good" value={good.id} />
                     <input type="hidden" name="side" value="buy" />
                     <Input type="number" name="quantity" min={1} max={200} defaultValue={1} className="w-20" />
@@ -131,7 +131,7 @@ export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                       Kopen
                     </Button>
                   </form>
-                  <form action={tradeAction} method="post" className="flex gap-2">
+                  <form action={tradeAction} className="flex gap-2">
                     <input type="hidden" name="good" value={good.id} />
                     <input type="hidden" name="side" value="sell" />
                     <Input type="number" name="quantity" min={1} max={200} defaultValue={1} className="w-20" />
