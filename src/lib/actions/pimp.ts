@@ -23,6 +23,7 @@ import {
   MISSION_DARK_ROOM,
   DRUG_RUN,
   darkRoomByKey,
+  escortIdleWhere,
   isEscortBusy,
   npcBuyoutPrice,
   transferFee,
@@ -160,11 +161,13 @@ export async function assignToWindow(workerId: string, windowId: string): Promis
     return fail(`Raam ${window.slotIndex + 1} is bezet door ${window.escort.name}.`);
   }
 
-  if (escort.windowId && escort.windowId !== window.id) {
-    await prisma.escort.update({ where: { id: escort.id }, data: { windowId: null } });
+  const seated = await prisma.escort.updateMany({
+    where: { id: escort.id, ownerId: g.userId, ...escortIdleWhere(now) },
+    data: { windowId: window.id },
+  });
+  if (seated.count === 0) {
+    return fail(`${escort.name} is net vertrokken of op een boeking. Raam en Dark Room lopen niet tegelijk.`);
   }
-
-  await prisma.escort.update({ where: { id: escort.id }, data: { windowId: window.id } });
   const rate = hourlyPayout(escort.charm, escort.loyalty, escort.health, escort.cityId);
   const message = `${escort.name} op raam ${window.slotIndex + 1} in ${cityDisplayName(window.cityId)}. Raming ${rate} euro per speeluur.`;
   await logEvent(g.userId, "PIMP", message);
@@ -369,8 +372,8 @@ export async function sendDrugRun(workerId: string): Promise<ActionResult> {
   if (escort.health < 30) return fail(`${escort.name} heeft te weinig conditie voor een pickup.`);
 
   const until = new Date(Date.now() + DRUG_RUN.durationMs);
-  await prisma.escort.update({
-    where: { id: escort.id },
+  const sent = await prisma.escort.updateMany({
+    where: { id: escort.id, ownerId: g.userId, windowId: null, ...escortIdleWhere() },
     data: {
       busyUntil: until,
       missionKind: MISSION_DRUG_RUN,
@@ -378,6 +381,9 @@ export async function sendDrugRun(workerId: string): Promise<ActionResult> {
       windowId: null,
     },
   });
+  if (sent.count === 0) {
+    return fail(`${escort.name} is net op een andere post gezet. Pickup geannuleerd.`);
+  }
 
   const message = `${escort.name} rijdt de afgesproken pickup. Vrijwillig werk. Ze is ${Math.round(DRUG_RUN.durationMs / 60000)} minuten onderweg.`;
   await logEvent(g.userId, "PIMP", message);
@@ -401,8 +407,8 @@ export async function startDarkRoom(workerId: string, roomKey: string): Promise<
   if (escort.health < 25) return fail(`${escort.name} heeft te weinig conditie voor een Dark Room-avond.`);
 
   const until = new Date(Date.now() + room.durationMs);
-  await prisma.escort.update({
-    where: { id: escort.id },
+  const booked = await prisma.escort.updateMany({
+    where: { id: escort.id, ownerId: g.userId, windowId: null, ...escortIdleWhere() },
     data: {
       busyUntil: until,
       missionKind: MISSION_DARK_ROOM,
@@ -410,6 +416,9 @@ export async function startDarkRoom(workerId: string, roomKey: string): Promise<
       windowId: null,
     },
   });
+  if (booked.count === 0) {
+    return fail(`${escort.name} staat al ergens anders. Dark Room en raam lopen niet tegelijk.`);
+  }
 
   const message = `${escort.name} boekt ${room.name}. Iedereen is er vrijwillig; zij mag nee zeggen. Klaar over ${Math.round(room.durationMs / 1000)} seconden.`;
   await logEvent(g.userId, "PIMP", message);

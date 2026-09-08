@@ -7,6 +7,7 @@ import { clamp, randomInt } from "@/lib/format";
 import {
   ESCORT_AVATARS,
   ESCORT_NAMES,
+  escortIdleWhere,
   isEscortBusy,
   pimpRankFor,
   workerCapReached,
@@ -203,8 +204,8 @@ export async function startVipJob(workerId: string, jobKey: string): Promise<Act
   if (escort.health < 28) return fail("Te weinig conditie voor deze boeking.");
 
   const until = new Date(Date.now() + job.durationMs);
-  await prisma.escort.update({
-    where: { id: escort.id },
+  const booked = await prisma.escort.updateMany({
+    where: { id: escort.id, ownerId: g.userId, windowId: null, ...escortIdleWhere() },
     data: {
       busyUntil: until,
       missionKind: MISSION_VIP_JOB,
@@ -212,6 +213,9 @@ export async function startVipJob(workerId: string, jobKey: string): Promise<Act
       windowId: null,
     },
   });
+  if (booked.count === 0) {
+    return fail(`${escort.name} is net bezet. VIP en raam lopen niet tegelijk.`);
+  }
   const message = `${escort.name} neemt ${job.name}. Zij mag nee zeggen. Klaar over ${Math.round(job.durationMs / 1000)} seconden.`;
   await logEvent(g.userId, "PIMP", message);
   return ok(message);

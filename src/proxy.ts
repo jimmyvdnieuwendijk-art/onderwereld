@@ -12,9 +12,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if ((pathname === "/inloggen" || pathname === "/registreren") && hasSession) {
-    return NextResponse.redirect(new URL("/game", request.url));
-  }
+  // Do not bounce /inloggen → /game on cookie presence alone. A stale
+  // authjs cookie plus layout auth() failure is an infinite redirect.
 
   return NextResponse.next();
 }

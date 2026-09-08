@@ -248,6 +248,14 @@ export function isEscortBusy(escort: { busyUntil?: Date | string | null }, now =
   return ts > now;
 }
 
+/** Prisma filter: not listed and not on a live mission (race-safe with updateMany). */
+export function escortIdleWhere(now = new Date()) {
+  return {
+    listedPrice: null,
+    OR: [{ busyUntil: null }, { busyUntil: { lte: now } }],
+  };
+}
+
 export function pimpRankProgress(exp: number) {
   const current = pimpRankFor(exp);
   const next = nextPimpRank(exp);
