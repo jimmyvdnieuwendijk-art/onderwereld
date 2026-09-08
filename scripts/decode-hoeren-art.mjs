@@ -9,10 +9,11 @@ mkdirSync(destDir, { recursive: true });
 const names = ["dark-vip","dark-fetish","dark-duo","dark-casino","dark-suite","mission-drugs","handel","venue-high","venue-strip","venue-cam","venue-bdsm","empire-kompromat"];
 
 function loadB64(name) {
-  const whole = join(artDir, `${name}.b64`);
-  if (existsSync(whole)) {
-    const text = readFileSync(whole, "utf8").trim();
-    if (text.length >= 1000) return text;
+  for (const candidate of [join(artDir, `${name}.b64`), join(artDir, "web", `${name}.b64`)]) {
+    if (existsSync(candidate)) {
+      const text = readFileSync(candidate, "utf8").trim();
+      if (text.length >= 1000) return text;
+    }
   }
   const partsDir = join(artDir, "parts", name);
   if (!existsSync(partsDir)) return "";
