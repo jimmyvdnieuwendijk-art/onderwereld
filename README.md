@@ -2,8 +2,6 @@
 
 Browser-based tekst/strategie-MMORPG in de geest van klassieke Nederlandse maffiaspellen (Crime-Club e.d.). Donkere UI, Dutch copy, misdaden, garage, bank, winkel, PvP, berichten en families.
 
-Source of truth is **Origin**, not GitHub. Do not mirror this repo to GitHub just to deploy.
-
 ## Tech
 
 - Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui
@@ -36,7 +34,7 @@ Andere gezaaide rivalen (zelfde wachtwoord): DeNachtjager, Bloedhond, SilentSjaa
 
 | Variabele | Local | Production (Vercel) | Uitleg |
 |-----------|-------|---------------------|--------|
-| `DATABASE_URL` | `postgresql://USER:PASSWORD@localhost:5432/onderwereld` | `postgresql://…?sslmode=require` (Neon / Supabase / Vercel Postgres) | Prisma provider is **postgresql**. SQLite (`file:./dev.db`) only if you switch the provider back. |
+| `DATABASE_URL` | `postgresql://USER:PASSWORD@localhost:5432/onderwereld` | Neon **pooled** URL (`sslmode=require`) | Prisma provider is **postgresql**. SQLite (`file:./dev.db`) only if you switch the provider back. |
 | `AUTH_SECRET` | long random string | **required**, `openssl rand -base64 32` | JWT signing secret |
 | `AUTH_TRUST_HOST` | `true` | `true` | Auth.js trusts the Host header |
 | `AUTH_URL` | omit | `https://<your-public-host>` (optional but recommended) | Canonical public origin |
@@ -47,39 +45,77 @@ Andere gezaaide rivalen (zelfde wachtwoord): DeNachtjager, Bloedhond, SilentSjaa
 
 The Prisma datasource provider is `"postgresql"`. SQLite is **unsuitable for Vercel/serverless**: each lambda has an ephemeral disk, the file is not shared, and writes are lost between invocations.
 
-1. Create a hosted Postgres database (Neon, Supabase, or Vercel Postgres) — this repo does not include credentials.
-2. Set `DATABASE_URL` to the connection string (`sslmode=require` on hosted providers). Prisma generate / `next build` do not need a live DB; `db push` and seed do.
-3. Apply schema once: `npx prisma db push` (or `prisma migrate deploy` once you add migrations).
-4. Seed **once** on an empty database: `npx prisma db seed`. Seed refuses to wipe an existing catalog unless `FORCE_SEED=1`.
-
-Models avoid native enums and use `Int` for money so they stay portable.
+This repo does not ship database credentials. For the free public deploy, use **Neon** (free Postgres) as described below.
 
 **Local SQLite (optional):** set `provider = "sqlite"` in `prisma/schema.prisma` and `DATABASE_URL="file:./dev.db"`. Do not use that on Vercel.
 
-## Deploy on Vercel (Origin is source of truth)
+## Deploy (free): GitHub + Vercel Hobby + Neon
 
-Do **not** create a GitHub mirror solely for Vercel. Origin ↔ Vercel is a supported git integration.
+This path does **not** need Vercel Pro or Origin Apps. Origin-hosted repos are private and cannot deploy on a Vercel Hobby team. A **public GitHub** repo can.
 
-Origin slug: `jkfd/tmp-7986da93878ae014`  
-Clone: `https://origin.cursor.com/git/jkfd/tmp-7986da93878ae014.git`  
-Repo view: `https://origin.cursor.com/jkfd/tmp-7986da93878ae014.git`
+Prisma stays on `postgresql`. `vercel.json` runs `prisma generate && next build` (no seed on deploy).
 
-### Blockers you must clear yourself
+### 1. Put the code on GitHub (public)
 
-1. **Vercel team plan** — Origin repositories are private. [Vercel for Origin](https://vercel.com/docs/git/vercel-for-origin) cannot deploy from a **Hobby** team. You need Owner/Member on a Vercel team, then **Continue with Origin** (or Origin repo → Apps → Vercel).
-2. **Hosted Postgres** — create Neon/Supabase/Vercel Postgres yourself and set `DATABASE_URL` on the Vercel project. Prisma provider is already `"postgresql"`.
-3. **Env vars on the Vercel project** — see the table above. `AUTH_SECRET` is mandatory; a missing secret fails Auth.js at runtime. `DATABASE_URL` must be a Postgres URL at build time (Prisma reads it during `generate`).
-4. **Do not run seed on every deploy.** `vercel.json` only runs `prisma generate && next build`. After the first successful deploy, run `db push` + one seed against production (Vercel → Storage / a one-off `npx prisma db push && npx prisma db seed` with production env).
+Create a public repository named `onderwereld` under your GitHub user, then push `main`:
 
-### Steps
+```bash
+# from a machine logged into GitHub (gh auth login, or GH_TOKEN)
+gh repo create onderwereld --public --source=. --remote=github --push
+```
 
-1. In Vercel: **New Project → Continue with Origin** → this repository.
-2. Framework preset: Next.js (also set in `vercel.json`).
-3. Add environment variables for Production (and Preview if you want preview deploys to work), including a real Postgres `DATABASE_URL`.
-4. Deploy. After the build succeeds, apply schema + seed once against `DATABASE_URL`.
-5. Set `AUTH_URL` to the resulting `https://….vercel.app` (or custom domain) and redeploy if Auth.js CSRF complains.
+Or in the GitHub UI: **New repository** → name `onderwereld` → Public → then:
 
-This agent cannot create the Vercel project, provision Postgres, or emit a public play URL — those need your Vercel + Origin accounts.
+```bash
+git remote add github https://github.com/YOUR_USER/onderwereld.git
+git push -u github main
+```
+
+Do not invent a GitHub remote until that repo exists. Origin (`origin`) can stay as a Cursor remote; Vercel should import **GitHub**, not Origin.
+
+### 2. Create free Postgres on Neon
+
+1. Sign up at [https://neon.tech](https://neon.tech) and create a project (e.g. `onderwereld`).
+2. Open **Dashboard → Connection details**.
+3. Copy the **pooled** connection string for the Vercel `DATABASE_URL` (include `sslmode=require`).
+4. Copy the **direct** (unpooled) connection string for the one-time `prisma db push` / seed from your laptop.
+
+Placeholder only — replace with the strings Neon shows you:
+
+```
+postgresql://USER:PASSWORD@HOST/onderwereld?sslmode=require
+```
+
+### 3. Import on Vercel Hobby
+
+1. [vercel.com](https://vercel.com) → **Add New… → Project**.
+2. Import the **GitHub** repository `YOUR_USER/onderwereld` (install the Vercel GitHub app if asked).
+3. Framework: **Next.js** (also set in `vercel.json`). Root directory: `.`
+4. **Hobby** is enough. Do not use “Continue with Origin”.
+5. Add environment variables **before** the first deploy (Production; add Preview too if you want preview URLs to work):
+
+| Name | Value |
+|------|--------|
+| `DATABASE_URL` | Neon **pooled** URL |
+| `AUTH_SECRET` | output of `openssl rand -base64 32` |
+| `AUTH_TRUST_HOST` | `true` |
+| `AUTH_URL` | leave empty on the first deploy; set to `https://<project>.vercel.app` afterward if Auth.js CSRF complains |
+
+6. Deploy. Build does not need a reachable database; runtime and seed do.
+
+### 4. Apply schema and seed once
+
+After the first successful deploy, from your machine (not on every Vercel build):
+
+```bash
+export DATABASE_URL="postgresql://…neon…direct…"   # Neon direct URL
+npx prisma db push
+npx prisma db seed
+```
+
+Seed refuses to wipe an existing catalog unless `FORCE_SEED=1`. Optional: `SKIP_DEMO_USERS=1` to skip DonDemo and rivals.
+
+Then open `https://<project>.vercel.app`, register or log in with the demo account if you seeded it.
 
 ## Scripts
 
