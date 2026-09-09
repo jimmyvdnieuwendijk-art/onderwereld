@@ -319,7 +319,10 @@ export function HoerenClient({
                 <img
                   src={main.avatar}
                   alt=""
-                  className="h-44 w-32 shrink-0 rounded-lg border border-red-500/40 object-cover object-top"
+                  className="h-44 w-32 shrink-0 rounded-lg border border-red-500/40 bg-gradient-to-b from-red-950 to-black object-cover object-top"
+                  onError={(event) => {
+                    event.currentTarget.style.opacity = "0.35";
+                  }}
                 />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -389,8 +392,9 @@ export function HoerenClient({
                 <CardTitle className="text-base">{venue.name}</CardTitle>
                 <CardDescription>{venue.blurb}</CardDescription>
               </CardHeader>
-              <CardContent className="text-xs text-muted-foreground">
-                Uur-multiplier ×{venue.payoutMult.toString().replace(".", ",")}
+              <CardContent className="space-y-2 text-xs text-muted-foreground">
+                <p className="italic text-red-200/90">{venue.nightLine}</p>
+                <p>Uur-multiplier ×{venue.payoutMult.toString().replace(".", ",")}</p>
               </CardContent>
             </Card>
           ))}
@@ -571,7 +575,7 @@ export function HoerenClient({
                       <img
                         src={win.escort.avatar}
                         alt=""
-                        className="absolute inset-0 h-full w-full object-cover object-top"
+                        className="absolute inset-0 h-full w-full bg-red-950 object-cover object-top"
                       />
                       <div className="absolute inset-0 ring-2 ring-inset ring-red-500/70" />
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
@@ -740,7 +744,7 @@ export function HoerenClient({
               <Card key={row.id} className={cn(row.isMain && "border-primary/50")}>
                 <CardContent className="flex gap-3 pt-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={row.avatar} alt="" className="h-40 w-28 shrink-0 rounded-md object-cover object-top" />
+                  <img src={row.avatar} alt="" className="h-40 w-28 shrink-0 rounded-md bg-red-950 object-cover object-top" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-heading text-lg">{row.name}</p>
@@ -865,7 +869,7 @@ export function HoerenClient({
               <Card key={row.id}>
                 <CardContent className="flex gap-3 pt-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={row.avatar} alt="" className="h-28 w-20 rounded object-cover object-top" />
+                  <img src={row.avatar} alt="" className="h-28 w-20 rounded bg-red-950 object-cover object-top" />
                   <div className="flex-1 space-y-2">
                     <p className="font-heading">{row.name}</p>
                     <p className="text-xs text-muted-foreground">
