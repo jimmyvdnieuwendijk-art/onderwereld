@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function CardArt({
@@ -24,18 +23,17 @@ export function CardArt({
         className,
       )}
     >
-      <Image
+      {/* Native img: some catalog JPEGs are incomplete stubs; next/image optimizer 400s them. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src={src}
         alt={alt}
-        fill
-        sizes={
-          aspect === "square"
-            ? "(max-width: 768px) 40vw, 160px"
-            : "(max-width: 768px) 100vw, 480px"
-        }
-        quality={50}
-        priority={priority}
-        className="object-cover"
+        width={aspect === "square" ? 320 : 640}
+        height={aspect === "square" ? 320 : 360}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={priority ? "high" : "low"}
+        className="h-full w-full object-cover"
         onError={(event) => {
           event.currentTarget.style.opacity = "0";
         }}
