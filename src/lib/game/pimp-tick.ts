@@ -23,6 +23,7 @@ import {
   streetHourlyIncome,
   streetZoneName,
   venuePayoutMult,
+  vipCloseLine,
   vipJobByKey,
 } from "@/lib/empire";
 
@@ -129,7 +130,7 @@ async function resolveMissions(userId: string, now: Date) {
         where: { id: escort.id },
         data: { ...clearMission(), health: clamp(escort.health - randomInt(3, 10), 8, 100) },
       });
-      logs.push(`${escort.name} sluit ${job.name} af. Afdracht ${payout} euro. Vrijwillig, klaar, volgende gast.`);
+      logs.push(vipCloseLine(job.key, escort.name, payout));
       continue;
     }
 
