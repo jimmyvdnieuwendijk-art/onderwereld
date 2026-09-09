@@ -53,7 +53,7 @@ This repo does not ship database credentials. For the free public deploy, use **
 
 This path does **not** need Vercel Pro or Origin Apps. Origin-hosted repos are private and cannot deploy on a Vercel Hobby team. A **public GitHub** repo can.
 
-Prisma stays on `postgresql`. `vercel.json` runs `prisma generate && next build` (no seed on deploy).
+Prisma stays on `postgresql`. `vercel.json` runs art decode, `prisma generate`, `prisma db push`, then `next build` (no seed on deploy).
 
 ### 1. Put the code on GitHub (public)
 
