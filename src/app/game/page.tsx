@@ -1,17 +1,14 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { tickPlayer } from "@/lib/game/player";
+import { requirePlayer } from "@/lib/actions/helpers";
 import { DashboardClient } from "./dashboard-client";
 import { redirect } from "next/navigation";
 
 export default async function GameHomePage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/inloggen");
-  const player = await tickPlayer(session.user.id);
+  const player = await requirePlayer();
   if (!player) redirect("/inloggen");
 
   const logs = await prisma.gameLog.findMany({
-    where: { userId: session.user.id },
+    where: { userId: player.id },
     orderBy: { createdAt: "desc" },
     take: 8,
   });

@@ -16,7 +16,9 @@ export function usePlayer(initial?: PlayerSnapshot) {
     queryKey: ["player"],
     queryFn: fetchPlayer,
     initialData: initial,
-    refetchInterval: 2500,
+    staleTime: 8_000,
+    refetchInterval: 12_000,
+    refetchOnWindowFocus: true,
   });
 }
 

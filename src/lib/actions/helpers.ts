@@ -1,21 +1,23 @@
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { tickPlayer } from "@/lib/game/player";
 import type { ActionResult } from "@/types/game";
 
-export async function requireUserId() {
+export const requireUserId = cache(async () => {
   const session = await auth();
   const id = session?.user?.id;
   if (!id) return null;
   return id;
-}
+});
 
-export async function requirePlayer() {
+/** One player tick per incoming request — layout and page share this. */
+export const requirePlayer = cache(async () => {
   const id = await requireUserId();
   if (!id) return null;
   return tickPlayer(id);
-}
+});
 
 export function fail(message: string, variant: ActionResult["variant"] = "error"): ActionResult {
   return { ok: false, message, variant };
