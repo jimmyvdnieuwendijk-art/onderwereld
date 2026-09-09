@@ -25,6 +25,7 @@ export const VENUES: {
   key: VenueKind;
   name: string;
   blurb: string;
+  nightLine: string;
   payoutMult: number;
   image: string;
 }[] = [
@@ -32,6 +33,8 @@ export const VENUES: {
     key: VENUE_HIGH_CLASS,
     name: "High-class escorts",
     blurb: "Penthouses, champagne, afgesproken nachten. Zij kiest de boeking. Geen dwang.",
+    nightLine:
+      "«Champagne op mijn borst, dan pas de rest. Jij rekent af. Ik zeg stop als ik stop zeg.» Penthouse, 21+, contract.",
     payoutMult: 1,
     image: "/game/hoeren/venue-high.jpg",
   },
@@ -39,6 +42,8 @@ export const VENUES: {
     key: VENUE_STRIPCLUB,
     name: "Underground stripclub",
     blurb: "Podium, polaroid-licht, privé-dans. Cash in de string, huisregels aan de deur.",
+    nightLine:
+      "«Handen van de heup tot ik knik. Tong, billen, polaroid — cash eerst, dan de privé. Geen kelder.»",
     payoutMult: 1.14,
     image: "/game/hoeren/venue-strip.jpg",
   },
@@ -46,6 +51,8 @@ export const VENUES: {
     key: VENUE_LIVE_CAM,
     name: "Hardcore live cams",
     blurb: "Studio, ringlight, tokens. Publiek betaalt om te kijken — zij bepaalt wat ze laat zien.",
+    nightLine:
+      "«Dildo in beeld als de tokens tikken. Ik kom klaar voor de lens, niet voor jouw bevel. Camera uit = show uit.»",
     payoutMult: 1.24,
     image: "/game/hoeren/venue-cam.jpg",
   },
@@ -53,6 +60,8 @@ export const VENUES: {
     key: VENUE_BDSM,
     name: "BDSM-club",
     blurb: "Leer, neon, safeword. Consensuele clubavond, geen kelder, geen marteling.",
+    nightLine:
+      "«Knevel, zweep, rood licht. Safeword is rood. Geen slaaf, geen angstmeter — alleen wie ja zegt mag knielen.»",
     payoutMult: 1.18,
     image: "/game/hoeren/venue-bdsm.jpg",
   },
@@ -107,7 +116,8 @@ export const VIP_JOBS: VipJob[] = [
   {
     key: "highroller",
     name: "High-roller penthouse",
-    blurb: "Een gast met te veel chips en te weinig schaamte. Afdracht + pimp-exp. Zij mag de boeking afzeggen.",
+    blurb:
+      "Een gast met te veel chips en te weinig schaamte. Zij zuigt, hij filmt, jij telt. Zij mag de boeking afzeggen.",
     durationMs: 2 * 60 * 1000,
     cashBase: 640,
     pimpExp: 12,
@@ -119,7 +129,8 @@ export const VIP_JOBS: VipJob[] = [
   {
     key: "politician",
     name: "Corrupte wethouder",
-    blurb: "Hij boekt. Hij komt. Hij filmt zichzelf. Jij houdt de USB. Kompromat op hém — niet op haar.",
+    blurb:
+      "Hij komt klaar in de suite, smeekt om stilte, jij houdt de USB. Kompromat op hém — niet op haar. Geen slaaf.",
     durationMs: 3 * 60 * 1000,
     cashBase: 520,
     pimpExp: 16,
@@ -131,7 +142,8 @@ export const VIP_JOBS: VipJob[] = [
   {
     key: "livecam",
     name: "Private cam-show",
-    blurb: "Tokens tikken binnen. Hard, expliciet, vrijwillig. Zeden kan meelezen.",
+    blurb:
+      "Hardcore tokens: naakt, vingers, dildo — vrijwillig voor de lens. Zeden kan meelezen. Zij klikt stop.",
     durationMs: 90 * 1000,
     cashBase: 380,
     pimpExp: 9,
@@ -162,6 +174,20 @@ export const EMPIRE_TOASTS = {
 
 export function pickEmpireToast(key: keyof typeof EMPIRE_TOASTS) {
   return EMPIRE_TOASTS[key];
+}
+
+const VIP_CLOSE: Record<string, string> = {
+  highroller:
+    " penthouse: hij komt klaar, zij veegt haar mond, jij telt de chips. Vrijwillig. Klaar.",
+  politician:
+    " wethouder: USB warm, zijn gezicht nat, haar lipstick op zijn kraag. Hij gaat betalen. Zij gaat douchen.",
+  livecam:
+    " cam: tokens, orgasme, fade-to-black. Geen bevel — een show die zij uitzet.",
+};
+
+export function vipCloseLine(jobKey: string, escortName: string, payout: number) {
+  const tail = VIP_CLOSE[jobKey] ?? " VIP klaar. Vrijwillig, volgende gast.";
+  return `${escortName} sluit af.${tail} Afdracht ${payout} euro.`;
 }
 
 export function rivalContestChance(pimpExp: number) {
