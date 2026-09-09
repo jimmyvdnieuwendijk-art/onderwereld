@@ -13,6 +13,7 @@ import {
   CASINO_MIN_BET,
   KNIFE_ANTE,
   PEEK_COST,
+  fightOdds,
   maxBetFor,
   pitOdds,
 } from "@/lib/casino";
@@ -28,9 +29,10 @@ import { ActionFeedback, useFormAction } from "@/components/game/action-feedback
 import { usePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const PIT = pitOdds();
+const RACE_BOARD = pitOdds();
+const FIGHT_BOARD = fightOdds();
 
 export function CasinoClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
   const { data: player } = usePlayer(initialPlayer);
@@ -49,6 +51,8 @@ export function CasinoClient({ initialPlayer }: { initialPlayer: PlayerSnapshot 
   const peekReady = !(p.casinoPeekUntil && new Date(p.casinoPeekUntil).getTime() > Date.now());
   const cap = maxBetFor(p.cash);
   const tableOpen = !p.casinoPoker;
+  const [pitKind, setPitKind] = useState<"race" | "fight">("race");
+  const pitBoardRows = pitKind === "fight" ? FIGHT_BOARD : RACE_BOARD;
 
   useEffect(() => {
     if ([rouletteState, streetState, pitState, dealState, drawState, peekState, foldState].some((row) => row)) {
@@ -250,30 +254,49 @@ export function CasinoClient({ initialPlayer }: { initialPlayer: PlayerSnapshot 
         </Card>
 
         <Card className="overflow-hidden border-fuchsia-500/25">
-          <CardArt src={casinoArt("pit")} alt="Hondenkooi" />
+          <CardArt src={casinoArt("pit")} alt="Hondenkooi en illegale gevechten" />
           <CardHeader>
-            <CardTitle className="font-heading">Hondenkooi</CardTitle>
+            <CardTitle className="font-heading">Hondenkooi / illegale gevechten</CardTitle>
             <CardDescription>
-              Vier greyhounds, één heat. Koers uit snelheid, daarna 12% vig op de uitbetaling. De outsider betaalt als
-              hij wint — het bord somt nooit tot 100%.
+              Greyhound-races of een kooigevecht onder de zaal. Vier starters, 12% vig op de uitbetaling. Het bord somt
+              nooit tot 100%.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form action={pitAction} className="space-y-3">
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={pitKind === "race" ? "default" : "outline"}
+                onClick={() => setPitKind("race")}
+              >
+                Hondenrace
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={pitKind === "fight" ? "default" : "outline"}
+                onClick={() => setPitKind("fight")}
+              >
+                Illegaal gevecht
+              </Button>
+            </div>
+            <form key={pitKind} action={pitAction} className="space-y-3">
+              <input type="hidden" name="kind" value={pitKind} />
               <div className="space-y-2">
-                {PIT.map((dog) => (
-                  <label key={dog.key} className="flex items-start gap-2 rounded-md border border-border/60 px-2 py-1.5 text-sm">
-                    <input type="radio" name="dog" value={dog.key} defaultChecked={dog.key === "bliksem"} className="mt-1" />
+                {pitBoardRows.map((row, index) => (
+                  <label key={row.key} className="flex items-start gap-2 rounded-md border border-border/60 px-2 py-1.5 text-sm">
+                    <input type="radio" name="pick" value={row.key} defaultChecked={index === 0} className="mt-1" />
                     <span>
-                      <span className="font-medium">{dog.name}</span>
-                      <span className="text-muted-foreground"> · {dog.decimal.toFixed(2)}× · {dog.blurb}</span>
+                      <span className="font-medium">{row.name}</span>
+                      <span className="text-muted-foreground"> · {row.decimal.toFixed(2)}× · {row.blurb}</span>
                     </span>
                   </label>
                 ))}
               </div>
               <Input type="number" name="stake" min={CASINO_MIN_BET} max={cap} defaultValue={40} />
               <Button type="submit" className="w-full" disabled={busy || cooling || !tableOpen || p.isTraveling}>
-                Zet op de kooi
+                {pitKind === "fight" ? "Zet op het gevecht" : "Zet op de race"}
               </Button>
             </form>
           </CardContent>
