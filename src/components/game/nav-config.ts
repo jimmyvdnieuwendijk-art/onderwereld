@@ -46,3 +46,14 @@ export const MOBILE_PRIMARY = [
   { href: "/game/spelers", label: "PvP", icon: Shield },
   { href: "/game/berichten", label: "Post", icon: Mail },
 ] as const;
+
+export const DASHBOARD_LINKS = [
+  { href: "/game/misdaden", label: "Misdaden", hint: "Cash en exp op straat", icon: Skull },
+  { href: "/game/vliegveld", label: "Vliegveld", hint: "Tien steden, smokkel", icon: Plane },
+  { href: "/game/hoeren", label: "Hoeren", hint: "Ramen, crew en empire", icon: VenetianMask },
+  { href: "/game/gym", label: "Gym", hint: "Kracht, conditie, vuisten", icon: Dumbbell },
+  { href: "/game/casino", label: "Casino", hint: "Roulette, poker, de kooi", icon: Dices },
+  { href: "/game/auto-stelen", label: "Auto stelen", hint: "Van Corsa tot Chiron", icon: Car },
+  { href: "/game/bank", label: "Bank", hint: "Rente en een kluis", icon: Banknote },
+  { href: "/game/winkel", label: "Winkel", hint: "Staal en kogels", icon: ShoppingBag },
+] as const;
