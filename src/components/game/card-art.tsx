@@ -1,3 +1,6 @@
+"use client";
+
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function CardArt({
@@ -5,11 +8,13 @@ export function CardArt({
   alt,
   className,
   aspect = "video",
+  priority = false,
 }: {
   src: string;
   alt: string;
   className?: string;
   aspect?: "video" | "square";
+  priority?: boolean;
 }) {
   return (
     <div
@@ -19,11 +24,18 @@ export function CardArt({
         className,
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={src}
         alt={alt}
-        className="h-full w-full object-cover"
+        fill
+        sizes={
+          aspect === "square"
+            ? "(max-width: 768px) 40vw, 160px"
+            : "(max-width: 768px) 100vw, 480px"
+        }
+        quality={50}
+        priority={priority}
+        className="object-cover"
         onError={(event) => {
           event.currentTarget.style.opacity = "0";
         }}

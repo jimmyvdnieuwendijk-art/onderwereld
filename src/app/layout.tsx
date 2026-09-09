@@ -6,17 +6,22 @@ import "./globals.css";
 const heading = Cinzel({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600"],
+  display: "swap",
 });
 
 const sans = Source_Sans_3({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "600"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
