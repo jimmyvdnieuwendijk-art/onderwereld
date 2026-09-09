@@ -14,6 +14,10 @@ export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, null);
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/game";
+  const urlError =
+    searchParams.get("error") === "CredentialsSignin"
+      ? "Ongeldige inloggegevens. Controleer e-mail en wachtwoord."
+      : undefined;
 
   return (
     <AuthShell
@@ -53,7 +57,7 @@ export function LoginForm() {
             defaultValue="demo1234"
           />
         </div>
-        <AuthError message={state && !state.ok ? state.message : undefined} />
+        <AuthError message={(state && !state.ok ? state.message : undefined) ?? urlError} />
         <button type="submit" className={cn(buttonVariants(), "w-full")} disabled={pending}>
           {pending ? "Deur gaat open…" : "Naar binnen"}
         </button>
