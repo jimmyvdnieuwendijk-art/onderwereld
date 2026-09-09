@@ -44,6 +44,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           <Link
             key={item.href}
             href={item.href}
+            prefetch
             onClick={onNavigate}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
@@ -78,7 +79,7 @@ export function GameShell({
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 border-r border-border/70 bg-sidebar/80 p-4 md:flex md:flex-col">
-        <Link href="/game" className="mb-6 px-1">
+        <Link href="/game" prefetch className="mb-6 px-1">
           <p className="font-heading text-xl tracking-wide text-primary">Onderwereld</p>
           <p className="text-xs text-muted-foreground">{p.username} · {p.currentCityName}</p>
         </Link>
@@ -197,6 +198,7 @@ export function GameShell({
             <Link
               key={item.href}
               href={item.href}
+              prefetch
               className="flex flex-col items-center gap-0.5 py-2 text-[10px] text-muted-foreground"
             >
               <Icon className="size-4" />
