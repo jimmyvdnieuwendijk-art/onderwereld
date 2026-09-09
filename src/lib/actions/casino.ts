@@ -17,7 +17,7 @@ import {
   handNameNl,
   maxBetFor,
   parsePoker,
-  pitOdds,
+  pitBoard,
   rouletteColor,
   roulettePayout,
   spinEuropean,
@@ -134,16 +134,17 @@ export async function playStreet(stakeRaw: number): Promise<ActionResult> {
   return net >= 0 ? ok(message) : fail(message, "warning");
 }
 
-export async function playPit(dogKey: string, stakeRaw: number): Promise<ActionResult> {
+export async function playPit(kindRaw: string, pickKey: string, stakeRaw: number): Promise<ActionResult> {
   const g = await gate();
   if (!g.ok) return g.error;
   if (cooling(g.player.casinoCooldownUntil)) return fail("De volgende heat start zo.", "warning");
   if (g.player.casinoPoker) return fail("Eerst je pokerhand afmaken of folden.");
   const stake = clampBet(stakeRaw, g.player.cash);
   if (stake == null) return fail(`Inzet ${CASINO_MIN_BET}–${maxBetFor(g.player.cash)} euro.`);
-  const card = pitOdds();
-  const pick = card.find((row) => row.key === dogKey);
-  if (!pick) return fail("Die hond loopt vanavond niet.");
+  const kind = kindRaw === "fight" ? "fight" : "race";
+  const card = pitBoard(kind);
+  const pick = card.find((row) => row.key === pickKey);
+  if (!pick) return fail(kind === "fight" ? "Die vechter staat vanavond niet in de kooi." : "Die hond loopt vanavond niet.");
 
   const scored = card.map((row) => ({
     ...row,
@@ -159,10 +160,11 @@ export async function playPit(dogKey: string, stakeRaw: number): Promise<ActionR
   }
   const net = returned - stake;
   const board = scored.map((row) => row.name).join(" → ");
+  const label = kind === "fight" ? "Illegaal gevecht" : "Hondenkooi";
   const message =
     net > 0
-      ? `Hondenkooi: ${winner.name} wint (${board}). Koers ${pick.decimal.toFixed(2)}. +${net} euro na 12% vig.`
-      : `Hondenkooi: ${winner.name} wint (${board}). ${pick.name} blijft achter. −${stake} euro.`;
+      ? `${label}: ${winner.name} wint (${board}). Koers ${pick.decimal.toFixed(2)}. +${net} euro na 12% vig.`
+      : `${label}: ${winner.name} wint (${board}). ${pick.name} blijft achter. −${stake} euro.`;
   await logEvent(g.userId, "CASINO", message);
   return net > 0 ? ok(message) : fail(message, "warning");
 }
@@ -319,7 +321,8 @@ export async function playStreetForm(_prev: ActionResult | null, form: FormData)
 }
 
 export async function playPitForm(_prev: ActionResult | null, form: FormData) {
-  const result = await playPit(String(form.get("dog") ?? ""), formNum(form, "stake"));
+  const pick = String(form.get("pick") ?? form.get("dog") ?? "");
+  const result = await playPit(String(form.get("kind") ?? "race"), pick, formNum(form, "stake"));
   revalidateGame();
   return result;
 }
