@@ -37,7 +37,7 @@ function Meter({ label, value, max, barClass }: { label: string; value: number; 
           {value}/{max}
         </span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900 ring-1 ring-fuchsia-500/20">
         <div className={cn("h-full rounded-full", barClass)} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -72,29 +72,32 @@ export function GymClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) 
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-xl border border-amber-600/35">
+      <section className="relative overflow-hidden rounded-xl border border-fuchsia-500/45 shadow-[0_0_32px_rgba(217,70,239,0.18)]">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${gymArt("header")})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-fuchsia-950/50 to-cyan-950/25" />
         <div className="relative space-y-3 px-5 py-8 md:px-8">
-          <p className="text-[11px] tracking-[0.25em] text-amber-300 uppercase">Grindhouse · illegaal</p>
-          <h1 className="font-heading text-3xl text-white md:text-4xl">Gym</h1>
+          <p className="text-[11px] tracking-[0.28em] text-cyan-300 uppercase">Grindhouse · neon-noir</p>
+          <h1 className="font-heading text-3xl text-fuchsia-100 md:text-4xl">Gym</h1>
           <p className="max-w-xl text-sm text-zinc-200">
-            Vijf verdiepingen onder de straat. Roest, neon, geen spiegels. Gym-rep opent de volgende vloer — plus een
-            eenmalige deurprijs. Geen oneindige grind: één cooldown voor het hele gebouw.
+            Vijf verdiepingen onder de straat. Roest, magenta neon, geen spiegels. Gym-rep opent de volgende vloer —
+            plus een eenmalige deurprijs. Energie eraf, dan een recovery-procent terug. Eén cooldown voor het hele
+            gebouw.
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
-            <Badge className="bg-amber-800 text-white">Vloer {p.gymFloor}/5</Badge>
-            <Badge variant="outline">Gym-rep {p.gymExp}</Badge>
-            <Badge variant="outline">
+            <Badge className="bg-fuchsia-700 text-white">Vloer {p.gymFloor}/5</Badge>
+            <Badge variant="outline" className="border-cyan-400/40 text-cyan-200">
+              Gym-rep {p.gymExp}
+            </Badge>
+            <Badge variant="outline" className="border-fuchsia-400/40 text-fuchsia-100">
               Energie {p.energy}/{MAX_ENERGY}
             </Badge>
-            <Badge variant="secondary">PvP +{atk} ATK / +{def} DEF</Badge>
+            <Badge className="bg-cyan-900 text-cyan-100">PvP +{atk} ATK / +{def} DEF</Badge>
           </div>
           {cooling && p.gymCooldownUntil && (
-            <p className="text-sm text-amber-200">
+            <p className="text-sm text-cyan-200">
               <Countdown until={p.gymCooldownUntil} label="Dweilen:" />
             </p>
           )}
@@ -107,18 +110,18 @@ export function GymClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) 
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card className="border-amber-600/25">
+        <Card className="border-fuchsia-500/30 bg-zinc-950/80 shadow-[0_0_18px_rgba(217,70,239,0.08)]">
           <CardHeader>
-            <CardTitle className="font-heading">Jouw lijf</CardTitle>
+            <CardTitle className="font-heading text-fuchsia-100">Jouw lijf</CardTitle>
             <CardDescription>
               Kracht en vechtkunst tellen bij aanval. Conditie en vechtkunst bij verdediging. Wapen/vest blijven extra.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Meter label="Kracht" value={p.strength} max={MAX_STRENGTH} barClass="bg-red-500" />
-            <Meter label="Conditie" value={p.condition} max={MAX_CONDITION} barClass="bg-amber-400" />
-            <Meter label="Vechtkunst" value={p.fightSkill} max={MAX_FIGHT_SKILL} barClass="bg-orange-600" />
-            <Meter label="Energie" value={p.energy} max={MAX_ENERGY} barClass="bg-primary" />
+            <Meter label="Kracht" value={p.strength} max={MAX_STRENGTH} barClass="bg-gradient-to-r from-fuchsia-600 to-red-500" />
+            <Meter label="Conditie" value={p.condition} max={MAX_CONDITION} barClass="bg-gradient-to-r from-cyan-500 to-fuchsia-400" />
+            <Meter label="Vechtkunst" value={p.fightSkill} max={MAX_FIGHT_SKILL} barClass="bg-gradient-to-r from-fuchsia-500 to-cyan-300" />
+            <Meter label="Energie" value={p.energy} max={MAX_ENERGY} barClass="bg-gradient-to-r from-cyan-600 to-fuchsia-500" />
             <p className="text-xs text-muted-foreground">
               Buiten de gym: +2 energie per 10 seconden, max {MAX_ENERGY}. Energiedrank in de winkel +40. Training
               kost eerst energie, daarna een recovery-procent van het maximum.
@@ -126,7 +129,7 @@ export function GymClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) 
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-cyan-500/25 bg-zinc-950/70">
           <CardHeader>
             <CardTitle className="font-heading">Hoe je omhoog komt</CardTitle>
             <CardDescription>Altijd de volgende vloer, nooit overslaan. Kelder is gratis.</CardDescription>
@@ -137,7 +140,9 @@ export function GymClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) 
                 key={row.level}
                 className={cn(
                   "flex items-center justify-between rounded-md border px-2 py-1.5",
-                  row.level === p.gymFloor ? "border-amber-500/50 bg-amber-950/30" : "border-border/50",
+                  row.level === p.gymFloor
+                    ? "border-cyan-400/60 bg-fuchsia-950/40 shadow-[0_0_12px_rgba(34,211,238,0.15)]"
+                    : "border-border/50",
                 )}
               >
                 <span>
@@ -169,7 +174,9 @@ export function GymClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) 
               key={row.level}
               className={cn(
                 "overflow-hidden",
-                opened ? "border-amber-600/30" : "border-border/50 opacity-80",
+                opened
+                  ? "border-fuchsia-500/40 shadow-[0_0_16px_rgba(217,70,239,0.12)]"
+                  : "border-border/50 opacity-80",
               )}
             >
               <CardArt src={row.image} alt={row.name} />
