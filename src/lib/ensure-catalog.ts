@@ -1,4 +1,6 @@
+import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { STARTER_CASH } from "@/lib/constants";
 
 /** Extra cars/crimes added after the first production seed. Idempotent upsert so Vercel shows them without a wipe. */
 const EXTRA_CRIMES = [
@@ -82,29 +84,101 @@ const EXTRA_VEHICLES = [
   { slug: "chiron", name: "Bugatti Chiron", baseValue: 185000, stealDifficulty: 96, rarity: "legendary", minRankOrder: 9 },
 ] as const;
 
-let syncing: Promise<void> | null = null;
+const BOOTSTRAP_RANKS = [
+  { slug: "schooier", name: "Schooier", minExp: 0, order: 1 },
+  { slug: "zakkenroller", name: "Zakkenroller", minExp: 250, order: 2 },
+  { slug: "inbreker", name: "Inbreker", minExp: 800, order: 3 },
+  { slug: "overvaller", name: "Overvaller", minExp: 2000, order: 4 },
+  { slug: "schutter", name: "Schutter", minExp: 5000, order: 5 },
+  { slug: "huurmoordenaar", name: "Huurmoordenaar", minExp: 12000, order: 6 },
+  { slug: "capo", name: "Capo", minExp: 25000, order: 7 },
+  { slug: "consigliere", name: "Consigliere", minExp: 50000, order: 8 },
+  { slug: "onderbaas", name: "Onderbaas", minExp: 100000, order: 9 },
+  { slug: "peetvader", name: "Peetvader", minExp: 200000, order: 10 },
+] as const;
+
+let catalogSync: Promise<void> | null = null;
+let liveBoot: Promise<void> | null = null;
 
 export async function ensureGameCatalog() {
-  if (!syncing) {
-    syncing = (async () => {
-      for (const crime of EXTRA_CRIMES) {
-        await prisma.crime.upsert({
-          where: { slug: crime.slug },
-          create: { ...crime },
-          update: { ...crime },
-        });
+  if (!catalogSync) {
+    catalogSync = (async () => {
+      const extraCrime = await prisma.crime.findUnique({
+        where: { slug: "arsenaal" },
+        select: { id: true },
+      });
+      const extraCar = await prisma.vehicleType.findUnique({
+        where: { slug: "chiron" },
+        select: { id: true },
+      });
+      if (!extraCrime) {
+        for (const crime of EXTRA_CRIMES) {
+          await prisma.crime.upsert({
+            where: { slug: crime.slug },
+            create: { ...crime },
+            update: { ...crime },
+          });
+        }
       }
-      for (const vehicle of EXTRA_VEHICLES) {
-        await prisma.vehicleType.upsert({
-          where: { slug: vehicle.slug },
-          create: { ...vehicle },
-          update: { ...vehicle },
-        });
+      if (!extraCar) {
+        for (const vehicle of EXTRA_VEHICLES) {
+          await prisma.vehicleType.upsert({
+            where: { slug: vehicle.slug },
+            create: { ...vehicle },
+            update: { ...vehicle },
+          });
+        }
       }
     })().catch((error) => {
-      syncing = null;
+      catalogSync = null;
       console.error("ensureGameCatalog", error);
     });
   }
-  await syncing;
+  await catalogSync;
+}
+
+/** Non-destructive: ranks, extra catalog, demo user. Never deletes live players. */
+export async function ensureLiveBootstrap() {
+  if (!liveBoot) {
+    liveBoot = (async () => {
+      const rankCount = await prisma.rank.count();
+      if (rankCount === 0) {
+        await prisma.rank.createMany({ data: [...BOOTSTRAP_RANKS], skipDuplicates: true });
+      }
+      await ensureGameCatalog();
+      if (process.env.SKIP_DEMO_USERS === "1") return;
+
+      const demoEmail = "demo@onderwereld.nl";
+      const existing = await prisma.user.findUnique({
+        where: { email: demoEmail },
+        select: { id: true },
+      });
+      if (existing) return;
+
+      const nameTaken = await prisma.user.findUnique({
+        where: { username: "DonDemo" },
+        select: { id: true },
+      });
+      if (nameTaken) return;
+
+      const starter = await prisma.rank.findFirst({ orderBy: { order: "asc" } });
+      if (!starter) return;
+
+      const hashedPassword = await hash("demo1234", 10);
+      await prisma.user.create({
+        data: {
+          email: demoEmail,
+          hashedPassword,
+          username: "DonDemo",
+          currentCity: "ams",
+          cash: Math.max(STARTER_CASH, 2500),
+          rankId: starter.id,
+        },
+      });
+    })().catch((error) => {
+      liveBoot = null;
+      console.error("ensureLiveBootstrap", error);
+    });
+  }
+  await liveBoot;
 }
