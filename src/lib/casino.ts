@@ -36,6 +36,13 @@ export const PIT_CARD: PitFighter[] = [
   { key: "diesel", name: "Diesel", blurb: "Outsider. Als hij wint, ruikt de zaal naar bloedgeld.", speed: 52 },
 ];
 
+export const FIGHT_CARD: PitFighter[] = [
+  { key: "hamer", name: "De Hamer", blurb: "Korte stoot, veel tape, veel bloed.", speed: 84 },
+  { key: "naald", name: "De Naald", blurb: "Snel, vies, mes in de wrapping.", speed: 76 },
+  { key: "karkas", name: "Karkas", blurb: "Tank. Komt laat, blijft staan.", speed: 64 },
+  { key: "as", name: "As", blurb: "Outsider uit de kelder. Lange odds.", speed: 50 },
+];
+
 export function maxBetFor(cash: number) {
   return Math.max(CASINO_MIN_BET, Math.min(CASINO_MAX_BET, cash));
 }
@@ -180,14 +187,26 @@ export function dealerDiscards(hand: CasinoCard[]): number[] {
   return drop;
 }
 
-export function pitOdds() {
-  const total = PIT_CARD.reduce((sum, dog) => sum + dog.speed, 0);
-  return PIT_CARD.map((dog) => {
-    const fair = dog.speed / total;
+function vigBoard(card: PitFighter[]) {
+  const total = card.reduce((sum, row) => sum + row.speed, 0);
+  return card.map((row) => {
+    const fair = row.speed / total;
     const implied = fair * (1 - PIT_VIG);
     const decimal = Math.max(1.35, Math.round((1 / implied) * 100) / 100);
-    return { ...dog, fair, decimal, payoutMult: decimal };
+    return { ...row, fair, decimal, payoutMult: decimal };
   });
+}
+
+export function pitOdds() {
+  return vigBoard(PIT_CARD);
+}
+
+export function fightOdds() {
+  return vigBoard(FIGHT_CARD);
+}
+
+export function pitBoard(kind: "race" | "fight") {
+  return kind === "fight" ? fightOdds() : pitOdds();
 }
 
 export type PublicPoker = {
