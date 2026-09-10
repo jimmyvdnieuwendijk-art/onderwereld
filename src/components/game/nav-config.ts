@@ -51,6 +51,12 @@ export const NAV_GROUPS = [
 
 export const NAV_ITEMS = NAV_GROUPS.flatMap((group) => [...group.items]);
 
+/** Overzicht is exact `/game`; other items also match nested routes. */
+export function isNavActive(pathname: string, href: string) {
+  if (href === "/game") return pathname === "/game";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export const MOBILE_PRIMARY = [
   { href: "/game", label: "Home", icon: LayoutDashboard },
   { href: "/game/misdaden", label: "Misdaad", icon: Swords },

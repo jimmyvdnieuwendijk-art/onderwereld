@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, LogOut, Crosshair, Heart, Zap, Coins, Landmark, Skull } from "lucide-react";
+import { Menu, LogOut, Crosshair, Heart, Zap, Coins, Landmark, Skull, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -12,7 +12,7 @@ import { logoutAction } from "@/lib/actions/session";
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { TravelBanner } from "@/components/game/travel-banner";
-import { MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
+import { isNavActive, MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -33,43 +33,125 @@ function Meter({
   );
 }
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavItemLinks({
+  items,
+  pathname,
+  onNavigate,
+  unreadMessages,
+}: {
+  items: (typeof NAV_GROUPS)[number]["items"];
+  pathname: string;
+  onNavigate?: () => void;
+  unreadMessages: number;
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {items.map((item) => {
+        const active = isNavActive(pathname, item.href);
+        const Icon = item.icon;
+        const unread = item.href === "/game/berichten" ? unreadMessages : 0;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            prefetch
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+              active
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <Icon className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {unread > 0 ? (
+              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">
+                {unread}
+              </Badge>
+            ) : null}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function CollapsibleNavGroup({
+  label,
+  startOpen,
+  children,
+}: {
+  label: string;
+  startOpen: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(startOpen);
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full cursor-pointer items-center justify-between gap-2 px-2 py-1 text-left text-[10px] uppercase tracking-[0.2em] text-muted-foreground"
+      >
+        {label}
+        <ChevronDown
+          className={cn("size-3.5 shrink-0 opacity-70 transition-transform", open && "rotate-180")}
+        />
+      </button>
+      {open ? <div className="pt-0.5">{children}</div> : null}
+    </div>
+  );
+}
+function NavLinks({
+  onNavigate,
+  collapsible = false,
+  unreadMessages = 0,
+}: {
+  onNavigate?: () => void;
+  collapsible?: boolean;
+  unreadMessages?: number;
+}) {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-col gap-2.5">
-      {NAV_GROUPS.map((group) => (
-        <section
-          key={group.id}
-          className="rounded-lg border border-border/40 bg-card/25 p-1.5"
-        >
-          <p className="px-2 pb-1 pt-0.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            {group.label}
-          </p>
-          <div className="flex flex-col gap-0.5">
-            {group.items.map((item) => {
-              const active = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch
-                  onClick={onNavigate}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
-                    active
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+    <nav className="flex flex-col gap-2.5" aria-label="Spelmenu">
+      {NAV_GROUPS.map((group) => {
+        const groupActive = group.items.some((item) => isNavActive(pathname, item.href));
+        const links = (
+          <NavItemLinks
+            items={group.items}
+            pathname={pathname}
+            onNavigate={onNavigate}
+            unreadMessages={unreadMessages}
+          />
+        );
+        return (
+          <section
+            key={group.id}
+            className={cn(
+              "rounded-lg border p-1.5",
+              groupActive
+                ? "border-primary/35 bg-card/45"
+                : "border-border/40 bg-card/25",
+            )}
+          >
+            {collapsible ? (
+              <CollapsibleNavGroup label={group.label} startOpen={groupActive}>
+                {links}
+              </CollapsibleNavGroup>
+            ) : (
+              <>
+                <h2 className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  {group.label}
+                </h2>
+                {links}
+              </>
+            )}
+          </section>
+        );
+      })}
     </nav>
   );
 }
@@ -81,6 +163,7 @@ export function GameShell({
   children: ReactNode;
   initialPlayer: PlayerSnapshot;
 }) {
+  const pathname = usePathname();
   const { data: player } = usePlayer(initialPlayer);
   const p = player ?? initialPlayer;
   const nextExp = p.nextRank?.minExp ?? p.exp;
@@ -90,13 +173,13 @@ export function GameShell({
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-60 shrink-0 border-r border-border/70 bg-sidebar/80 p-4 md:flex md:flex-col">
-        <Link href="/game" prefetch className="mb-6 px-1">
+      <aside className="hidden w-64 shrink-0 border-r border-border/70 bg-sidebar/80 p-3 md:flex md:flex-col">
+        <Link href="/game" prefetch className="mb-4 px-1">
           <p className="font-heading text-xl tracking-wide text-primary">Onderwereld</p>
           <p className="text-xs text-muted-foreground">{p.displayName?.trim() || p.username} · {p.currentCityName}</p>
         </Link>
-        <div className="flex-1 overflow-y-auto">
-          <NavLinks />
+        <div className="flex-1 overflow-y-auto pr-0.5">
+          <NavLinks unreadMessages={p.unreadMessages} />
         </div>
         <form action={logoutAction} className="mt-4">
           <Button type="submit" variant="ghost" className="w-full justify-start gap-2 text-muted-foreground">
@@ -117,11 +200,11 @@ export function GameShell({
               >
                 <Menu className="size-5" />
               </SheetTrigger>
-              <SheetContent side="left" className="bg-sidebar p-4">
+              <SheetContent side="left" className="overflow-y-auto bg-sidebar p-4">
                 <SheetHeader>
                   <SheetTitle className="font-heading text-primary">Menu</SheetTitle>
                 </SheetHeader>
-                <NavLinks />
+                <NavLinks unreadMessages={p.unreadMessages} />
                 <form action={logoutAction} className="mt-4">
                   <Button type="submit" variant="outline" className="w-full">
                     Uitloggen
@@ -206,12 +289,17 @@ export function GameShell({
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border/70 bg-background/95 md:hidden">
         {MOBILE_PRIMARY.map((item) => {
           const Icon = item.icon;
+          const active = isNavActive(pathname, item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
               prefetch
-              className="flex flex-col items-center gap-0.5 py-2 text-[10px] text-muted-foreground"
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex flex-col items-center gap-0.5 py-2 text-[10px]",
+                active ? "text-primary" : "text-muted-foreground",
+              )}
             >
               <Icon className="size-4" />
               {item.label}
@@ -223,11 +311,17 @@ export function GameShell({
             <Menu className="size-4" />
             Meer
           </SheetTrigger>
-          <SheetContent side="bottom" className="p-4">
+          <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto p-4">
             <SheetHeader>
               <SheetTitle>Navigatie</SheetTitle>
             </SheetHeader>
-            <NavLinks />
+            <NavLinks collapsible unreadMessages={p.unreadMessages} />
+            <form action={logoutAction} className="mt-4">
+              <Button type="submit" variant="outline" className="w-full gap-2">
+                <LogOut className="size-4" />
+                Uitloggen
+              </Button>
+            </form>
           </SheetContent>
         </Sheet>
       </nav>
