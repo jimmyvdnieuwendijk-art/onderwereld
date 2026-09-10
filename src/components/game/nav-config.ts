@@ -37,9 +37,9 @@ export const NAV_ITEMS = [
   { href: "/game/familie", label: "Familie", icon: Users },
   { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel },
   { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross },
-  { href: "/game/berichten", label: "Berichten", icon: Mail },
   { href: "/game/logboek", label: "Logboek", icon: MessageSquare },
   { href: "/game/account", label: "Account", icon: UserCog },
+  { href: "/game/berichten", label: "Berichten", icon: Mail },
 ] as const;
 
 export const MOBILE_PRIMARY = [

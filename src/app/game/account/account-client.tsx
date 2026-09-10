@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogOut } from "lucide-react";
 import { PlayerAvatar } from "@/components/game/player-avatar";
@@ -85,9 +85,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h1 className="font-heading text-2xl leading-none md:text-3xl">Profiel</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Jouw dossier: weergave, foto, bio en wachtwoord.
-            </p>
           </div>
           <Link
             href={`/game/spelers/${p.username}`}
@@ -102,7 +99,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
           <CardTitle>Profiel</CardTitle>
-          <CardDescription>E-mail, rang en de cijfers die tellen. Alleen jij ziet je stad hier.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -152,9 +148,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
           <CardTitle>Weergave</CardTitle>
-          <CardDescription>
-            Weergavenaam op klassement en publiek profiel. Loginnaam @{p.username} blijft vast.
-          </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <form
@@ -199,10 +192,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         <Card size="sm" className="border-border/50">
           <CardHeader className="border-b border-border/40">
             <CardTitle>Profielfoto uploaden</CardTitle>
-            <CardDescription>
-              JPG, PNG of WebP. Maximaal {Math.round(AVATAR_MAX_BYTES / 1_000_000)} MB. Wordt
-              serverless in de database bewaard.
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             <div className="flex items-center gap-3">
@@ -238,6 +227,9 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                     replacePreview(file ? URL.createObjectURL(file) : null);
                   }}
                 />
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG of WebP · max {Math.round(AVATAR_MAX_BYTES / 1_000_000)} MB
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={avatarAct.pending}>
@@ -268,7 +260,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         <Card size="sm" className="border-border/50">
           <CardHeader className="border-b border-border/40">
             <CardTitle>Bio</CardTitle>
-            <CardDescription>Kort iets over jezelf. Zichtbaar op je publieke profiel.</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <form
@@ -303,7 +294,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
           <CardTitle>Wachtwoord wijzigen</CardTitle>
-          <CardDescription>Huidig wachtwoord ter controle, daarna een nieuwe sleutel.</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <form
@@ -369,7 +359,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
           <CardTitle>Sessie</CardTitle>
-          <CardDescription>Uitloggen op dit apparaat. Je account blijft bestaan.</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <form action={logoutAction}>
