@@ -2,8 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
 
+const PUBLIC_FILE = /\.(?:avif|css|gif|ico|jpe?g|js|map|png|svg|webp|woff2?)$/i;
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (PUBLIC_FILE.test(pathname)) {
+    return NextResponse.next();
+  }
   const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
 
   if (pathname.startsWith("/game") && !hasSession) {

@@ -17,7 +17,9 @@ export async function sendMessage(toUsername: string, subject: string, body: str
   if (cleanSubject.length < 2) return fail("Onderwerp is te kort.");
   if (cleanBody.length < 2) return fail("Bericht is te kort.");
 
-  const target = await prisma.user.findFirst({ where: { username: toUsername.trim() } });
+  const target = await prisma.user.findFirst({
+    where: { username: { equals: toUsername.trim(), mode: "insensitive" } },
+  });
   if (!target) return fail("Gebruiker niet gevonden.");
   if (target.id === userId) return fail("Je kunt jezelf geen bericht sturen.");
 

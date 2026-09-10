@@ -82,7 +82,7 @@ export async function registerAction(
   const [emailTaken, nameTaken] = await Promise.all([
     prisma.user.findUnique({ where: { email } }),
     prisma.user.findFirst({
-      where: { username: { equals: username } },
+      where: { username: { equals: username, mode: "insensitive" } },
     }),
   ]);
   if (emailTaken) return fail("Dit e-mailadres is al in gebruik.");
