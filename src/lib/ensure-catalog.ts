@@ -1,6 +1,29 @@
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { STARTER_CASH } from "@/lib/constants";
+
+/** Exact cash for the shared DonDemo test account. */
+export const DEMO_TEST_CASH = 500_000;
+
+/** SET cash = 500000 on DonDemo only. Match email, else username case-insensitively. */
+export async function grantDemoTestCash() {
+  const byEmail = await prisma.user.findUnique({
+    where: { email: "demo@onderwereld.nl" },
+    select: { id: true, cash: true, username: true, email: true },
+  });
+  const demo =
+    byEmail ??
+    (await prisma.user.findFirst({
+      where: { username: { equals: "DonDemo", mode: "insensitive" } },
+      select: { id: true, cash: true, username: true, email: true },
+    }));
+  if (!demo) return null;
+  if (demo.cash === DEMO_TEST_CASH) return demo;
+  return prisma.user.update({
+    where: { id: demo.id },
+    data: { cash: DEMO_TEST_CASH },
+    select: { id: true, cash: true, username: true, email: true },
+  });
+}
 
 /** Extra cars/crimes added after the first production seed. Idempotent upsert so Vercel shows them without a wipe. */
 const EXTRA_CRIMES = [
@@ -149,14 +172,11 @@ export async function ensureLiveBootstrap() {
       if (process.env.SKIP_DEMO_USERS === "1") return;
 
       const demoEmail = "demo@onderwereld.nl";
-      const existing = await prisma.user.findUnique({
-        where: { email: demoEmail },
-        select: { id: true },
-      });
-      if (existing) return;
+      const granted = await grantDemoTestCash();
+      if (granted) return;
 
-      const nameTaken = await prisma.user.findUnique({
-        where: { username: "DonDemo" },
+      const nameTaken = await prisma.user.findFirst({
+        where: { username: { equals: "DonDemo", mode: "insensitive" } },
         select: { id: true },
       });
       if (nameTaken) return;
@@ -171,7 +191,7 @@ export async function ensureLiveBootstrap() {
           hashedPassword,
           username: "DonDemo",
           currentCity: "ams",
-          cash: Math.max(STARTER_CASH, 2500),
+          cash: DEMO_TEST_CASH,
           rankId: starter.id,
         },
       });
