@@ -114,5 +114,3 @@ export async function postShout(body: string): Promise<ActionResult> {
   await prisma.shoutboxMessage.create({ data: { userId, body: text } });
   return ok("Geplaatst in de shoutbox.");
 }
-
-export { createFamily, leaveFamily, disbandFamily } from "@/lib/actions/family";
