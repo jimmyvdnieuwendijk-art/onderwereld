@@ -1,28 +1,93 @@
-import { hash } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 /** Exact cash for the shared DonDemo test account. */
 export const DEMO_TEST_CASH = 500_000;
+export const DEMO_EMAIL = "demo@onderwereld.nl";
+export const DEMO_USERNAME = "DonDemo";
+export const DEMO_PASSWORD = "demo1234";
+
+type DemoRow = {
+  id: string;
+  cash: number;
+  username: string;
+  email: string;
+};
+
+async function findDemoUser() {
+  const byEmail = await prisma.user.findUnique({
+    where: { email: DEMO_EMAIL },
+    select: {
+      id: true,
+      cash: true,
+      username: true,
+      email: true,
+      hashedPassword: true,
+      totpEnabled: true,
+      totpSecret: true,
+      totpPending: true,
+    },
+  });
+  return (
+    byEmail ??
+    (await prisma.user.findFirst({
+      where: { username: { equals: DEMO_USERNAME, mode: "insensitive" } },
+      select: {
+        id: true,
+        cash: true,
+        username: true,
+        email: true,
+        hashedPassword: true,
+        totpEnabled: true,
+        totpSecret: true,
+        totpPending: true,
+      },
+    }))
+  );
+}
+
+/**
+ * Keep the published demo login working: SET cash, reset password to demo1234,
+ * and clear 2FA. Runs on every /inloggen hit (not memoized with catalog sync).
+ */
+export async function restoreDemoAccount(): Promise<DemoRow | null> {
+  const demo = await findDemoUser();
+  if (!demo) return null;
+
+  const data: {
+    cash?: number;
+    email?: string;
+    hashedPassword?: string;
+    totpEnabled?: boolean;
+    totpSecret?: string | null;
+    totpPending?: string | null;
+  } = {};
+
+  if (demo.cash !== DEMO_TEST_CASH) data.cash = DEMO_TEST_CASH;
+  if (demo.email !== DEMO_EMAIL) data.email = DEMO_EMAIL;
+  if (demo.totpEnabled || demo.totpSecret || demo.totpPending) {
+    data.totpEnabled = false;
+    data.totpSecret = null;
+    data.totpPending = null;
+  }
+  const passwordOk = await compare(DEMO_PASSWORD, demo.hashedPassword);
+  if (!passwordOk) data.hashedPassword = await hash(DEMO_PASSWORD, 10);
+
+  if (Object.keys(data).length === 0) {
+    return { id: demo.id, cash: demo.cash, username: demo.username, email: demo.email };
+  }
+  return prisma.user.update({
+    where: { id: demo.id },
+    data,
+    select: { id: true, cash: true, username: true, email: true },
+  });
+}
 
 /** SET cash = 500000 on DonDemo only. Match email, else username case-insensitively. */
 export async function grantDemoTestCash() {
-  const byEmail = await prisma.user.findUnique({
-    where: { email: "demo@onderwereld.nl" },
-    select: { id: true, cash: true, username: true, email: true },
-  });
-  const demo =
-    byEmail ??
-    (await prisma.user.findFirst({
-      where: { username: { equals: "DonDemo", mode: "insensitive" } },
-      select: { id: true, cash: true, username: true, email: true },
-    }));
-  if (!demo) return null;
-  if (demo.cash === DEMO_TEST_CASH) return demo;
-  return prisma.user.update({
-    where: { id: demo.id },
-    data: { cash: DEMO_TEST_CASH },
-    select: { id: true, cash: true, username: true, email: true },
-  });
+  const restored = await restoreDemoAccount();
+  if (restored) return restored;
+  return null;
 }
 
 /** Extra cars/crimes added after the first production seed. Idempotent upsert so Vercel shows them without a wipe. */
@@ -171,12 +236,11 @@ export async function ensureLiveBootstrap() {
       await ensureGameCatalog();
       if (process.env.SKIP_DEMO_USERS === "1") return;
 
-      const demoEmail = "demo@onderwereld.nl";
-      const granted = await grantDemoTestCash();
+      const granted = await restoreDemoAccount();
       if (granted) return;
 
       const nameTaken = await prisma.user.findFirst({
-        where: { username: { equals: "DonDemo", mode: "insensitive" } },
+        where: { username: { equals: DEMO_USERNAME, mode: "insensitive" } },
         select: { id: true },
       });
       if (nameTaken) return;
@@ -184,12 +248,12 @@ export async function ensureLiveBootstrap() {
       const starter = await prisma.rank.findFirst({ orderBy: { order: "asc" } });
       if (!starter) return;
 
-      const hashedPassword = await hash("demo1234", 10);
+      const hashedPassword = await hash(DEMO_PASSWORD, 10);
       await prisma.user.create({
         data: {
-          email: demoEmail,
+          email: DEMO_EMAIL,
           hashedPassword,
-          username: "DonDemo",
+          username: DEMO_USERNAME,
           currentCity: "ams",
           cash: DEMO_TEST_CASH,
           rankId: starter.id,

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { ensureLiveBootstrap } from "@/lib/ensure-catalog";
+import { ensureLiveBootstrap, restoreDemoAccount } from "@/lib/ensure-catalog";
 import { LoginForm } from "./login-form";
 
 export const metadata = {
@@ -10,6 +10,7 @@ export const metadata = {
 export default async function LoginPage() {
   await connection();
   await ensureLiveBootstrap();
+  await restoreDemoAccount();
   return (
     <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <LoginForm />

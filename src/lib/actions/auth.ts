@@ -6,7 +6,7 @@ import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
 import { fail, ok } from "@/lib/actions/helpers";
-import { ensureLiveBootstrap } from "@/lib/ensure-catalog";
+import { ensureLiveBootstrap, restoreDemoAccount } from "@/lib/ensure-catalog";
 import { verifyTotp } from "@/lib/totp";
 import type { ActionResult } from "@/types/game";
 
@@ -20,6 +20,7 @@ export async function loginAction(
   formData: FormData,
 ): Promise<ActionResult> {
   await ensureLiveBootstrap();
+  await restoreDemoAccount();
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
