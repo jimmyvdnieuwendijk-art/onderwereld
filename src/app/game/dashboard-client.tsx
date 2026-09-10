@@ -56,12 +56,15 @@ export function DashboardClient({
         <p className="text-[11px] uppercase tracking-[0.28em] text-primary/80">Hoofdmenu</p>
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h1 className="font-heading text-2xl leading-none md:text-3xl">{p.username}</h1>
+            <h1 className="font-heading text-2xl leading-none md:text-3xl">
+              {p.displayName?.trim() || p.username}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               <span className="text-primary">{p.rank.name}</span>
               {" · "}
               {p.currentCityName}
               {p.family ? ` · ${p.family.name}` : " · solo"}
+              {p.displayName?.trim() && p.displayName.trim() !== p.username ? ` · @${p.username}` : ""}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">

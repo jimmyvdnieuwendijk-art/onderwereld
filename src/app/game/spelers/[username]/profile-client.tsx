@@ -23,11 +23,14 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
           <div className="flex items-start gap-4">
             <PlayerAvatar
               url={target.avatarUrl}
-              username={target.username}
+              username={target.displayName}
               className="size-16 shrink-0 text-xl md:size-20 md:text-2xl"
             />
             <div className="min-w-0">
-              <CardTitle className="font-heading text-3xl">{target.username}</CardTitle>
+              <CardTitle className="font-heading text-3xl">{target.displayName}</CardTitle>
+              {target.displayName !== target.username ? (
+                <p className="mt-1 text-sm text-muted-foreground">@{target.username}</p>
+              ) : null}
               {target.bio ? (
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
                   {target.bio}

@@ -1,6 +1,11 @@
 import type { PublicPlayer } from "@/types/game";
 
 /** Public dossier for other players — never include city or travel destination. */
+export function publicDisplayName(user: { displayName?: string | null; username: string }) {
+  const name = user.displayName?.trim();
+  return name || user.username;
+}
+
 export function toPublicPlayer(user: {
   id: string;
   username: string;
@@ -13,14 +18,19 @@ export function toPublicPlayer(user: {
   inHospitalUntil: Date | null;
   travelEndAt?: Date | null;
   bio?: string | null;
+  bioHidden?: boolean | null;
+  displayName?: string | null;
   avatarUrl?: string | null;
   rank: { name: string; order: number };
   family: { name: string } | null;
 }): PublicPlayer {
   const now = Date.now();
+  const hidden = !!user.bioHidden;
+  const bio = user.bio?.trim() ? user.bio : null;
   return {
     id: user.id,
     username: user.username,
+    displayName: publicDisplayName(user),
     rankName: user.rank.name,
     rankOrder: user.rank.order,
     exp: user.exp,
@@ -32,7 +42,7 @@ export function toPublicPlayer(user: {
     isTraveling: !!(user.travelEndAt && user.travelEndAt.getTime() > now),
     killCount: user.killCount,
     familyName: user.family?.name ?? null,
-    bio: user.bio?.trim() ? user.bio : null,
+    bio: hidden ? null : bio,
     avatarUrl: user.avatarUrl ?? null,
   };
 }

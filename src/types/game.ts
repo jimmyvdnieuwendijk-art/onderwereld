@@ -24,9 +24,12 @@ export type PlayerSnapshot = {
   id: string;
   email: string;
   username: string;
+  displayName: string | null;
   bio: string | null;
+  bioHidden: boolean;
   avatarUrl: string | null;
   createdAt: string;
+  lastLoginAt: string | null;
   cash: number;
   bankBalance: number;
   health: number;
@@ -89,6 +92,7 @@ export type PlayerSnapshot = {
 export type PublicPlayer = {
   id: string;
   username: string;
+  displayName: string;
   rankName: string;
   rankOrder: number;
   exp: number;

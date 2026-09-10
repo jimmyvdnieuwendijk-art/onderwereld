@@ -112,8 +112,11 @@ export function PlayersClient({
                           href={`/game/spelers/${row.username}`}
                           className="font-heading text-primary hover:underline"
                         >
-                          {row.username}
+                          {row.displayName}
                         </Link>
+                        {row.displayName !== row.username && (
+                          <span className="text-xs text-muted-foreground">@{row.username}</span>
+                        )}
                         {mine && <Badge variant="secondary">Jij</Badge>}
                         {row.familyName && (
                           <span className="text-xs text-muted-foreground">{row.familyName}</span>

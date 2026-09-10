@@ -5,17 +5,26 @@ import Link from "next/link";
 import {
   changePassword,
   removeAvatar,
+  updateAppearance,
   updateBio,
   uploadAvatar,
 } from "@/lib/actions/account";
-import { AVATAR_ACCEPT, AVATAR_MAX_BYTES, BIO_MAX, PASSWORD_MIN } from "@/lib/constants";
-import { formatMoney, formatNumber } from "@/lib/format";
+import { logoutAction } from "@/lib/actions/session";
+import {
+  AVATAR_ACCEPT,
+  AVATAR_MAX_BYTES,
+  BIO_MAX,
+  DISPLAY_NAME_MAX,
+  PASSWORD_MIN,
+} from "@/lib/constants";
+import { formatDateTime, formatMoney, formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { LogOut } from "lucide-react";
 import { PlayerAvatar } from "@/components/game/player-avatar";
 import { useGameAction, usePlayer } from "@/hooks/use-player";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
@@ -41,12 +50,15 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
   const p = player ?? initialPlayer;
   const avatarAct = useGameAction();
   const bioAct = useGameAction();
+  const lookAct = useGameAction();
   const passwordAct = useGameAction();
   const passwordFormRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const previewRef = useRef<string | null>(null);
   const [bio, setBio] = useState(initialPlayer.bio ?? "");
+  const [displayName, setDisplayName] = useState(initialPlayer.displayName ?? "");
+  const [bioHidden, setBioHidden] = useState(initialPlayer.bioHidden);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -64,6 +76,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
   }
 
   const shownAvatar = preview ?? p.avatarUrl;
+  const shownName = (p.displayName?.trim() || p.username);
 
   return (
     <div className="space-y-5">
@@ -73,7 +86,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
           <div>
             <h1 className="font-heading text-2xl leading-none md:text-3xl">Profiel</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Jouw dossier in de onderwereld. Foto, bio en wachtwoord blijven bij jou.
+              Jouw dossier: weergave, foto, bio en wachtwoord.
             </p>
           </div>
           <Link
@@ -89,14 +102,16 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
           <CardTitle>Profiel</CardTitle>
-          <CardDescription>Gebruikersnaam, e-mail en de cijfers die tellen.</CardDescription>
+          <CardDescription>E-mail, rang en de cijfers die tellen. Alleen jij ziet je stad hier.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <PlayerAvatar url={shownAvatar} username={p.username} className="size-20 shrink-0 text-2xl" />
+            <PlayerAvatar url={shownAvatar} username={shownName} className="size-20 shrink-0 text-2xl" />
             <div className="min-w-0 space-y-1">
-              <p className="font-heading text-xl leading-none">{p.username}</p>
-              <p className="truncate text-sm text-muted-foreground">{p.email}</p>
+              <p className="font-heading text-xl leading-none">{shownName}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                @{p.username} · {p.email}
+              </p>
               <div className="flex flex-wrap gap-1.5 pt-1">
                 <Badge>{p.rank.name}</Badge>
                 {p.family ? (
@@ -122,7 +137,61 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                 new Date(p.createdAt),
               )}
             />
+            <Stat
+              label="Laatst in"
+              value={
+                p.lastLoginAt
+                  ? formatDateTime(p.lastLoginAt)
+                  : "Deze sessie"
+              }
+            />
           </section>
+        </CardContent>
+      </Card>
+
+      <Card size="sm" className="border-border/50">
+        <CardHeader className="border-b border-border/40">
+          <CardTitle>Weergave</CardTitle>
+          <CardDescription>
+            Weergavenaam op klassement en publiek profiel. Loginnaam @{p.username} blijft vast.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              lookAct.run(() => updateAppearance(displayName, bioHidden));
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Weergavenaam</Label>
+              <Input
+                id="displayName"
+                name="displayName"
+                value={displayName}
+                maxLength={DISPLAY_NAME_MAX}
+                placeholder={p.username}
+                onChange={(event) => setDisplayName(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leeg = {p.username}. Max {DISPLAY_NAME_MAX} tekens.
+              </p>
+            </div>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-primary"
+                checked={bioHidden}
+                onChange={(event) => setBioHidden(event.target.checked)}
+              />
+              <span>Verberg bio op je publieke profiel</span>
+            </label>
+            <Button type="submit" disabled={lookAct.pending}>
+              {lookAct.pending ? "Opslaan…" : "Weergave opslaan"}
+            </Button>
+            <FormMessage state={lookAct.feedback} />
+          </form>
         </CardContent>
       </Card>
 
@@ -137,7 +206,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
             <div className="flex items-center gap-3">
-              <PlayerAvatar url={shownAvatar} username={p.username} className="size-16 text-lg" />
+              <PlayerAvatar url={shownAvatar} username={shownName} className="size-16 text-lg" />
               <p className="text-xs text-muted-foreground">
                 {preview ? "Voorvertoning — nog niet opgeslagen." : "Huidige foto of initialen."}
               </p>
@@ -293,6 +362,21 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
               {passwordAct.pending ? "Wijzigen…" : "Wachtwoord opslaan"}
             </Button>
             <FormMessage state={passwordAct.feedback} />
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card size="sm" className="border-border/50">
+        <CardHeader className="border-b border-border/40">
+          <CardTitle>Sessie</CardTitle>
+          <CardDescription>Uitloggen op dit apparaat. Je account blijft bestaan.</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <form action={logoutAction}>
+            <Button type="submit" variant="outline" className="gap-2">
+              <LogOut className="size-4" />
+              Uitloggen
+            </Button>
           </form>
         </CardContent>
       </Card>

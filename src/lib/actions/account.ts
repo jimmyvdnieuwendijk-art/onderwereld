@@ -3,7 +3,7 @@
 import { compare, hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { BIO_MAX, PASSWORD_MIN } from "@/lib/constants";
+import { BIO_MAX, DISPLAY_NAME_MAX, DISPLAY_NAME_MIN, PASSWORD_MIN } from "@/lib/constants";
 import { avatarPublicPath, readAvatarFile } from "@/lib/avatar";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
@@ -40,6 +40,32 @@ export async function updateBio(rawBio: string): Promise<ActionResult> {
   });
   revalidateAccount(auth.user.username);
   return ok(bio.length > 0 ? "Bio opgeslagen." : "Bio gewist.");
+}
+
+export async function updateAppearance(
+  rawDisplayName: string,
+  bioHidden: boolean,
+): Promise<ActionResult> {
+  const auth = await requireAccountUser();
+  if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
+
+  const displayName = rawDisplayName.trim().replace(/\s+/g, " ");
+  if (displayName.length > 0 && displayName.length < DISPLAY_NAME_MIN) {
+    return fail(`Weergavenaam moet minstens ${DISPLAY_NAME_MIN} tekens zijn.`);
+  }
+  if (displayName.length > DISPLAY_NAME_MAX) {
+    return fail(`Weergavenaam mag maximaal ${DISPLAY_NAME_MAX} tekens zijn.`);
+  }
+
+  await prisma.user.update({
+    where: { id: auth.user.id },
+    data: {
+      displayName: displayName.length > 0 ? displayName : null,
+      bioHidden,
+    },
+  });
+  revalidateAccount(auth.user.username);
+  return ok("Weergave opgeslagen.");
 }
 
 export async function uploadAvatar(file: File): Promise<ActionResult> {

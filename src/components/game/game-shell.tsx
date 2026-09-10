@@ -82,7 +82,7 @@ export function GameShell({
       <aside className="hidden w-60 shrink-0 border-r border-border/70 bg-sidebar/80 p-4 md:flex md:flex-col">
         <Link href="/game" prefetch className="mb-6 px-1">
           <p className="font-heading text-xl tracking-wide text-primary">Onderwereld</p>
-          <p className="text-xs text-muted-foreground">{p.username} · {p.currentCityName}</p>
+          <p className="text-xs text-muted-foreground">{p.displayName?.trim() || p.username} · {p.currentCityName}</p>
         </Link>
         <div className="flex-1 overflow-y-auto">
           <NavLinks />
