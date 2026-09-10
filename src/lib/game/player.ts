@@ -8,7 +8,6 @@ import {
   MAX_ENERGY,
 } from "@/lib/constants";
 import { cityDisplayName, getAirport, normalizeCityId } from "@/lib/airports";
-import { LAST_SEEN_WRITE_MS } from "@/lib/constants";
 import { MAIN_ESCORT_DEFENSE_BONUS, PIMP_HOUR_MS, pimpRankFor } from "@/lib/pimp";
 import { gymAttackBonus, gymDefenseBonus } from "@/lib/gym";
 import { parsePoker, publicPoker } from "@/lib/casino";
