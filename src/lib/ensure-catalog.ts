@@ -1,4 +1,4 @@
-import { compare, hash } from "bcryptjs";
+import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 /** Exact cash for the shared DonDemo test account. */
@@ -17,77 +17,30 @@ type DemoRow = {
 async function findDemoUser() {
   const byEmail = await prisma.user.findUnique({
     where: { email: DEMO_EMAIL },
-    select: {
-      id: true,
-      cash: true,
-      username: true,
-      email: true,
-      hashedPassword: true,
-      totpEnabled: true,
-      totpSecret: true,
-      totpPending: true,
-    },
+    select: { id: true, cash: true, username: true, email: true },
   });
   return (
     byEmail ??
     (await prisma.user.findFirst({
       where: { username: { equals: DEMO_USERNAME, mode: "insensitive" } },
-      select: {
-        id: true,
-        cash: true,
-        username: true,
-        email: true,
-        hashedPassword: true,
-        totpEnabled: true,
-        totpSecret: true,
-        totpPending: true,
-      },
+      select: { id: true, cash: true, username: true, email: true },
     }))
   );
 }
 
 /**
- * Keep the published demo login working: SET cash, reset password to demo1234,
- * and clear 2FA. Runs on every /inloggen hit (not memoized with catalog sync).
+ * Cash helper only. Never touches hashedPassword, TOTP, email, or session.
+ * Existing DonDemo credentials always win.
  */
-export async function restoreDemoAccount(): Promise<DemoRow | null> {
+export async function grantDemoTestCash(): Promise<DemoRow | null> {
   const demo = await findDemoUser();
   if (!demo) return null;
-
-  const data: {
-    cash?: number;
-    email?: string;
-    hashedPassword?: string;
-    totpEnabled?: boolean;
-    totpSecret?: string | null;
-    totpPending?: string | null;
-  } = {};
-
-  if (demo.cash !== DEMO_TEST_CASH) data.cash = DEMO_TEST_CASH;
-  if (demo.email !== DEMO_EMAIL) data.email = DEMO_EMAIL;
-  if (demo.totpEnabled || demo.totpSecret || demo.totpPending) {
-    data.totpEnabled = false;
-    data.totpSecret = null;
-    data.totpPending = null;
-  }
-  const passwordOk = await compare(DEMO_PASSWORD, demo.hashedPassword);
-  if (!passwordOk) data.hashedPassword = await hash(DEMO_PASSWORD, 10);
-
-  if (Object.keys(data).length === 0) {
-    return { id: demo.id, cash: demo.cash, username: demo.username, email: demo.email };
-  }
+  if (demo.cash === DEMO_TEST_CASH) return demo;
   return prisma.user.update({
     where: { id: demo.id },
-    data,
+    data: { cash: DEMO_TEST_CASH },
     select: { id: true, cash: true, username: true, email: true },
   });
-}
-
-/** SET cash = 500000 on DonDemo only. Match email, else username case-insensitively. */
-export async function grantDemoTestCash() {
-  const restored = await restoreDemoAccount();
-  if (restored) return restored;
-  return null;
 }
 
 /** Extra cars/crimes added after the first production seed. Idempotent upsert so Vercel shows them without a wipe. */
@@ -236,8 +189,8 @@ export async function ensureLiveBootstrap() {
       await ensureGameCatalog();
       if (process.env.SKIP_DEMO_USERS === "1") return;
 
-      const granted = await restoreDemoAccount();
-      if (granted) return;
+      const existing = await findDemoUser();
+      if (existing) return;
 
       const nameTaken = await prisma.user.findFirst({
         where: { username: { equals: DEMO_USERNAME, mode: "insensitive" } },
