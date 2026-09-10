@@ -6,7 +6,7 @@ import "./globals.css";
 const heading = Cinzel({
   variable: "--font-heading",
   subsets: ["latin"],
-  weight: ["600"],
+  weight: ["600", "700"],
   display: "swap",
 });
 

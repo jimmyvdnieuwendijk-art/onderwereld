@@ -1,87 +1,79 @@
+import Image from "next/image";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Crosshair, Landmark, Skull, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { auth } from "@/auth";
+import styles from "./landing.module.css";
 
-export default function LandingPage() {
+const FEATURES = [
+  { title: "MISDADEN", src: "/landing/misdaden.webp", alt: "Bronzen schedel met gekruiste dolken" },
+  { title: "ECONOMIE", src: "/landing/economie.webp", alt: "Leren buidel met gouden munten en staven" },
+  { title: "PVP", src: "/landing/pvp.webp", alt: "Gekruiste revolvers en boksbeugel" },
+  { title: "FAMILIES", src: "/landing/families.webp", alt: "Gouden leeuwenwapen met kroon" },
+] as const;
+
+export default async function LandingPage() {
+  const session = await auth();
+  const playHref = session?.user ? "/game" : "/registreren";
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between px-4 py-4 md:px-10">
-        <p className="font-heading text-lg tracking-[0.2em] text-primary">ONDERWERELD</p>
-        <div className="flex gap-2">
-          <Link href="/inloggen" className={cn(buttonVariants({ variant: "ghost" }))}>
-            Inloggen
-          </Link>
-          <Link href="/registreren" className={cn(buttonVariants())}>
-            Spelen
-          </Link>
-        </div>
-      </header>
+    <div className={styles.page}>
+      <div className={styles.backdrop}>
+        <Image
+          src="/landing/hero.webp"
+          alt=""
+          fill
+          preload
+          fetchPriority="high"
+          sizes="100vw"
+          className="object-cover object-[center_30%] md:object-center"
+        />
+      </div>
+      <div className={styles.veil} />
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 pb-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-3 text-xs uppercase tracking-[0.35em] text-primary/80">
-            Misdaad · Macht · Verraad
-          </p>
-          <h1 className="font-heading text-4xl leading-tight text-balance md:text-6xl">
-            De straten van de Lage Landen zijn van niemand.
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-            Een browser-MMORPG in de geest van klassieke Nederlandse maffiaspellen.
-            Steel, schiet, spaar en sticht een familie — of eindig in de cel.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/registreren" className={cn(buttonVariants({ size: "lg" }))}>
-              Maak een crimineel
+      <div className={styles.shell}>
+        <header className={styles.nav}>
+          <p className={styles.logo}>ONDERWERELD</p>
+          <nav className={styles.navLinks} aria-label="Hoofdmenu">
+            <Link href="/inloggen" className={styles.ghost}>
+              Inloggen
             </Link>
-            <Link href="/inloggen" className={cn(buttonVariants({ size: "lg", variant: "outline" }))}>
+            <Link href={playHref} className={styles.play}>
+              SPELEN
+            </Link>
+          </nav>
+        </header>
+
+        <main className={styles.hero}>
+          <h1 className={styles.headline}>DE STRATEN VAN DE LAGE LANDEN ZIJN VAN NIEMAND.</h1>
+          <div className={styles.cta}>
+            <Link href="/registreren" className={styles.gold}>
+              START HET CRIMINEEL LEVEN
+            </Link>
+            <Link href="/inloggen" className={styles.bronze}>
               Ik heb al een naam
             </Link>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            Demo: <span className="text-foreground">demo@onderwereld.nl</span> /{" "}
-            <span className="text-foreground">demo1234</span>
-          </p>
-        </div>
+        </main>
 
-        <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              icon: Skull,
-              title: "Misdaden",
-              text: "Van zakkenroller tot ministerieel konvooi. Energie, kans en celrisico.",
-            },
-            {
-              icon: Landmark,
-              title: "Economie",
-              text: "Bank je cash, koop wapens, handel kogels en auto's op de markt.",
-            },
-            {
-              icon: Crosshair,
-              title: "PvP",
-              text: "Zoek rivalen, vuurkogels, stuur ze naar het ziekenhuis.",
-            },
-            {
-              icon: Users,
-              title: "Families",
-              text: "Sticht een huis, doneer aan de kas, regeer je stad.",
-            },
-          ].map((item) => (
-            <Card key={item.title} className="border-primary/10 bg-card/70">
-              <CardHeader>
-                <item.icon className="size-5 text-primary" />
-                <CardTitle className="font-heading">{item.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-muted-foreground">{item.text}</CardContent>
-            </Card>
+        <section className={styles.features} aria-label="Spelpijlers">
+          {FEATURES.map((item) => (
+            <article key={item.title} className={styles.plinth}>
+              <Image
+                src={item.src}
+                alt={item.alt}
+                width={640}
+                height={640}
+                sizes="(max-width: 768px) 42vw, 22vw"
+                className={styles.artifact}
+              />
+              <h2 className={styles.label}>{item.title}</h2>
+            </article>
           ))}
-        </div>
-      </main>
+        </section>
 
-      <footer className="border-t border-border/50 px-4 py-6 text-center text-xs text-muted-foreground">
-        Onderwereld — tekststrategie, geen echt geweld. Speel verantwoord.
-      </footer>
+        <p className={styles.foot}>
+          Onderwereld — tekststrategie. Demo: demo@onderwereld.nl / demo1234
+        </p>
+      </div>
     </div>
   );
 }
