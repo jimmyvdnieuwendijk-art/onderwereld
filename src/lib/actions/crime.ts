@@ -5,6 +5,7 @@ import { blockedReason } from "@/lib/game/player";
 import { clamp, randomInt } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { tickPlayer } from "@/lib/game/player";
+import { getFamilyPerks } from "@/lib/family";
 import type { ActionResult } from "@/types/game";
 
 export async function attemptCrime(crimeId: string): Promise<ActionResult> {
@@ -39,17 +40,29 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
 
   if (roll <= chance) {
     const cash = randomInt(crime.cashMin, crime.cashMax);
+    const perks = await getFamilyPerks(player.family?.id);
+    const boosted = perks ? Math.floor(cash * (1 + perks.crimeBonus)) : cash;
+    const laundered = perks ? Math.floor(boosted * perks.launderPct) : 0;
+    const street = boosted - laundered;
     await prisma.user.update({
       where: { id: userId },
       data: {
-        cash: { increment: cash },
+        cash: { increment: street },
+        ...(laundered > 0 ? { bankBalance: { increment: laundered } } : {}),
         exp: { increment: crime.expReward },
         energy: { decrement: crime.energyCost },
         lastCrimeAt: now,
         crimeCooldownUntil: cooldownUntil,
       },
     });
-    const message = `Gelukt: ${crime.name}. Je pakt ${cash} euro en ${crime.expReward} ervaring.`;
+    if (perks) {
+      await prisma.family.update({
+        where: { id: perks.familyId },
+        data: { exp: { increment: 5 } },
+      });
+    }
+    const extra = laundered > 0 ? ` (${laundered} witgewassen)` : "";
+    const message = `Gelukt: ${crime.name}. Je pakt ${street} euro${extra} en ${crime.expReward} ervaring.`;
     await logEvent(userId, "CRIME", message);
     await bumpWanted(userId, 2);
     await tickPlayer(userId);

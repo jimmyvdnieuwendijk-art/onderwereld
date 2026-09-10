@@ -92,6 +92,11 @@ model User {
   redLightWindows  RedLightWindow[]
   streetZones      StreetZone[]
   avatarFile       UserAvatar?
+  familyInvitesIn  FamilyInvite[]   @relation("FamilyInviteTo")
+  familyInvitesOut FamilyInvite[]   @relation("FamilyInviteFrom")
+  familyLedger     FamilyLedger[]
+  familyHeists     FamilyHeist[]    @relation("FamilyHeistCreator")
+  familyHeistSeats FamilyHeistSeat[]
 
   @@index([rankId])
   @@index([familyId])
@@ -191,27 +196,112 @@ model InventoryItem {
 }
 
 model Family {
-  id          String         @id @default(cuid())
-  name        String         @unique
-  leaderId    String         @unique
-  leader      User           @relation("FamilyLeader", fields: [leaderId], references: [id])
-  bankBalance Int            @default(0)
-  description String         @default("")
-  createdAt   DateTime       @default(now())
-  members     User[]         @relation("FamilyRoster")
-  memberships FamilyMember[]
+  id             String            @id @default(cuid())
+  name           String            @unique
+  leaderId       String            @unique
+  leader         User              @relation("FamilyLeader", fields: [leaderId], references: [id])
+  bankBalance    Int               @default(0)
+  legalBank      Int               @default(0)
+  bulletsBank    Int               @default(0)
+  exp            Int               @default(0)
+  memberLimit    Int               @default(8)
+  announcement   String            @default("")
+  announcementAt DateTime?
+  lastIncomeAt   DateTime          @default(now())
+  launderLevel   Int               @default(0)
+  doctorLevel    Int               @default(0)
+  defenseLevel   Int               @default(0)
+  description    String            @default("")
+  createdAt      DateTime          @default(now())
+  members        User[]            @relation("FamilyRoster")
+  memberships    FamilyMember[]
+  invites        FamilyInvite[]
+  ledger         FamilyLedger[]
+  buildings      FamilyBuilding[]
+  heists         FamilyHeist[]
 }
 
 model FamilyMember {
-  id       String   @id @default(cuid())
-  familyId String
-  family   Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  userId   String   @unique
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role     String   @default("MEMBER")
-  joinedAt DateTime @default(now())
+  id              String   @id @default(cuid())
+  familyId        String
+  family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            String   @default("SOLDIER")
+  donatedCash     Int      @default(0)
+  donatedLegal    Int      @default(0)
+  donatedBullets  Int      @default(0)
+  joinedAt        DateTime @default(now())
 
   @@index([familyId])
+}
+
+model FamilyInvite {
+  id         String   @id @default(cuid())
+  familyId   String
+  family     Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User     @relation("FamilyInviteFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("FamilyInviteTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([familyId, toUserId])
+  @@index([toUserId])
+}
+
+model FamilyLedger {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      String
+  asset     String
+  amount    Int
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([familyId, createdAt])
+}
+
+model FamilyBuilding {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  slug      String
+  level     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([familyId, slug])
+  @@index([familyId])
+}
+
+model FamilyHeist {
+  id         String           @id @default(cuid())
+  familyId   String
+  family     Family           @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  slug       String
+  status     String           @default("OPEN")
+  createdById String
+  createdBy  User             @relation("FamilyHeistCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now())
+  resolvedAt DateTime?
+  seats      FamilyHeistSeat[]
+
+  @@index([familyId, status])
+}
+
+model FamilyHeistSeat {
+  id      String      @id @default(cuid())
+  heistId String
+  heist   FamilyHeist @relation(fields: [heistId], references: [id], onDelete: Cascade)
+  roleKey String
+  userId  String?
+  user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([heistId, roleKey])
+  @@index([userId])
 }
 
 model MarketListing {

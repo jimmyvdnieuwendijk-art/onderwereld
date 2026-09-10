@@ -5,6 +5,7 @@ import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { remainingMs } from "@/lib/format";
 import { hospitalMsForHealth } from "@/lib/hospital";
+import { getFamilyPerks } from "@/lib/family";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
@@ -36,7 +37,9 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
 
   const attackScore = attacker.attackPower * bullets * (0.85 + Math.random() * 0.3);
   const escortMult = 1 + (defenderLive.escortDefenseBonus ?? 0);
-  const defenseScore = (defenderLive.defense + 8) * 1.1 * escortMult;
+  const defenderPerks = await getFamilyPerks(defenderLive.family?.id);
+  const defenseScore =
+    (defenderLive.defense + 8) * 1.1 * escortMult * (1 + (defenderPerks?.defenseBonus ?? 0));
   const damage = Math.max(4, Math.round(attackScore - defenseScore / 3));
   const applied = Math.min(defenderLive.health, damage);
   const newHealth = defenderLive.health - applied;
@@ -44,7 +47,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   const stolen = killed
     ? Math.floor(defenderLive.cash * 0.55)
     : Math.floor(defenderLive.cash * 0.18);
-  const stayMs = hospitalMsForHealth(newHealth, killed);
+  const stayMs = hospitalMsForHealth(newHealth, killed, defenderPerks?.hospitalFactor ?? 1);
   const hospitalUntil = new Date(Date.now() + stayMs);
 
   await prisma.$transaction(async (tx) => {

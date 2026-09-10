@@ -45,6 +45,18 @@ export const LISTING_BULLETS = "BULLETS";
 export const LISTING_VEHICLE = "VEHICLE";
 export const LISTING_ITEM = "ITEM";
 
-export const ROLE_LEADER = "LEADER";
-export const ROLE_OFFICER = "OFFICER";
-export const ROLE_MEMBER = "MEMBER";
+export const ROLE_DON = "DON";
+export const ROLE_UNDERBOSS = "UNDERBOSS";
+export const ROLE_CAPO = "CAPO";
+export const ROLE_SOLDIER = "SOLDIER";
+/** @deprecated Use ROLE_DON */
+export const ROLE_LEADER = ROLE_DON;
+/** @deprecated Use ROLE_UNDERBOSS */
+export const ROLE_OFFICER = ROLE_UNDERBOSS;
+/** @deprecated Use ROLE_SOLDIER */
+export const ROLE_MEMBER = ROLE_SOLDIER;
+
+export const FAMILY_MEMBER_LIMIT_START = 8;
+export const FAMILY_MEMBER_LIMIT_MAX = 15;
+export const FAMILY_ANNOUNCE_MAX = 400;
+export const FAMILY_HOUR_MS = 60 * 60 * 1000;

@@ -12,6 +12,7 @@ import { MAIN_ESCORT_DEFENSE_BONUS, PIMP_HOUR_MS, pimpRankFor } from "@/lib/pimp
 import { gymAttackBonus, gymDefenseBonus } from "@/lib/gym";
 import { parsePoker, publicPoker } from "@/lib/casino";
 import { tickPimpEconomy } from "@/lib/game/pimp-tick";
+import { tickFamilyEconomy } from "@/lib/family";
 import { getRanksCached } from "@/lib/catalog";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -182,6 +183,10 @@ export async function tickPlayer(userId: string) {
       });
       if (again) updated = again;
     }
+  }
+
+  if (updated.familyId) {
+    await tickFamilyEconomy(updated.familyId, now);
   }
 
   return toSnapshot(updated, ranks);
