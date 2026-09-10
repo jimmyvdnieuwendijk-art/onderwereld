@@ -21,26 +21,35 @@ import {
   VenetianMask,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
-  { href: "/game", label: "Overzicht", icon: LayoutDashboard },
-  { href: "/game/misdaden", label: "Misdaden", icon: Skull },
-  { href: "/game/vliegveld", label: "Vliegveld", icon: Plane },
-  { href: "/game/hoeren", label: "Hoeren", icon: VenetianMask },
-  { href: "/game/gym", label: "Gym", icon: Dumbbell },
-  { href: "/game/casino", label: "Casino", icon: Dices },
-  { href: "/game/auto-stelen", label: "Auto stelen", icon: Car },
-  { href: "/game/garage", label: "Garage", icon: Home },
-  { href: "/game/bank", label: "Bank", icon: Banknote },
-  { href: "/game/winkel", label: "Winkel", icon: ShoppingBag },
-  { href: "/game/markt", label: "Markt", icon: Store },
-  { href: "/game/spelers", label: "Spelers", icon: Search },
-  { href: "/game/familie", label: "Familie", icon: Users },
-  { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel },
-  { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross },
-  { href: "/game/logboek", label: "Logboek", icon: MessageSquare },
-  { href: "/game/account", label: "Account", icon: UserCog },
-  { href: "/game/berichten", label: "Berichten", icon: Mail },
+const overzicht = { href: "/game", label: "Overzicht", icon: LayoutDashboard };
+const misdaden = { href: "/game/misdaden", label: "Misdaden", icon: Skull };
+const vliegveld = { href: "/game/vliegveld", label: "Vliegveld", icon: Plane };
+const hoeren = { href: "/game/hoeren", label: "Hoeren", icon: VenetianMask };
+const gym = { href: "/game/gym", label: "Gym", icon: Dumbbell };
+const casino = { href: "/game/casino", label: "Casino", icon: Dices };
+const autoStelen = { href: "/game/auto-stelen", label: "Auto stelen", icon: Car };
+const garage = { href: "/game/garage", label: "Garage", icon: Home };
+const bank = { href: "/game/bank", label: "Bank", icon: Banknote };
+const winkel = { href: "/game/winkel", label: "Winkel", icon: ShoppingBag };
+const markt = { href: "/game/markt", label: "Markt", icon: Store };
+const spelers = { href: "/game/spelers", label: "Spelers", icon: Search };
+const familie = { href: "/game/familie", label: "Familie", icon: Users };
+const gevangenis = { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel };
+const ziekenhuis = { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross };
+const account = { href: "/game/account", label: "Account", icon: UserCog };
+const berichten = { href: "/game/berichten", label: "Berichten", icon: Mail };
+const logboek = { href: "/game/logboek", label: "Logboek", icon: MessageSquare };
+
+export const NAV_GROUPS = [
+  { id: "hoofd", label: "Hoofd", items: [overzicht] },
+  { id: "actie", label: "Actie", items: [misdaden, vliegveld, hoeren, gym, casino] },
+  { id: "voertuigen", label: "Voertuigen", items: [autoStelen, garage] },
+  { id: "economie", label: "Economie", items: [bank, winkel, markt] },
+  { id: "sociaal", label: "Sociaal", items: [spelers, familie, gevangenis, ziekenhuis] },
+  { id: "account", label: "Account", items: [account, berichten, logboek] },
 ] as const;
+
+export const NAV_ITEMS = NAV_GROUPS.flatMap((group) => [...group.items]);
 
 export const MOBILE_PRIMARY = [
   { href: "/game", label: "Home", icon: LayoutDashboard },

@@ -12,7 +12,7 @@ import { logoutAction } from "@/lib/actions/session";
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { TravelBanner } from "@/components/game/travel-banner";
-import { MOBILE_PRIMARY, NAV_ITEMS } from "@/components/game/nav-config";
+import { MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -36,29 +36,40 @@ function Meter({
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-col gap-0.5">
-      {NAV_ITEMS.map((item) => {
-        const active = pathname === item.href;
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            prefetch
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
-              item.href === "/game/account" && "mt-2 border-t border-border/50 pt-3",
-              active
-                ? "bg-primary/15 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <Icon className="size-4" />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="flex flex-col gap-2.5">
+      {NAV_GROUPS.map((group) => (
+        <section
+          key={group.id}
+          className="rounded-lg border border-border/40 bg-card/25 p-1.5"
+        >
+          <p className="px-2 pb-1 pt-0.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            {group.label}
+          </p>
+          <div className="flex flex-col gap-0.5">
+            {group.items.map((item) => {
+              const active = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                    active
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </nav>
   );
 }

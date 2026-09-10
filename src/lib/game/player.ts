@@ -4,9 +4,11 @@ import {
   BANK_INTEREST_RATE,
   ENERGY_PER_TICK,
   ENERGY_TICK_MS,
+  LAST_SEEN_WRITE_MS,
   MAX_ENERGY,
 } from "@/lib/constants";
 import { cityDisplayName, getAirport, normalizeCityId } from "@/lib/airports";
+import { LAST_SEEN_WRITE_MS } from "@/lib/constants";
 import { MAIN_ESCORT_DEFENSE_BONUS, PIMP_HOUR_MS, pimpRankFor } from "@/lib/pimp";
 import { gymAttackBonus, gymDefenseBonus } from "@/lib/gym";
 import { parsePoker, publicPoker } from "@/lib/casino";
@@ -72,6 +74,7 @@ export async function tickPlayer(userId: string) {
     travelEndAt?: Date | null;
     travelDestinationId?: string | null;
     wantedLevel?: number;
+    lastSeenAt?: Date;
   } = {};
 
   const cityId = normalizeCityId(user.currentCity);
@@ -81,6 +84,10 @@ export async function tickPlayer(userId: string) {
 
   if (user.wantedLevel < 0) patch.wantedLevel = 0;
   if (user.wantedLevel > 100) patch.wantedLevel = 100;
+
+  if (!user.lastSeenAt || now.getTime() - user.lastSeenAt.getTime() >= LAST_SEEN_WRITE_MS) {
+    patch.lastSeenAt = now;
+  }
 
   const arriving =
     !!user.travelEndAt &&
@@ -218,6 +225,7 @@ function toSnapshot(
     displayName: user.displayName ?? null,
     bio: user.bio ?? null,
     bioHidden: user.bioHidden,
+    hideOnline: user.hideOnline,
     avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: toIso(user.lastLoginAt),

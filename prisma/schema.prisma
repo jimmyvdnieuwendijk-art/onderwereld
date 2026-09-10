@@ -66,9 +66,11 @@ model User {
   equippedArmor         ShopItem? @relation("EquippedArmor", fields: [equippedArmorId], references: [id])
   bio                   String?
   bioHidden             Boolean   @default(false)
+  hideOnline            Boolean   @default(false)
   displayName           String?
   avatarUrl             String?
   lastLoginAt           DateTime?
+  lastSeenAt            DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 

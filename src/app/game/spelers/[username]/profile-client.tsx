@@ -42,6 +42,7 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Badge>{target.rankName}</Badge>
+            {target.isOnline && <Badge variant="outline">Online</Badge>}
             <Badge variant="outline">{formatNumber(target.exp)} exp</Badge>
             <Badge variant="outline">{formatMoney(target.cash)} cash</Badge>
             <Badge variant="outline">HP {target.health}</Badge>

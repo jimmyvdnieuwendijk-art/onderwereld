@@ -27,6 +27,7 @@ export type PlayerSnapshot = {
   displayName: string | null;
   bio: string | null;
   bioHidden: boolean;
+  hideOnline: boolean;
   avatarUrl: string | null;
   createdAt: string;
   lastLoginAt: string | null;
@@ -106,4 +107,5 @@ export type PublicPlayer = {
   familyName: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  isOnline: boolean;
 };

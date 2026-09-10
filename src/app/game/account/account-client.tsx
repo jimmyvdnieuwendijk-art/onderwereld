@@ -59,6 +59,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
   const [bio, setBio] = useState(initialPlayer.bio ?? "");
   const [displayName, setDisplayName] = useState(initialPlayer.displayName ?? "");
   const [bioHidden, setBioHidden] = useState(initialPlayer.bioHidden);
+  const [hideOnline, setHideOnline] = useState(initialPlayer.hideOnline);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -154,7 +155,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
             className="space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
-              lookAct.run(() => updateAppearance(displayName, bioHidden));
+              lookAct.run(() => updateAppearance(displayName, bioHidden, hideOnline));
             }}
           >
             <div className="space-y-2">
@@ -179,6 +180,15 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                 onChange={(event) => setBioHidden(event.target.checked)}
               />
               <span>Verberg bio op je publieke profiel</span>
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-primary"
+                checked={hideOnline}
+                onChange={(event) => setHideOnline(event.target.checked)}
+              />
+              <span>Verberg of je online bent</span>
             </label>
             <Button type="submit" disabled={lookAct.pending}>
               {lookAct.pending ? "Opslaan…" : "Weergave opslaan"}

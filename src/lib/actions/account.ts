@@ -45,6 +45,7 @@ export async function updateBio(rawBio: string): Promise<ActionResult> {
 export async function updateAppearance(
   rawDisplayName: string,
   bioHidden: boolean,
+  hideOnline: boolean,
 ): Promise<ActionResult> {
   const auth = await requireAccountUser();
   if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
@@ -62,6 +63,7 @@ export async function updateAppearance(
     data: {
       displayName: displayName.length > 0 ? displayName : null,
       bioHidden,
+      hideOnline,
     },
   });
   revalidateAccount(auth.user.username);
