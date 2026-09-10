@@ -24,6 +24,9 @@ export type PlayerSnapshot = {
   id: string;
   email: string;
   username: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
   cash: number;
   bankBalance: number;
   health: number;
@@ -97,4 +100,6 @@ export type PublicPlayer = {
   isTraveling: boolean;
   killCount: number;
   familyName: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
 };

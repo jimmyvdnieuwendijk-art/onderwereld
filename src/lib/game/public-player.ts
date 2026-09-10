@@ -12,6 +12,8 @@ export function toPublicPlayer(user: {
   inJailUntil: Date | null;
   inHospitalUntil: Date | null;
   travelEndAt?: Date | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
   rank: { name: string; order: number };
   family: { name: string } | null;
 }): PublicPlayer {
@@ -30,5 +32,7 @@ export function toPublicPlayer(user: {
     isTraveling: !!(user.travelEndAt && user.travelEndAt.getTime() > now),
     killCount: user.killCount,
     familyName: user.family?.name ?? null,
+    bio: user.bio?.trim() ? user.bio : null,
+    avatarUrl: user.avatarUrl ?? null,
   };
 }

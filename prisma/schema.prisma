@@ -64,6 +64,8 @@ model User {
   equippedArmorId       String?
   equippedWeapon        ShopItem? @relation("EquippedWeapon", fields: [equippedWeaponId], references: [id])
   equippedArmor         ShopItem? @relation("EquippedArmor", fields: [equippedArmorId], references: [id])
+  bio                   String?
+  avatarUrl             String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -81,6 +83,7 @@ model User {
   escorts          Escort[]
   redLightWindows  RedLightWindow[]
   streetZones      StreetZone[]
+  avatarFile       UserAvatar?
 
   @@index([rankId])
   @@index([familyId])
@@ -89,6 +92,14 @@ model User {
   @@index([travelEndAt])
   @@index([inJailUntil])
   @@index([inHospitalUntil])
+}
+
+model UserAvatar {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mimeType  String
+  bytes     Bytes
+  updatedAt DateTime @updatedAt
 }
 
 model Rank {

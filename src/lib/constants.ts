@@ -22,6 +22,12 @@ export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 16;
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 
+export const BIO_MAX = 500;
+export const PASSWORD_MIN = 6;
+/** Max avatar upload size (bytes). Keep under the Server Action body limit. */
+export const AVATAR_MAX_BYTES = 1_000_000;
+export const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
+
 export const ITEM_WEAPON = "WEAPON";
 export const ITEM_ARMOR = "ARMOR";
 export const ITEM_CONSUMABLE = "CONSUMABLE";

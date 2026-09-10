@@ -16,6 +16,7 @@ import {
   Skull,
   Store,
   Swords,
+  UserCog,
   Users,
   VenetianMask,
 } from "lucide-react";
@@ -38,6 +39,7 @@ export const NAV_ITEMS = [
   { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross },
   { href: "/game/berichten", label: "Berichten", icon: Mail },
   { href: "/game/logboek", label: "Logboek", icon: MessageSquare },
+  { href: "/game/account", label: "Account", icon: UserCog },
 ] as const;
 
 export const MOBILE_PRIMARY = [

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { formatMoney, formatNumber } from "@/lib/format";
+import { PlayerAvatar } from "@/components/game/player-avatar";
 import type { PublicPlayer } from "@/types/game";
 
 export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
@@ -19,7 +20,21 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
     <div className="mx-auto grid max-w-3xl gap-4">
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading text-3xl">{target.username}</CardTitle>
+          <div className="flex items-start gap-4">
+            <PlayerAvatar
+              url={target.avatarUrl}
+              username={target.username}
+              className="size-16 shrink-0 text-xl md:size-20 md:text-2xl"
+            />
+            <div className="min-w-0">
+              <CardTitle className="font-heading text-3xl">{target.username}</CardTitle>
+              {target.bio ? (
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                  {target.bio}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
