@@ -29,6 +29,7 @@ export type PlayerSnapshot = {
   bioHidden: boolean;
   hideOnline: boolean;
   avatarUrl: string | null;
+  totpEnabled: boolean;
   createdAt: string;
   lastLoginAt: string | null;
   cash: number;
@@ -108,4 +109,13 @@ export type PublicPlayer = {
   bio: string | null;
   avatarUrl: string | null;
   isOnline: boolean;
+};
+
+export type FamilyBoardRow = {
+  id: string;
+  name: string;
+  leader: string;
+  leaderName: string;
+  members: number;
+  bank: number;
 };

@@ -1,12 +1,13 @@
 "use server";
 
-import { hash } from "bcryptjs";
+import { hash, compare } from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
 import { fail, ok } from "@/lib/actions/helpers";
 import { ensureLiveBootstrap } from "@/lib/ensure-catalog";
+import { verifyTotp } from "@/lib/totp";
 import type { ActionResult } from "@/types/game";
 
 function safeCallback(raw: string) {
@@ -23,11 +24,28 @@ export async function loginAction(
     .trim()
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const totp = String(formData.get("totp") ?? "").trim();
   if (!email || !password) return fail("Vul e-mail en wachtwoord in.");
   const callbackUrl = safeCallback(String(formData.get("callbackUrl") ?? "/game"));
 
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { hashedPassword: true, totpEnabled: true, totpSecret: true },
+  });
+  if (!user) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
+  const valid = await compare(password, user.hashedPassword);
+  if (!valid) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
+  if (user.totpEnabled) {
+    if (!totp) {
+      return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
+    }
+    if (!user.totpSecret || !verifyTotp(user.totpSecret, totp)) {
+      return fail("Ongeldige authenticatorcode.", "error", { needsTotp: true });
+    }
+  }
+
   try {
-    await signIn("credentials", { email, password, redirectTo: callbackUrl });
+    await signIn("credentials", { email, password, totp, redirectTo: callbackUrl });
     return ok("Welkom terug.");
   } catch (error) {
     if (error instanceof AuthError) {

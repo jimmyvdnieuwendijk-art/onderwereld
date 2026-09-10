@@ -18,6 +18,9 @@ export function LoginForm() {
     searchParams.get("error") === "CredentialsSignin"
       ? "Ongeldige inloggegevens. Controleer e-mail en wachtwoord."
       : undefined;
+  const needsTotp = Boolean(
+    state && !state.ok && (state.data as { needsTotp?: boolean } | undefined)?.needsTotp,
+  );
 
   return (
     <AuthShell
@@ -57,9 +60,28 @@ export function LoginForm() {
             defaultValue="demo1234"
           />
         </div>
+        {needsTotp ? (
+          <div className="space-y-2">
+            <Label htmlFor="totp">Authenticator-code</Label>
+            <Input
+              id="totp"
+              name="totp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              maxLength={8}
+              className="font-mono tracking-[0.28em]"
+              autoFocus
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Voer de 6-cijferige code uit je authenticator-app in.
+            </p>
+          </div>
+        ) : null}
         <AuthError message={(state && !state.ok ? state.message : undefined) ?? urlError} />
         <button type="submit" className={cn(buttonVariants(), "w-full")} disabled={pending}>
-          {pending ? "Deur gaat open…" : "Naar binnen"}
+          {pending ? "Deur gaat open…" : needsTotp ? "Bevestigen" : "Naar binnen"}
         </button>
         <DemoHint />
       </form>

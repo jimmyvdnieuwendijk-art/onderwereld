@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   createFamily,
   disbandFamily,
@@ -48,7 +49,12 @@ export function FamilyClient({
   if (mine) {
     return (
       <div className="space-y-4">
-        <h1 className="font-heading text-3xl">{mine.name}</h1>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h1 className="font-heading text-3xl">{mine.name}</h1>
+          <Link href="/game/spelers?tab=families" className="text-sm text-primary hover:underline">
+            Families-klassement
+          </Link>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Familie</CardTitle>
@@ -87,7 +93,12 @@ export function FamilyClient({
 
   return (
     <div className="space-y-4">
-      <h1 className="font-heading text-3xl">Families</h1>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <h1 className="font-heading text-3xl">Families</h1>
+        <Link href="/game/spelers?tab=families" className="text-sm text-primary hover:underline">
+          Families-klassement
+        </Link>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Sticht een huis</CardTitle>

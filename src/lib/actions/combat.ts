@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { clamp, remainingMs } from "@/lib/format";
+import { remainingMs } from "@/lib/format";
+import { hospitalMsForHealth } from "@/lib/hospital";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
@@ -43,7 +44,8 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   const stolen = killed
     ? Math.floor(defenderLive.cash * 0.55)
     : Math.floor(defenderLive.cash * 0.18);
-  const hospitalMinutes = killed ? 25 : clamp(Math.ceil(applied / 6), 8, 20);
+  const stayMs = hospitalMsForHealth(newHealth, killed);
+  const hospitalUntil = new Date(Date.now() + stayMs);
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
@@ -61,7 +63,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
         health: killed ? 0 : newHealth,
         cash: { decrement: stolen },
         isDead: killed,
-        inHospitalUntil: new Date(Date.now() + hospitalMinutes * 60_000),
+        inHospitalUntil: hospitalUntil,
       },
     });
     await tx.attackLog.create({
@@ -83,7 +85,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   await logEvent(
     defenderId,
     "ATTACK",
-    `${attacker.username} valt je aan (${applied} schade). Je ligt ${hospitalMinutes} minuten in het ziekenhuis.`,
+    `${attacker.username} valt je aan (${applied} schade). Je ligt in het ziekenhuis.`,
   );
   await tickPlayer(userId);
   return ok(outcome);

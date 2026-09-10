@@ -12,6 +12,7 @@ import { logoutAction } from "@/lib/actions/session";
 import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { TravelBanner } from "@/components/game/travel-banner";
+import { DetentionBanner } from "@/components/game/detention-banner";
 import { isNavActive, MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -281,6 +282,7 @@ export function GameShell({
         </header>
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 md:px-6 md:py-6">
+          <DetentionBanner player={p} />
           <TravelBanner player={p} />
           {children}
         </main>

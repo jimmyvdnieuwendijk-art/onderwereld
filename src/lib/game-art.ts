@@ -12,8 +12,21 @@ export function airportArt(id: string) {
   return `/game/airports/${id}.jpg`;
 }
 
+/** Catalog slugs that share a generated JPEG (Vespa is stored as scooter). */
+const VEHICLE_ART_FILE: Record<string, string> = {
+  scooter: "scooter",
+  vespa: "scooter",
+  fiets: "corsa",
+  golf: "corsa",
+  bmw: "rs6",
+  mercedes: "rover",
+  porsche: "roma",
+  lambo: "chiron",
+};
+
 export function vehicleArt(slug: string) {
-  return `/game/vehicles/${slug}.jpg`;
+  const file = VEHICLE_ART_FILE[slug] ?? slug;
+  return `/game/vehicles/${file}.jpg`;
 }
 
 export function casinoArt(kind: "header" | "roulette" | "poker" | "street" | "pit") {

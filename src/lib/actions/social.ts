@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { FAMILY_CREATE_COST, ROLE_LEADER, ROLE_MEMBER, ROLE_OFFICER } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
@@ -29,6 +30,8 @@ export async function sendMessage(toUsername: string, subject: string, body: str
       body: cleanBody,
     },
   });
+  revalidateGame();
+  revalidatePath("/game/berichten");
   return ok(`Bericht verzonden naar ${target.username}.`);
 }
 
@@ -49,10 +52,53 @@ export async function markMessageRead(messageId: string): Promise<ActionResult> 
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
   await prisma.message.updateMany({
-    where: { id: messageId, toUserId: userId },
+    where: { id: messageId, toUserId: userId, deletedByTo: false },
     data: { read: true },
   });
+  revalidateGame();
+  revalidatePath("/game/berichten");
   return ok("Gelezen.");
+}
+
+export async function markAllMessagesRead(): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const result = await prisma.message.updateMany({
+    where: { toUserId: userId, read: false, deletedByTo: false },
+    data: { read: true },
+  });
+  revalidateGame();
+  revalidatePath("/game/berichten");
+  return ok(result.count > 0 ? `${result.count} berichten gelezen.` : "Alles was al gelezen.");
+}
+
+export async function deleteMessage(messageId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const msg = await prisma.message.findFirst({
+    where: {
+      id: messageId,
+      OR: [{ toUserId: userId }, { fromUserId: userId }],
+    },
+  });
+  if (!msg) return fail("Bericht niet gevonden.");
+
+  const asTo = msg.toUserId === userId;
+  const asFrom = msg.fromUserId === userId;
+  const deletedByTo = asTo ? true : msg.deletedByTo;
+  const deletedByFrom = asFrom ? true : msg.deletedByFrom;
+
+  if (deletedByTo && deletedByFrom) {
+    await prisma.message.delete({ where: { id: msg.id } });
+  } else {
+    await prisma.message.update({
+      where: { id: msg.id },
+      data: { deletedByTo, deletedByFrom, read: asTo ? true : msg.read },
+    });
+  }
+  revalidateGame();
+  revalidatePath("/game/berichten");
+  return ok("Bericht verwijderd.");
 }
 
 export async function postShout(body: string): Promise<ActionResult> {
@@ -111,6 +157,8 @@ export async function joinFamily(familyId: string): Promise<ActionResult> {
   if (!userId) return fail("Je bent niet ingelogd.");
   const player = await tickPlayer(userId);
   if (!player) return fail("Speler niet gevonden.");
+  const joinBlocked = blockedReason(player);
+  if (joinBlocked) return fail(joinBlocked, "warning");
   if (player.family) return fail("Je zit al in een familie.");
 
   const family = await prisma.family.findUnique({ where: { id: familyId } });
@@ -129,7 +177,10 @@ export async function leaveFamily(): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
   const player = await tickPlayer(userId);
-  if (!player?.family) return fail("Je zit in geen familie.");
+  if (!player) return fail("Speler niet gevonden.");
+  const leaveBlocked = blockedReason(player);
+  if (leaveBlocked) return fail(leaveBlocked, "warning");
+  if (!player.family) return fail("Je zit in geen familie.");
 
   const membership = await prisma.familyMember.findUnique({ where: { userId } });
   if (membership?.role === ROLE_LEADER) {
@@ -145,7 +196,10 @@ export async function donateToFamily(amount: number): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
   const player = await tickPlayer(userId);
-  if (!player?.family) return fail("Je zit in geen familie.");
+  if (!player) return fail("Speler niet gevonden.");
+  const donateBlocked = blockedReason(player);
+  if (donateBlocked) return fail(donateBlocked, "warning");
+  if (!player.family) return fail("Je zit in geen familie.");
   const value = Math.floor(amount);
   if (value < 1) return fail("Ongeldig bedrag.");
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -164,6 +218,10 @@ export async function donateToFamily(amount: number): Promise<ActionResult> {
 export async function promoteMember(memberUserId: string): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
+  const player = await tickPlayer(userId);
+  if (!player) return fail("Speler niet gevonden.");
+  const promoteBlocked = blockedReason(player);
+  if (promoteBlocked) return fail(promoteBlocked, "warning");
   const leader = await prisma.familyMember.findUnique({ where: { userId } });
   if (!leader || leader.role !== ROLE_LEADER) return fail("Alleen de leider kan promoveren.");
 
@@ -181,6 +239,10 @@ export async function promoteMember(memberUserId: string): Promise<ActionResult>
 export async function disbandFamily(): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
+  const player = await tickPlayer(userId);
+  if (!player) return fail("Speler niet gevonden.");
+  const disbandBlocked = blockedReason(player);
+  if (disbandBlocked) return fail(disbandBlocked, "warning");
   const membership = await prisma.familyMember.findUnique({ where: { userId } });
   if (!membership || membership.role !== ROLE_LEADER) return fail("Alleen de leider kan ontbinden.");
 

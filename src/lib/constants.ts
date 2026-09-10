@@ -22,7 +22,7 @@ export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 16;
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 
-export const BIO_MAX = 500;
+export const BIO_MAX = 300;
 export const DISPLAY_NAME_MIN = 2;
 export const DISPLAY_NAME_MAX = 24;
 export const PASSWORD_MIN = 6;
@@ -31,6 +31,10 @@ export const AVATAR_MAX_BYTES = 1_000_000;
 export const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
 export const ONLINE_WINDOW_MS = 3 * 60 * 1000;
 export const LAST_SEEN_WRITE_MS = 60 * 1000;
+
+export const LOG_PAGE_SIZE = 20;
+export const LOG_MAX_PAGES = 5;
+export const LOG_KEEP = LOG_PAGE_SIZE * LOG_MAX_PAGES;
 
 export const ITEM_WEAPON = "WEAPON";
 export const ITEM_ARMOR = "ARMOR";

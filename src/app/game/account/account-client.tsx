@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  beginTotpSetup,
   changePassword,
+  confirmTotp,
+  disableTotp,
   removeAvatar,
   updateAppearance,
   updateBio,
@@ -165,31 +168,33 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                 name="displayName"
                 value={displayName}
                 maxLength={DISPLAY_NAME_MAX}
-                placeholder={p.username}
+                placeholder={p.username || "DonDemo"}
                 onChange={(event) => setDisplayName(event.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
-                Leeg = {p.username}. Max {DISPLAY_NAME_MAX} tekens.
+              <p className="text-right text-xs tabular-nums text-muted-foreground">
+                {displayName.length}/{DISPLAY_NAME_MAX}
               </p>
             </div>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 accent-primary"
-                checked={bioHidden}
-                onChange={(event) => setBioHidden(event.target.checked)}
-              />
-              <span>Verberg bio op je publieke profiel</span>
-            </label>
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 accent-primary"
-                checked={hideOnline}
-                onChange={(event) => setHideOnline(event.target.checked)}
-              />
-              <span>Verberg of je online bent</span>
-            </label>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-6">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-primary"
+                  checked={bioHidden}
+                  onChange={(event) => setBioHidden(event.target.checked)}
+                />
+                <span>Verberg je bio</span>
+              </label>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-primary"
+                  checked={hideOnline}
+                  onChange={(event) => setHideOnline(event.target.checked)}
+                />
+                <span>Verberg online status</span>
+              </label>
+            </div>
             <Button type="submit" disabled={lookAct.pending}>
               {lookAct.pending ? "Opslaan…" : "Weergave opslaan"}
             </Button>
@@ -234,9 +239,11 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
                     replacePreview(file ? URL.createObjectURL(file) : null);
                   }}
                 />
-                <p className="text-xs text-muted-foreground">
-                  JPG, PNG of WebP · max {Math.round(AVATAR_MAX_BYTES / 1_000_000)} MB
-                </p>
+                {avatarAct.feedback && !avatarAct.feedback.ok ? (
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG of WebP · max {Math.round(AVATAR_MAX_BYTES / 1_000_000)} MB
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={avatarAct.pending}>
@@ -305,7 +312,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         <CardContent className="pt-4">
           <form
             ref={passwordFormRef}
-            className="mx-auto max-w-md space-y-3"
+            className="max-w-md space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
               passwordAct.run(() => changePassword(current, next, confirm), (result) => {
@@ -363,6 +370,8 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         </CardContent>
       </Card>
 
+      <TotpCard enabled={p.totpEnabled} />
+
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
           <CardTitle>Sessie</CardTitle>
@@ -377,5 +386,122 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function TotpCard({ enabled }: { enabled: boolean }) {
+  const setupAct = useGameAction();
+  const confirmAct = useGameAction();
+  const disableAct = useGameAction();
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [setup, setSetup] = useState<{ qrDataUrl?: string; secret?: string } | null>(null);
+
+  const qr =
+    (setupAct.feedback?.data as { qrDataUrl?: string; secret?: string } | undefined)?.qrDataUrl ??
+    setup?.qrDataUrl;
+  const secret =
+    (setupAct.feedback?.data as { secret?: string } | undefined)?.secret ?? setup?.secret;
+
+  return (
+    <Card size="sm" className="border-border/50">
+      <CardHeader className="border-b border-border/40">
+        <CardTitle>Authenticator (2FA)</CardTitle>
+      </CardHeader>
+      <CardContent className="max-w-md space-y-3 pt-4">
+        {enabled ? (
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              disableAct.run(() => disableTotp(password, code), (result) => {
+                if (!result.ok) return;
+                setCode("");
+                setPassword("");
+              });
+            }}
+          >
+            <p className="text-sm">Authenticator staat aan.</p>
+            <div className="space-y-2">
+              <Label htmlFor="totp-pass">Wachtwoord</Label>
+              <Input
+                id="totp-pass"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="totp-off">Authenticatorcode</Label>
+              <Input
+                id="totp-off"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" variant="outline" disabled={disableAct.pending}>
+              {disableAct.pending ? "Uitschakelen…" : "Uitschakelen"}
+            </Button>
+            <FormMessage state={disableAct.feedback} />
+          </form>
+        ) : (
+          <div className="space-y-3">
+            {!qr ? (
+              <Button
+                type="button"
+                disabled={setupAct.pending}
+                onClick={() =>
+                  setupAct.run(() => beginTotpSetup(), (result) => {
+                    if (!result.ok) return;
+                    setSetup((result.data as { qrDataUrl?: string; secret?: string }) ?? null);
+                  })
+                }
+              >
+                {setupAct.pending ? "Bezig…" : "Authenticator instellen"}
+              </Button>
+            ) : (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qr} alt="QR-code voor authenticator" className="size-44 rounded-md bg-white p-1" />
+                {secret ? (
+                  <p className="break-all font-mono text-xs text-muted-foreground">{secret}</p>
+                ) : null}
+                <form
+                  className="space-y-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    confirmAct.run(() => confirmTotp(code), (result) => {
+                      if (!result.ok) return;
+                      setCode("");
+                      setSetup(null);
+                    });
+                  }}
+                >
+                  <Label htmlFor="totp-on">Code uit de app</Label>
+                  <Input
+                    id="totp-on"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    required
+                  />
+                  <Button type="submit" disabled={confirmAct.pending}>
+                    {confirmAct.pending ? "Bevestigen…" : "Bevestigen"}
+                  </Button>
+                </form>
+              </>
+            )}
+            <FormMessage state={setupAct.feedback} />
+            <FormMessage state={confirmAct.feedback} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { BIO_MAX, DISPLAY_NAME_MAX, DISPLAY_NAME_MIN, PASSWORD_MIN } from "@/lib/constants";
 import { avatarPublicPath, readAvatarFile } from "@/lib/avatar";
+import { newTotpSecret, totpQrDataUrl, verifyTotp } from "@/lib/totp";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
@@ -13,7 +14,15 @@ async function requireAccountUser() {
   if (!userId) return { user: null, error: fail("Je bent niet ingelogd.") };
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, hashedPassword: true },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      hashedPassword: true,
+      totpEnabled: true,
+      totpSecret: true,
+      totpPending: true,
+    },
   });
   if (!user) return { user: null, error: fail("Speler niet gevonden.") };
   return { user, error: null };
@@ -142,6 +151,60 @@ export async function changePassword(
   await logEvent(auth.user.id, "SYSTEM", "Je hebt je wachtwoord gewijzigd.");
   revalidateAccount();
   return ok("Wachtwoord gewijzigd.");
+}
+
+export async function beginTotpSetup(): Promise<ActionResult> {
+  const auth = await requireAccountUser();
+  if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
+  if (auth.user.totpEnabled) return fail("Authenticator staat al aan.");
+
+  const secret = newTotpSecret();
+  const label = auth.user.username || auth.user.email;
+  const qrDataUrl = await totpQrDataUrl(secret, label);
+  await prisma.user.update({
+    where: { id: auth.user.id },
+    data: { totpPending: secret },
+  });
+  revalidateAccount();
+  return ok("Scan de QR-code en bevestig met een code.", "success", {
+    qrDataUrl,
+    secret,
+  });
+}
+
+export async function confirmTotp(code: string): Promise<ActionResult> {
+  const auth = await requireAccountUser();
+  if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
+  const pending = auth.user.totpPending;
+  if (!pending) return fail("Start eerst de authenticator-setup.");
+  if (!verifyTotp(pending, code)) return fail("Ongeldige authenticatorcode.");
+
+  await prisma.user.update({
+    where: { id: auth.user.id },
+    data: { totpEnabled: true, totpSecret: pending, totpPending: null },
+  });
+  await logEvent(auth.user.id, "SYSTEM", "Je hebt twee-stapsverificatie ingeschakeld.");
+  revalidateAccount();
+  return ok("Authenticator is ingeschakeld.");
+}
+
+export async function disableTotp(password: string, code: string): Promise<ActionResult> {
+  const auth = await requireAccountUser();
+  if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
+  if (!auth.user.totpEnabled || !auth.user.totpSecret) {
+    return fail("Authenticator staat niet aan.");
+  }
+  const validPass = await compare(password, auth.user.hashedPassword);
+  if (!validPass) return fail("Wachtwoord is onjuist.");
+  if (!verifyTotp(auth.user.totpSecret, code)) return fail("Ongeldige authenticatorcode.");
+
+  await prisma.user.update({
+    where: { id: auth.user.id },
+    data: { totpEnabled: false, totpSecret: null, totpPending: null },
+  });
+  await logEvent(auth.user.id, "SYSTEM", "Je hebt twee-stapsverificatie uitgeschakeld.");
+  revalidateAccount();
+  return ok("Authenticator is uitgeschakeld.");
 }
 
 export async function updateBioForm(

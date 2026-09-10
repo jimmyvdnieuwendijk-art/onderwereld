@@ -41,7 +41,7 @@ const playerInclude = {
   familyMembership: true,
   equippedWeapon: true,
   equippedArmor: true,
-  receivedMessages: { where: { read: false }, select: { id: true } },
+  receivedMessages: { where: { read: false, deletedByTo: false }, select: { id: true } },
   _count: { select: { vehicles: true, escorts: true } },
 } as const;
 
@@ -226,6 +226,7 @@ function toSnapshot(
     bioHidden: user.bioHidden,
     hideOnline: user.hideOnline,
     avatarUrl: user.avatarUrl ?? null,
+    totpEnabled: !!user.totpEnabled,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: toIso(user.lastLoginAt),
     cash: user.cash,
