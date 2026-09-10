@@ -206,9 +206,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
           <CardContent className="space-y-3 pt-4">
             <div className="flex items-center gap-3">
               <PlayerAvatar url={shownAvatar} username={shownName} className="size-16 text-lg" />
-              <p className="text-xs text-muted-foreground">
-                {preview ? "Voorvertoning — nog niet opgeslagen." : "Huidige foto of initialen."}
-              </p>
             </div>
             <form
               className="space-y-3"
