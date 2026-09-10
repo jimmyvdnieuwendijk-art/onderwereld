@@ -10,6 +10,15 @@
 import { PrismaClient } from "@prisma/client";
 
 const DEMO_CASH = 500_000;
+
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL ontbreekt. Zet de Neon pooled URL en draai opnieuw.");
+  console.error('  DATABASE_URL="postgresql://…" node scripts/set-demo-cash.mjs');
+  console.error("SQL:");
+  console.error('  UPDATE "User" SET cash = 500000');
+  console.error("  WHERE lower(email) = 'demo@onderwereld.nl' OR lower(username) = 'dondemo';");
+  process.exit(1);
+}
 const prisma = new PrismaClient();
 
 const byEmail = await prisma.user.findUnique({
