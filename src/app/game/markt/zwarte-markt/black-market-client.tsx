@@ -91,7 +91,7 @@ export function BlackMarketClient({
           <p className="text-[11px] uppercase tracking-[0.28em] text-[#d4a359]/80">Ondergronds</p>
           <h1 className="font-heading text-3xl text-[#d4a359]">Zwarte Markt</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Desk in {p.currentCityName}. Straatprijzen, spelersorders en alerts — Amsterdam is de basis.
+            Handel in {p.currentCityName}. Straatprijzen, spelersorders en alerts — Amsterdam is de basis.
           </p>
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
             <Badge className="bg-[#d4a359]/20 text-[#d4a359]">{p.currentCityName}</Badge>

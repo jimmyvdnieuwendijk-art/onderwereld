@@ -12,7 +12,7 @@ const HUB = [
   {
     href: "/game/markt/zwarte-markt",
     title: "Zwarte Markt",
-    hint: "Luxe undergrondse desk: snelle handel, spelersadvertenties, geschiedenis en prijsalerts.",
+    hint: "Luxe ondergrondse balie: snelle handel, spelersadvertenties, geschiedenis en prijsalerts.",
     icon: Scale,
   },
   {
