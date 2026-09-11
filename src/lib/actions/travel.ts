@@ -5,15 +5,12 @@ import {
   CUSTOMS_ARREST_CHANCE,
   CUSTOMS_JAIL_MINUTES,
   CUSTOMS_WANTED_THRESHOLD,
-  cityDisplayName,
   flightQuote,
   isAirportId,
   normalizeCityId,
-  smugglePrice,
-  type SmuggleGood,
 } from "@/lib/airports";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { clamp, randomInt } from "@/lib/format";
+import { randomInt } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 
@@ -81,70 +78,6 @@ export async function bookFlightForm(
   const dest = String(formData.get("destinationId") ?? "");
   const privateJet = String(formData.get("privateJet") ?? "") === "1";
   const result = await bookFlight(dest, privateJet);
-  revalidateGame();
-  return result;
-}
-
-export async function smuggleTrade(good: string, side: string, quantity: number): Promise<ActionResult> {
-  const userId = await requireUserId();
-  if (!userId) return fail("Je bent niet ingelogd.");
-  const player = await tickPlayer(userId);
-  if (!player) return fail("Speler niet gevonden.");
-  const blocked = blockedReason(player);
-  if (blocked) return fail(blocked, "warning");
-
-  const kind = good as SmuggleGood;
-  if (kind !== "drugs" && kind !== "weapons" && kind !== "bullets") {
-    return fail("Onbekende waar.");
-  }
-  if (side !== "buy" && side !== "sell") return fail("Kies kopen of verkopen.");
-
-  const qty = clamp(Math.floor(quantity), 1, 200);
-  const cityId = normalizeCityId(player.currentCity);
-  const unitPrice = smugglePrice(cityId, kind, side);
-  const total = unitPrice * qty;
-  const label = kind === "drugs" ? "drugs" : kind === "weapons" ? "wapenkisten" : "kogels";
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return fail("Speler niet gevonden.");
-
-  if (side === "buy") {
-    if (user.cash < total) return fail("Niet genoeg contant geld.");
-    const data =
-      kind === "drugs"
-        ? { cash: { decrement: total }, drugs: { increment: qty } }
-        : kind === "weapons"
-          ? { cash: { decrement: total }, weaponCrates: { increment: qty } }
-          : { cash: { decrement: total }, bullets: { increment: qty } };
-    await prisma.user.update({ where: { id: userId }, data });
-    const message = `Je koopt ${qty} ${label} in ${cityDisplayName(cityId)} voor ${total} euro.`;
-    await logEvent(userId, "SMUGGLE", message);
-    return ok(message);
-  }
-
-  const have = kind === "drugs" ? user.drugs : kind === "weapons" ? user.weaponCrates : user.bullets;
-  if (have < qty) return fail("Je hebt die voorraad niet.");
-  const data =
-    kind === "drugs"
-      ? { cash: { increment: total }, drugs: { decrement: qty } }
-      : kind === "weapons"
-        ? { cash: { increment: total }, weaponCrates: { decrement: qty } }
-        : { cash: { increment: total }, bullets: { decrement: qty } };
-  await prisma.user.update({ where: { id: userId }, data });
-  const message = `Je zet ${qty} ${label} van de hand voor ${total} euro.`;
-  await logEvent(userId, "SMUGGLE", message);
-  return ok(message);
-}
-
-export async function smuggleTradeForm(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const result = await smuggleTrade(
-    String(formData.get("good") ?? ""),
-    String(formData.get("side") ?? ""),
-    Number(formData.get("quantity") ?? 1),
-  );
   revalidateGame();
   return result;
 }

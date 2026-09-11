@@ -121,3 +121,36 @@ export function smugglePrice(cityId: string, good: SmuggleGood, side: "buy" | "s
   if (good === "weapons") return side === "buy" ? market.weaponsBuy : market.weaponsSell;
   return side === "buy" ? market.bulletsBuy : market.bulletsSell;
 }
+
+export function goodStock(
+  player: { drugs: number; weaponCrates: number; bullets: number },
+  good: SmuggleGood,
+) {
+  if (good === "drugs") return player.drugs;
+  if (good === "weapons") return player.weaponCrates;
+  return player.bullets;
+}
+
+export function cityPriceRank(good: SmuggleGood, side: "buy" | "sell" = "buy") {
+  const ranked = AIRPORTS.map((row) => ({
+    ...row,
+    price: smugglePrice(row.id, good, side),
+  })).sort((a, b) => a.price - b.price);
+  return {
+    cheapest: ranked[0],
+    dearest: ranked[ranked.length - 1],
+    ranked,
+  };
+}
+
+export function spreadPct(buy: number, sell: number) {
+  if (buy <= 0) return 0;
+  return Math.round(((sell - buy) / buy) * 100);
+}
+
+export function vsAmsterdamPct(cityId: string, good: SmuggleGood, side: "buy" | "sell" = "buy") {
+  const here = smugglePrice(cityId, good, side);
+  const ams = smugglePrice("ams", good, side);
+  if (ams <= 0) return 0;
+  return Math.round(((here - ams) / ams) * 100);
+}

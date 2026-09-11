@@ -13,6 +13,7 @@ import { gymAttackBonus, gymDefenseBonus } from "@/lib/gym";
 import { parsePoker, publicPoker } from "@/lib/casino";
 import { tickPimpEconomy } from "@/lib/game/pimp-tick";
 import { tickFamilyEconomy } from "@/lib/family";
+import { firePriceAlerts } from "@/lib/game/price-alerts";
 import { getRanksCached } from "@/lib/catalog";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -172,6 +173,7 @@ export async function tickPlayer(userId: string) {
         message: `Je landt op ${dest.airport} in ${dest.city}. De douane wuift je door — of kijkt de andere kant op.`,
       },
     });
+    await firePriceAlerts(userId, dest.id);
   }
 
   if (shouldTickPimp(userId, updated.lastPimpTickAt, now)) {

@@ -13,7 +13,7 @@ import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { TravelBanner } from "@/components/game/travel-banner";
 import { DetentionBanner } from "@/components/game/detention-banner";
-import { isNavActive, MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
+import { isMarktChildActive, isNavActive, MARKT_NAV_CHILDREN, MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -52,8 +52,8 @@ function NavItemLinks({
         const Icon = item.icon;
         const unread = item.href === "/game/berichten" ? unreadMessages : 0;
         return (
+          <div key={item.href}>
           <Link
-            key={item.href}
             href={item.href}
             prefetch
             onClick={onNavigate}
@@ -73,6 +73,31 @@ function NavItemLinks({
               </Badge>
             ) : null}
           </Link>
+          {item.href === "/game/markt" ? (
+            <div className="mb-1 ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border/60 pl-2">
+              {MARKT_NAV_CHILDREN.map((child) => {
+                const childActive = isMarktChildActive(pathname, child.href);
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    prefetch
+                    onClick={onNavigate}
+                    aria-current={childActive ? "page" : undefined}
+                    className={cn(
+                      "rounded-md px-2 py-1 text-xs transition-colors",
+                      childActive
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {child.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+          </div>
         );
       })}
     </div>

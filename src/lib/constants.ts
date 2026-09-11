@@ -42,6 +42,8 @@ export const ITEM_CONSUMABLE = "CONSUMABLE";
 export const ITEM_AMMO = "AMMO";
 
 export const LISTING_BULLETS = "BULLETS";
+export const LISTING_DRUGS = "DRUGS";
+export const LISTING_WEAPONS = "WEAPONS";
 export const LISTING_VEHICLE = "VEHICLE";
 export const LISTING_ITEM = "ITEM";
 

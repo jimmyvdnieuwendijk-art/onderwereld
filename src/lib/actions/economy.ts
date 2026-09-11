@@ -2,8 +2,22 @@
 
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { BASE_ATTACK, ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON, LISTING_BULLETS, LISTING_ITEM, LISTING_VEHICLE, MAX_ENERGY, MAX_HEALTH } from "@/lib/constants";
+import {
+  BASE_ATTACK,
+  ITEM_AMMO,
+  ITEM_ARMOR,
+  ITEM_CONSUMABLE,
+  ITEM_WEAPON,
+  LISTING_ITEM,
+  LISTING_VEHICLE,
+  MAX_ENERGY,
+  MAX_HEALTH,
+} from "@/lib/constants";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { cityDisplayName, normalizeCityId, smugglePrice, type SmuggleGood } from "@/lib/airports";
+import { clamp } from "@/lib/format";
+import { firePriceAlerts } from "@/lib/game/price-alerts";
+import { listingLabel, stockFieldForType } from "@/lib/market";
 import type { ActionResult } from "@/types/game";
 
 export async function bankDeposit(amount: number): Promise<ActionResult> {
@@ -159,6 +173,7 @@ export async function createListing(input: {
   quantity?: number;
   vehicleId?: string;
   itemId?: string;
+  unitPrice?: number;
 }): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!userId) return fail("Je bent niet ingelogd.");
@@ -167,21 +182,33 @@ export async function createListing(input: {
   const blocked = blockedReason(player);
   if (blocked) return fail(blocked, "warning");
 
-  const price = Math.floor(input.price);
+  const qtyHint = Math.max(1, Math.floor(input.quantity ?? 1));
+  const price =
+    input.unitPrice != null && Number.isFinite(input.unitPrice)
+      ? Math.floor(input.unitPrice) * qtyHint
+      : Math.floor(input.price);
   if (price < 1) return fail("Prijs moet minstens 1 euro zijn.");
 
-  if (input.type === LISTING_BULLETS) {
+  const stockField = stockFieldForType(input.type);
+  if (stockField) {
     const qty = Math.floor(input.quantity ?? 0);
-    if (qty < 1) return fail("Kies een aantal kogels.");
+    if (qty < 1) return fail("Kies een aantal.");
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.bullets < qty) return fail("Niet genoeg kogels.");
+    if (!user || user[stockField] < qty) return fail("Niet genoeg voorraad.");
+    const total =
+      input.unitPrice != null && Number.isFinite(input.unitPrice)
+        ? Math.floor(input.unitPrice) * qty
+        : price;
+    if (total < 1) return fail("Prijs moet minstens 1 euro zijn.");
     await prisma.$transaction([
-      prisma.user.update({ where: { id: userId }, data: { bullets: { decrement: qty } } }),
+      prisma.user.update({ where: { id: userId }, data: { [stockField]: { decrement: qty } } }),
       prisma.marketListing.create({
-        data: { sellerId: userId, type: LISTING_BULLETS, quantity: qty, price },
+        data: { sellerId: userId, type: input.type, quantity: qty, price: total },
       }),
     ]);
-    return ok(`Je zet ${qty} kogels te koop voor ${price} euro.`);
+    const message = `Je zet ${listingLabel(input.type, qty)} te koop voor ${total} euro.`;
+    await logEvent(userId, "MARKET", message);
+    return ok(message);
   }
 
   if (input.type === LISTING_VEHICLE && input.vehicleId) {
@@ -272,12 +299,16 @@ export async function buyListing(listingId: string): Promise<ActionResult> {
       where: { id: listing.sellerId },
       data: { cash: { increment: listing.price } },
     });
-    await tx.marketListing.update({ where: { id: listing.id }, data: { active: false } });
+    await tx.marketListing.update({
+      where: { id: listing.id },
+      data: { active: false, buyerId: userId, completedAt: new Date() },
+    });
 
-    if (listing.type === LISTING_BULLETS) {
+    const stockField = stockFieldForType(listing.type);
+    if (stockField) {
       await tx.user.update({
         where: { id: userId },
-        data: { bullets: { increment: listing.quantity } },
+        data: { [stockField]: { increment: listing.quantity } },
       });
     }
     if (listing.type === LISTING_VEHICLE && listing.vehicleId) {
@@ -295,12 +326,14 @@ export async function buyListing(listingId: string): Promise<ActionResult> {
     }
   });
 
-  const label =
-    listing.type === LISTING_BULLETS
-      ? `${listing.quantity} kogels`
-      : listing.vehicle?.vehicleType.name ?? listing.item?.name ?? "artikel";
+  const label = listingLabel(
+    listing.type,
+    listing.quantity,
+    listing.vehicle?.vehicleType.name ?? listing.item?.name,
+  );
   const message = `Je koopt ${label} van ${listing.seller.username} voor ${listing.price} euro.`;
   await logEvent(userId, "MARKET", message);
+  await logEvent(listing.sellerId, "MARKET", `${player.username} koopt ${label} van je voor ${listing.price} euro.`);
   return ok(message);
 }
 
@@ -314,11 +347,15 @@ export async function cancelListing(listingId: string): Promise<ActionResult> {
   if (!listing) return fail("Advertentie niet gevonden.");
 
   await prisma.$transaction(async (tx) => {
-    await tx.marketListing.update({ where: { id: listing.id }, data: { active: false } });
-    if (listing.type === LISTING_BULLETS) {
+    await tx.marketListing.update({
+      where: { id: listing.id },
+      data: { active: false, completedAt: new Date() },
+    });
+    const stockField = stockFieldForType(listing.type);
+    if (stockField) {
       await tx.user.update({
         where: { id: userId },
-        data: { bullets: { increment: listing.quantity } },
+        data: { [stockField]: { increment: listing.quantity } },
       });
     }
     if (listing.type === LISTING_ITEM && listing.itemId) {
@@ -329,7 +366,170 @@ export async function cancelListing(listingId: string): Promise<ActionResult> {
       });
     }
   });
+  await logEvent(userId, "MARKET", `Advertentie ingetrokken: ${listingLabel(listing.type, listing.quantity)}.`);
   return ok("Advertentie ingetrokken.");
+}
+
+export async function cancelListings(listingIds: string[]): Promise<ActionResult> {
+  const ids = [...new Set(listingIds.filter(Boolean))].slice(0, 50);
+  if (ids.length === 0) return fail("Selecteer advertenties.");
+  let cancelled = 0;
+  let last: ActionResult = fail("Niets ingetrokken.");
+  for (const id of ids) {
+    last = await cancelListing(id);
+    if (last.ok) cancelled += 1;
+  }
+  if (cancelled === 0) return last;
+  revalidateGame();
+  return ok(`${cancelled} advertentie${cancelled === 1 ? "" : "s"} ingetrokken.`);
+}
+
+export async function updateListing(listingId: string, unitPrice: number): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const player = await tickPlayer(userId);
+  if (!player) return fail("Speler niet gevonden.");
+  const blocked = blockedReason(player);
+  if (blocked) return fail(blocked, "warning");
+
+  const unit = Math.floor(unitPrice);
+  if (unit < 1) return fail("Ask per stuk moet minstens 1 euro zijn.");
+  const listing = await prisma.marketListing.findFirst({
+    where: { id: listingId, sellerId: userId, active: true },
+  });
+  if (!listing) return fail("Advertentie niet gevonden.");
+  const total = unit * listing.quantity;
+  await prisma.marketListing.update({
+    where: { id: listing.id },
+    data: { price: total },
+  });
+  revalidateGame();
+  return ok(`Ask bijgewerkt naar ${unit} euro per stuk (${total} euro totaal).`);
+}
+
+export async function updateListings(listingIds: string[], unitPrice: number): Promise<ActionResult> {
+  const ids = [...new Set(listingIds.filter(Boolean))].slice(0, 50);
+  if (ids.length === 0) return fail("Selecteer advertenties.");
+  let updated = 0;
+  let last: ActionResult = fail("Niets bijgewerkt.");
+  for (const id of ids) {
+    last = await updateListing(id, unitPrice);
+    if (last.ok) updated += 1;
+  }
+  if (updated === 0) return last;
+  return ok(`${updated} advertentie${updated === 1 ? "" : "s"} bijgewerkt.`);
+}
+
+export async function smuggleTrade(good: string, side: string, quantity: number): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const player = await tickPlayer(userId);
+  if (!player) return fail("Speler niet gevonden.");
+  const blocked = blockedReason(player);
+  if (blocked) return fail(blocked, "warning");
+
+  const kind = good as SmuggleGood;
+  if (kind !== "drugs" && kind !== "weapons" && kind !== "bullets") {
+    return fail("Onbekende waar.");
+  }
+  if (side !== "buy" && side !== "sell") return fail("Kies kopen of verkopen.");
+
+  const qty = clamp(Math.floor(quantity), 1, 200);
+  const cityId = normalizeCityId(player.currentCity);
+  const unitPrice = smugglePrice(cityId, kind, side);
+  const total = unitPrice * qty;
+  const label = kind === "drugs" ? "drugs" : kind === "weapons" ? "wapenkisten" : "kogels";
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return fail("Speler niet gevonden.");
+
+  if (side === "buy") {
+    if (user.cash < total) return fail("Niet genoeg contant geld.");
+    const data =
+      kind === "drugs"
+        ? { cash: { decrement: total }, drugs: { increment: qty } }
+        : kind === "weapons"
+          ? { cash: { decrement: total }, weaponCrates: { increment: qty } }
+          : { cash: { decrement: total }, bullets: { increment: qty } };
+    await prisma.user.update({ where: { id: userId }, data });
+    const message = `Je koopt ${qty} ${label} in ${cityDisplayName(cityId)} voor ${total} euro.`;
+    await logEvent(userId, "SMUGGLE", message);
+    return ok(message);
+  }
+
+  const have = kind === "drugs" ? user.drugs : kind === "weapons" ? user.weaponCrates : user.bullets;
+  if (have < qty) return fail("Je hebt die voorraad niet.");
+  const data =
+    kind === "drugs"
+      ? { cash: { increment: total }, drugs: { decrement: qty } }
+      : kind === "weapons"
+        ? { cash: { increment: total }, weaponCrates: { decrement: qty } }
+        : { cash: { increment: total }, bullets: { decrement: qty } };
+  await prisma.user.update({ where: { id: userId }, data });
+  const message = `Je zet ${qty} ${label} van de hand voor ${total} euro.`;
+  await logEvent(userId, "SMUGGLE", message);
+  return ok(message);
+}
+
+export async function smuggleTradeForm(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const result = await smuggleTrade(
+    String(formData.get("good") ?? ""),
+    String(formData.get("side") ?? ""),
+    Number(formData.get("quantity") ?? 1),
+  );
+  revalidateGame();
+  return result;
+}
+
+export async function createPriceAlert(input: {
+  good: string;
+  side: string;
+  threshold: number;
+  cityId?: string | null;
+}): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const player = await tickPlayer(userId);
+  if (!player) return fail("Speler niet gevonden.");
+
+  const good = input.good as SmuggleGood;
+  if (good !== "drugs" && good !== "weapons" && good !== "bullets") return fail("Onbekende waar.");
+  const side = input.side === "sell" ? "sell" : "buy";
+  const threshold = Math.floor(input.threshold);
+  if (threshold < 1) return fail("Drempel moet minstens 1 euro zijn.");
+
+  const cityId =
+    input.cityId === "" || input.cityId == null
+      ? null
+      : input.cityId === "here"
+        ? normalizeCityId(player.currentCity)
+        : input.cityId;
+
+  const existing = await prisma.priceAlert.count({ where: { userId } });
+  if (existing >= 12) return fail("Je hebt het maximum van 12 prijsalerts.");
+
+  await prisma.priceAlert.create({
+    data: { userId, good, side, threshold, cityId },
+  });
+  const fired = await firePriceAlerts(userId, normalizeCityId(player.currentCity));
+  revalidateGame();
+  if (fired > 0) {
+    return ok("Prijsalert gezet. De huidige stad voldoet al — check je logboek.");
+  }
+  return ok("Prijsalert gezet. Je krijgt een melding in je logboek als de drempel wordt gehaald.");
+}
+
+export async function deletePriceAlert(alertId: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const row = await prisma.priceAlert.findFirst({ where: { id: alertId, userId } });
+  if (!row) return fail("Alert niet gevonden.");
+  await prisma.priceAlert.delete({ where: { id: row.id } });
+  revalidateGame();
+  return ok("Prijsalert verwijderd.");
 }
 
 export async function bankForm(

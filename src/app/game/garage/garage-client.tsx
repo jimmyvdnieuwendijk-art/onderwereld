@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useGameAction } from "@/hooks/use-player";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { vehicleArt } from "@/lib/game-art";
 import { CardArt } from "@/components/game/card-art";
 import { useState } from "react";
@@ -39,7 +40,16 @@ export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-heading text-3xl">Garage</h1>
+      <div>
+        <h1 className="font-heading text-3xl">Garage</h1>
+        <p className="text-sm text-muted-foreground">
+          Advertenties verschijnen op de{" "}
+          <Link href="/game/markt/spelersmarkt" className="text-primary underline">
+            Spelersmarkt
+          </Link>
+          .
+        </p>
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
         {vehicles.map((car) => {
           const sellValue = Math.max(

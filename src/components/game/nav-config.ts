@@ -10,11 +10,11 @@ import {
   Mail,
   MessageSquare,
   Plane,
+  Scale,
   Search,
   Shield,
   ShoppingBag,
   Skull,
-  Store,
   Swords,
   UserCog,
   Users,
@@ -31,7 +31,7 @@ const autoStelen = { href: "/game/auto-stelen", label: "Auto stelen", icon: Car 
 const garage = { href: "/game/garage", label: "Garage", icon: Home };
 const bank = { href: "/game/bank", label: "Bank", icon: Banknote };
 const winkel = { href: "/game/winkel", label: "Winkel", icon: ShoppingBag };
-const markt = { href: "/game/markt", label: "Markt", icon: Store };
+const markt = { href: "/game/markt", label: "Markt", icon: Scale };
 const spelers = { href: "/game/spelers", label: "Spelers", icon: Search };
 const familie = { href: "/game/familie", label: "Familie", icon: Users };
 const gevangenis = { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel };
@@ -39,6 +39,12 @@ const ziekenhuis = { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross 
 const account = { href: "/game/account", label: "Account", icon: UserCog };
 const berichten = { href: "/game/berichten", label: "Berichten", icon: Mail };
 const logboek = { href: "/game/logboek", label: "Logboek", icon: MessageSquare };
+
+export const MARKT_NAV_CHILDREN = [
+  { href: "/game/markt/smokkelmarkt", label: "Smokkelmarkt" },
+  { href: "/game/markt/zwarte-markt", label: "Zwarte Markt" },
+  { href: "/game/markt/spelersmarkt", label: "Spelersmarkt" },
+] as const;
 
 export const NAV_GROUPS = [
   { id: "hoofd", label: "Hoofd", items: [overzicht] },
@@ -54,7 +60,12 @@ export const NAV_ITEMS = NAV_GROUPS.flatMap((group) => [...group.items]);
 /** Overzicht is exact `/game`; other items also match nested routes. */
 export function isNavActive(pathname: string, href: string) {
   if (href === "/game") return pathname === "/game";
+  if (href === "/game/markt") return pathname === "/game/markt" || pathname.startsWith("/game/markt/");
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function isMarktChildActive(pathname: string, href: string) {
+  return pathname === href;
 }
 
 export const MOBILE_PRIMARY = [
@@ -66,7 +77,8 @@ export const MOBILE_PRIMARY = [
 
 export const DASHBOARD_LINKS = [
   { href: "/game/misdaden", label: "Misdaden", hint: "Cash en exp op straat", icon: Skull },
-  { href: "/game/vliegveld", label: "Vliegveld", hint: "Tien steden, smokkel", icon: Plane },
+  { href: "/game/vliegveld", label: "Vliegveld", hint: "Tien steden, tickets", icon: Plane },
+  { href: "/game/markt", label: "Markt", hint: "Smokkel, zwart en P2P", icon: Scale },
   { href: "/game/hoeren", label: "Hoeren", hint: "Ramen, crew en empire", icon: VenetianMask },
   { href: "/game/gym", label: "Gym", hint: "Kracht, conditie, vuisten", icon: Dumbbell },
   { href: "/game/casino", label: "Casino", hint: "Roulette, poker, de kooi", icon: Dices },
