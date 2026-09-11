@@ -6,7 +6,7 @@ import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
 import { fail, ok } from "@/lib/actions/helpers";
-import { ensureLiveBootstrap } from "@/lib/ensure-catalog";
+import { DEMO_EMAIL, ensureLiveBootstrap } from "@/lib/ensure-catalog";
 import type { ActionResult } from "@/types/game";
 
 function safeCallback(raw: string) {
@@ -26,13 +26,15 @@ export async function loginAction(
   if (!email || !password) return fail("Vul e-mail en wachtwoord in.");
   const callbackUrl = safeCallback(String(formData.get("callbackUrl") ?? "/game"));
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { totpEnabled: true },
-  });
-  if (!user) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
-  if (user.totpEnabled && !totp) {
-    return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
+  if (!totp && email !== DEMO_EMAIL) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { totpEnabled: true },
+    });
+    if (!user) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
+    if (user.totpEnabled) {
+      return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
+    }
   }
 
   try {

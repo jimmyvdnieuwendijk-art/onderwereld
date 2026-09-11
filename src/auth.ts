@@ -50,7 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         if (email === DEMO_EMAIL) {
-          await grantDemoTestCash();
+          void grantDemoTestCash().catch(() => undefined);
         }
 
         void prisma.user

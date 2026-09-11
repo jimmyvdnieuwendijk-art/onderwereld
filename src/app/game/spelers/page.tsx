@@ -1,5 +1,4 @@
-import { requirePlayer } from "@/lib/actions/helpers";
-import { redirect } from "next/navigation";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { prisma } from "@/lib/prisma";
 import { PlayersClient } from "./players-client";
 import { toPublicPlayer, publicDisplayName } from "@/lib/game/public-player";
@@ -13,13 +12,31 @@ export default async function PlayersPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
+  const selfId = await requireUserIdOrRedirect();
   const tab = (await searchParams).tab === "families" ? "families" : "players";
 
   const [users, families] = await Promise.all([
     prisma.user.findMany({
-      include: { rank: true, family: true },
+      select: {
+        id: true,
+        username: true,
+        health: true,
+        isDead: true,
+        killCount: true,
+        exp: true,
+        cash: true,
+        inJailUntil: true,
+        inHospitalUntil: true,
+        travelEndAt: true,
+        bio: true,
+        bioHidden: true,
+        hideOnline: true,
+        lastSeenAt: true,
+        displayName: true,
+        avatarUrl: true,
+        rank: { select: { name: true, order: true } },
+        family: { select: { name: true } },
+      },
       orderBy: [{ exp: "desc" }, { killCount: "desc" }, { cash: "desc" }],
       take: 80,
     }),
@@ -34,7 +51,7 @@ export default async function PlayersPage({
 
   return (
     <PlayersClient
-      selfId={player.id}
+      selfId={selfId}
       initialTab={tab}
       initial={users.map((user) => toPublicPlayer(user))}
       families={families.map((family) => ({

@@ -48,7 +48,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { QtyShortcuts } from "@/components/game/qty-shortcuts";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -68,15 +68,14 @@ export function BlackMarketClient({
   logs,
   alerts,
 }: {
-  initialPlayer: PlayerSnapshot;
+  initialPlayer?: PlayerSnapshot;
   listings: ListingDTO[];
   mine: ListingDTO[];
   history: ListingDTO[];
   logs: TradeLogDTO[];
   alerts: PriceAlertDTO[];
 }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+  const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
   const router = useRouter();
   const refresh = (r: ActionResult) => {

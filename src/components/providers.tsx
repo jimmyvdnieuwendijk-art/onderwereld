@@ -11,11 +11,11 @@ let browserQueryClient: QueryClient | undefined;
 function getQueryClient() {
   if (typeof window === "undefined") {
     return new QueryClient({
-      defaultOptions: { queries: { staleTime: 25_000, refetchOnWindowFocus: false } },
+      defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false, refetchOnMount: false } },
     });
   }
   browserQueryClient ??= new QueryClient({
-    defaultOptions: { queries: { staleTime: 25_000, refetchOnWindowFocus: false } },
+    defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false, refetchOnMount: false } },
   });
   return browserQueryClient;
 }

@@ -6,18 +6,17 @@ import { formatMoney, remainingMs } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Countdown } from "@/components/game/countdown";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
 
 export function JailClient({
   initialPlayer,
   occupantCount,
 }: {
-  initialPlayer: PlayerSnapshot;
+  initialPlayer?: PlayerSnapshot;
   occupantCount: number;
 }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+  const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
   const ms = remainingMs(p.inJailUntil);
   const jailed = ms > 0;

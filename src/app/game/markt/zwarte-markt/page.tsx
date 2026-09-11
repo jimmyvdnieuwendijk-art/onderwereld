@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePlayer } from "@/lib/actions/helpers";
-import { redirect } from "next/navigation";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { CONTRABAND_TYPES, type ListingDTO, type PriceAlertDTO, type TradeLogDTO } from "@/lib/market";
 import { BlackMarketClient } from "./black-market-client";
 
@@ -37,8 +36,7 @@ function serializeListing(row: {
 }
 
 export default async function ZwarteMarktPage() {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
+  const userId = await requireUserIdOrRedirect();
 
   const include = {
     seller: { select: { username: true } },
@@ -54,7 +52,7 @@ export default async function ZwarteMarktPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.marketListing.findMany({
-      where: { active: true, sellerId: player.id, type: { in: [...CONTRABAND_TYPES] } },
+      where: { active: true, sellerId: userId, type: { in: [...CONTRABAND_TYPES] } },
       include,
       orderBy: { createdAt: "desc" },
     }),
@@ -62,19 +60,19 @@ export default async function ZwarteMarktPage() {
       where: {
         active: false,
         type: { in: [...CONTRABAND_TYPES] },
-        OR: [{ sellerId: player.id }, { buyerId: player.id }],
+        OR: [{ sellerId: userId }, { buyerId: userId }],
       },
       include,
       orderBy: { completedAt: "desc" },
       take: 40,
     }),
     prisma.gameLog.findMany({
-      where: { userId: player.id, type: { in: ["SMUGGLE", "MARKET", "ALERT"] } },
+      where: { userId, type: { in: ["SMUGGLE", "MARKET", "ALERT"] } },
       orderBy: { createdAt: "desc" },
       take: 40,
     }),
     prisma.priceAlert.findMany({
-      where: { userId: player.id },
+      where: { userId },
       orderBy: { createdAt: "desc" },
     }),
   ]);
@@ -99,7 +97,6 @@ export default async function ZwarteMarktPage() {
 
   return (
     <BlackMarketClient
-      initialPlayer={player}
       listings={active.map(serializeListing)}
       mine={mine.map(serializeListing)}
       history={history.map(serializeListing)}

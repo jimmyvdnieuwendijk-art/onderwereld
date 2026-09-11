@@ -5,13 +5,12 @@ import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { usePlayer } from "@/hooks/use-player";
+import { useLivePlayer } from "@/hooks/use-player";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PlayerSnapshot } from "@/types/game";
 
-export function BankClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+export function BankClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
+  const p = useLivePlayer(initialPlayer)!;
   const [state, action, pending] = useFormAction(bankForm);
 
   return (

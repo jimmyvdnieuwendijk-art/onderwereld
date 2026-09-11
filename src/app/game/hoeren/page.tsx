@@ -1,4 +1,4 @@
-import { requirePlayer } from "@/lib/actions/helpers";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { tickPimpEconomy } from "@/lib/game/pimp-tick";
@@ -22,30 +22,39 @@ export const metadata = {
 };
 
 export default async function HoerenPage() {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
-  await tickPimpEconomy(player.id);
+  const userId = await requireUserIdOrRedirect();
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      currentCity: true,
+      wantedLevel: true,
+      lastRaidAt: true,
+      mainEscortId: true,
+    },
+  });
+  if (!me) redirect("/inloggen");
+  await tickPimpEconomy(userId);
 
-  const cityId = normalizeCityId(player.currentCity);
+  const cityId = normalizeCityId(me.currentCity);
   const now = Date.now();
 
   const [escorts, windows, listings, logs, zones] = await Promise.all([
     prisma.escort.findMany({
-      where: { ownerId: player.id },
+      where: { ownerId: userId },
       orderBy: { createdAt: "asc" },
     }),
     prisma.redLightWindow.findMany({
-      where: { ownerId: player.id, cityId },
+      where: { ownerId: userId, cityId },
       include: { escort: { select: { id: true, name: true, avatar: true } } },
     }),
     prisma.escort.findMany({
-      where: { listedPrice: { not: null }, ownerId: { not: player.id } },
+      where: { listedPrice: { not: null }, ownerId: { not: userId } },
       include: { owner: { select: { username: true } } },
       orderBy: { listedPrice: "asc" },
       take: 24,
     }),
     prisma.gameLog.findMany({
-      where: { userId: player.id, type: "PIMP" },
+      where: { userId, type: "PIMP" },
       orderBy: { createdAt: "desc" },
       take: 12,
     }),
@@ -63,7 +72,7 @@ export default async function HoerenPage() {
     cityName: cityDisplayName(row.cityId),
     windowId: row.windowId,
     listedPrice: row.listedPrice,
-    isMain: player.mainEscortId === row.id,
+    isMain: me.mainEscortId === row.id,
     hourly: Math.floor(
       hourlyPayout(row.charm, row.loyalty, row.health, row.cityId) * venuePayoutMult(row.venueKind),
     ),
@@ -91,8 +100,8 @@ export default async function HoerenPage() {
       status: windowStatus({
         hired,
         occupied: !!occupied,
-        wantedLevel: player.wantedLevel,
-        lastRaidAt: player.lastRaidAt,
+        wantedLevel: me.wantedLevel,
+        lastRaidAt: me.lastRaidAt,
         now,
       }),
     };
@@ -114,7 +123,6 @@ export default async function HoerenPage() {
 
   return (
     <HoerenClient
-      initialPlayer={player}
       escorts={escortDtos}
       windows={windowDtos}
       market={market}
@@ -124,7 +132,7 @@ export default async function HoerenPage() {
         name: streetZoneName(row.slotIndex),
         rivalName: rivalByKey(row.rivalKey).name,
         ownerId: row.ownerId,
-        mine: row.ownerId === player.id && row.claimedUntil.getTime() > now,
+        mine: row.ownerId === userId && row.claimedUntil.getTime() > now,
         claimedUntil: row.claimedUntil.toISOString(),
         heat: row.heat,
         fee: streetClaimCost(cityId),

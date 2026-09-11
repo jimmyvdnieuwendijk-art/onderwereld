@@ -6,7 +6,7 @@ import { formatClock, formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { usePlayer } from "@/hooks/use-player";
+import { useLivePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { airportArt } from "@/lib/game-art";
@@ -14,9 +14,8 @@ import { CardArt } from "@/components/game/card-art";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
-export function AirportClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+export function AirportClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
+  const p = useLivePlayer(initialPlayer)!;
   const [flightState, flightAction, flying] = useFormAction(bookFlightForm);
   const inAir = p.isTraveling;
 

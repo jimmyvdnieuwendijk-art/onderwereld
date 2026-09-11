@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { requirePlayer } from "@/lib/actions/helpers";
-import { migrateFamilyRoles, tickFamilyEconomy } from "@/lib/family";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
+import { migrateFamilyRoles } from "@/lib/family";
 import { ONLINE_WINDOW_MS } from "@/lib/constants";
 import { publicDisplayName } from "@/lib/game/public-player";
 import { redirect } from "next/navigation";
@@ -10,17 +10,24 @@ import type { FamilyHq, FamilyInviteRow, FamilyRival } from "./hq-types";
 export const metadata = { title: "Familie" };
 
 export default async function FamilyPage() {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
+  const userId = await requireUserIdOrRedirect();
 
-  const inviteRows = await prisma.familyInvite.findMany({
-    where: { toUserId: player.id },
-    include: {
-      family: { select: { name: true, memberLimit: true, _count: { select: { memberships: true } } } },
-      fromUser: { select: { username: true, displayName: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [me, inviteRows] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { familyId: true, familyMembership: { select: { role: true } } },
+    }),
+    prisma.familyInvite.findMany({
+      where: { toUserId: userId },
+      include: {
+        family: { select: { name: true, memberLimit: true, _count: { select: { memberships: true } } } },
+        fromUser: { select: { username: true, displayName: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+  if (!me) redirect("/inloggen");
+
   const invites: FamilyInviteRow[] = inviteRows.map((row) => ({
     id: row.id,
     familyName: row.family.name,
@@ -28,71 +35,73 @@ export default async function FamilyPage() {
     seats: `${row.family._count.memberships}/${row.family.memberLimit}`,
   }));
 
-  if (!player.family) {
-    return <FamilyClient selfId={player.id} selfRole={null} hq={null} invites={invites} rivals={[]} />;
+  if (!me.familyId) {
+    return <FamilyClient selfId={userId} selfRole={null} hq={null} invites={invites} rivals={[]} />;
   }
 
+  const familyId = me.familyId;
   const staleRole = await prisma.familyMember.findFirst({
-    where: { familyId: player.family.id, role: { in: ["LEADER", "OFFICER", "MEMBER"] } },
+    where: { familyId, role: { in: ["LEADER", "OFFICER", "MEMBER"] } },
     select: { id: true },
   });
   if (staleRole) {
-    await migrateFamilyRoles(player.family.id);
+    await migrateFamilyRoles(familyId);
   }
-  await tickFamilyEconomy(player.family.id);
 
-  const family = await prisma.family.findUnique({
-    where: { id: player.family.id },
-    include: {
-      leader: { select: { username: true, displayName: true } },
-      memberships: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatarUrl: true,
-              lastSeenAt: true,
-              hideOnline: true,
-              rank: { select: { name: true } },
+  const [family, rivalRows] = await Promise.all([
+    prisma.family.findUnique({
+      where: { id: familyId },
+      include: {
+        leader: { select: { username: true, displayName: true } },
+        memberships: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatarUrl: true,
+                lastSeenAt: true,
+                hideOnline: true,
+                rank: { select: { name: true } },
+              },
+            },
+          },
+          orderBy: { joinedAt: "asc" },
+        },
+        buildings: true,
+        ledger: {
+          orderBy: { createdAt: "desc" },
+          take: 30,
+          include: { user: { select: { username: true } } },
+        },
+        heists: {
+          where: { status: "OPEN" },
+          include: {
+            seats: {
+              include: { user: { select: { username: true, displayName: true } } },
             },
           },
         },
-        orderBy: { joinedAt: "asc" },
       },
-      buildings: true,
-      ledger: {
-        orderBy: { createdAt: "desc" },
-        take: 30,
-        include: { user: { select: { username: true } } },
+    }),
+    prisma.family.findMany({
+      where: { id: { not: familyId } },
+      select: {
+        id: true,
+        name: true,
+        defenseLevel: true,
+        _count: { select: { buildings: true, memberships: true } },
       },
-      heists: {
-        where: { status: "OPEN" },
-        include: {
-          seats: {
-            include: { user: { select: { username: true, displayName: true } } },
-          },
-        },
-      },
-    },
-  });
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
+  ]);
 
   if (!family) {
-    return <FamilyClient selfId={player.id} selfRole={null} hq={null} invites={invites} rivals={[]} />;
+    return <FamilyClient selfId={userId} selfRole={null} hq={null} invites={invites} rivals={[]} />;
   }
 
-  const rivalRows = await prisma.family.findMany({
-    where: { id: { not: family.id } },
-    select: {
-      id: true,
-      name: true,
-      defenseLevel: true,
-      _count: { select: { buildings: true, memberships: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 12,
-  });
   const rivals: FamilyRival[] = rivalRows.map((row) => ({
     id: row.id,
     name: row.name,
@@ -154,8 +163,8 @@ export default async function FamilyPage() {
 
   return (
     <FamilyClient
-      selfId={player.id}
-      selfRole={player.family.role}
+      selfId={userId}
+      selfRole={me.familyMembership?.role ?? null}
       hq={hq}
       invites={invites}
       rivals={rivals}

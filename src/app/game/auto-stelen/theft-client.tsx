@@ -5,7 +5,7 @@ import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { usePlayer } from "@/hooks/use-player";
+import { useLivePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { vehicleArt } from "@/lib/game-art";
@@ -26,11 +26,10 @@ export function TheftClient({
   initialPlayer,
   types,
 }: {
-  initialPlayer: PlayerSnapshot;
+  initialPlayer?: PlayerSnapshot;
   types: TypeRow[];
 }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+  const p = useLivePlayer(initialPlayer)!;
   const [state, action, pending] = useFormAction(stealCarForm);
 
   return (

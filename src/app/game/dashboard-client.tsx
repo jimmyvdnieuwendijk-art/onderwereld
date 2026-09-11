@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { DASHBOARD_LINKS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
@@ -22,11 +22,10 @@ export function DashboardClient({
   initialPlayer,
   logs,
 }: {
-  initialPlayer: PlayerSnapshot;
+  initialPlayer?: PlayerSnapshot;
   logs: LogRow[];
 }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+  const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
   const queryClient = useQueryClient();
   const [text, setText] = useState("");

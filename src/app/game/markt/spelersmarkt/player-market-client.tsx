@@ -7,17 +7,17 @@ import { formatMoney } from "@/lib/format";
 import { listingLabel, unitAsk, type ListingDTO } from "@/lib/market";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGameAction } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 
 export function PlayerMarketClient({
   listings,
   userId,
-  traveling,
 }: {
   listings: ListingDTO[];
   userId: string;
-  traveling: boolean;
 }) {
+  const player = useLivePlayer();
+  const traveling = !!player?.isTraveling;
   const { run, pending } = useGameAction();
   const router = useRouter();
   const refresh = (r: { ok: boolean }) => {

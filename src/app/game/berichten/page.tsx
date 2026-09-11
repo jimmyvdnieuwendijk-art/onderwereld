@@ -1,22 +1,20 @@
 import { prisma } from "@/lib/prisma";
-import { requirePlayer } from "@/lib/actions/helpers";
-import { redirect } from "next/navigation";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { InboxClient } from "./inbox-client";
 
 export default async function InboxPage() {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
+  const userId = await requireUserIdOrRedirect();
 
   const selectUser = { username: true, displayName: true };
   const [inbox, sent] = await Promise.all([
     prisma.message.findMany({
-      where: { toUserId: player.id, deletedByTo: false },
+      where: { toUserId: userId, deletedByTo: false },
       include: { fromUser: { select: selectUser }, toUser: { select: selectUser } },
       orderBy: { createdAt: "desc" },
       take: 80,
     }),
     prisma.message.findMany({
-      where: { fromUserId: player.id, deletedByFrom: false },
+      where: { fromUserId: userId, deletedByFrom: false },
       include: { fromUser: { select: selectUser }, toUser: { select: selectUser } },
       orderBy: { createdAt: "desc" },
       take: 80,

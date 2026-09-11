@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { auth } from "@/auth";
 import styles from "./landing.module.css";
 
 const FEATURES = [
@@ -10,10 +9,7 @@ const FEATURES = [
   { title: "FAMILIES", src: "/landing/families.webp", alt: "Gouden leeuwenwapen met kroon" },
 ] as const;
 
-export default async function LandingPage() {
-  const session = await auth();
-  const playHref = session?.user ? "/game" : "/registreren";
-
+export default function LandingPage() {
   return (
     <div className={styles.page}>
       <div className={styles.backdrop}>
@@ -36,7 +32,7 @@ export default async function LandingPage() {
             <Link href="/inloggen" className={styles.ghost}>
               Inloggen
             </Link>
-            <Link href={playHref} className={styles.play}>
+            <Link href="/game" className={styles.play}>
               SPELEN
             </Link>
           </nav>

@@ -26,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { CardArt } from "@/components/game/card-art";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
-import { usePlayer } from "@/hooks/use-player";
+import { useLivePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -34,9 +34,8 @@ import { useEffect, useState } from "react";
 const RACE_BOARD = pitOdds();
 const FIGHT_BOARD = fightOdds();
 
-export function CasinoClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+export function CasinoClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
+  const p = useLivePlayer(initialPlayer)!;
   const router = useRouter();
   const [rouletteState, rouletteAction, spinning] = useFormAction(playRouletteForm);
   const [streetState, streetAction, rolling] = useFormAction(playStreetForm);

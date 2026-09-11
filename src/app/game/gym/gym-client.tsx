@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CardArt } from "@/components/game/card-art";
 import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
-import { usePlayer } from "@/hooks/use-player";
+import { useLivePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import type { PlayerSnapshot } from "@/types/game";
 import { useRouter } from "next/navigation";
@@ -44,9 +44,8 @@ function Meter({ label, value, max, barClass }: { label: string; value: number; 
   );
 }
 
-export function GymClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+export function GymClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
+  const p = useLivePlayer(initialPlayer)!;
   const router = useRouter();
   const [trainState, trainAction, training] = useFormAction(trainGymForm);
   const [unlockState, unlockAction, unlocking] = useFormAction(unlockGymFloorForm);

@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   // does not refetch the player on every sidebar click.
   experimental: {
     staleTimes: {
-      dynamic: 30,
+      dynamic: 60,
       static: 180,
     },
     serverActions: {

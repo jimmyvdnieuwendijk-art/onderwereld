@@ -1,6 +1,6 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requirePlayer } from "@/lib/actions/helpers";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { PlayerProfileClient } from "./profile-client";
 import { toPublicPlayer } from "@/lib/game/public-player";
 
@@ -9,12 +9,30 @@ export default async function PlayerProfilePage({
 }: {
   params: Promise<{ username: string }>;
 }) {
-  const self = await requirePlayer();
-  if (!self) redirect("/inloggen");
+  await requireUserIdOrRedirect();
   const { username } = await params;
   const user = await prisma.user.findFirst({
     where: { username },
-    include: { rank: true, family: true },
+    select: {
+      id: true,
+      username: true,
+      health: true,
+      isDead: true,
+      killCount: true,
+      exp: true,
+      cash: true,
+      inJailUntil: true,
+      inHospitalUntil: true,
+      travelEndAt: true,
+      bio: true,
+      bioHidden: true,
+      hideOnline: true,
+      lastSeenAt: true,
+      displayName: true,
+      avatarUrl: true,
+      rank: { select: { name: true, order: true } },
+      family: { select: { name: true } },
+    },
   });
   if (!user) notFound();
   return <PlayerProfileClient target={toPublicPlayer(user)} />;

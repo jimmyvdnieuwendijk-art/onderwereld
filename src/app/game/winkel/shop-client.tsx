@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { useRouter } from "next/navigation";
 import { shopArt } from "@/lib/game-art";
@@ -36,12 +36,11 @@ export function ShopClient({
   items,
   inventory,
 }: {
-  initialPlayer: PlayerSnapshot;
+  initialPlayer?: PlayerSnapshot;
   items: Item[];
   inventory: Inv[];
 }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+  const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
   const [buyState, buyAction, buying] = useFormAction(buyItemForm);
   const router = useRouter();

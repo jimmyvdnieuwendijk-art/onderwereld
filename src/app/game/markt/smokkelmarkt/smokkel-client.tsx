@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QtyShortcuts } from "@/components/game/qty-shortcuts";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -30,9 +30,8 @@ const ICONS: Record<SmuggleGood, typeof Pill> = {
   bullets: Crosshair,
 };
 
-export function SmokkelClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+export function SmokkelClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
+  const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
   const router = useRouter();
   const [side, setSide] = useState<"buy" | "sell">("buy");

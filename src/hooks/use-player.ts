@@ -16,10 +16,17 @@ export function usePlayer(initial?: PlayerSnapshot) {
     queryKey: ["player"],
     queryFn: fetchPlayer,
     initialData: initial,
-    staleTime: 25_000,
-    refetchInterval: 30_000,
+    placeholderData: (previous) => previous ?? initial,
+    staleTime: 30_000,
+    refetchInterval: 45_000,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
+}
+
+export function useLivePlayer(initial?: PlayerSnapshot) {
+  const { data } = usePlayer(initial);
+  return data ?? initial ?? null;
 }
 
 export function useGameAction() {

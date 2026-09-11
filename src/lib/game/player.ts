@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   BANK_INTEREST_INTERVAL_MS,
@@ -27,23 +28,45 @@ const playerInclude = {
   familyMembership: { select: { role: true } },
   equippedWeapon: true,
   equippedArmor: true,
-  receivedMessages: { where: { read: false, deletedByTo: false }, select: { id: true }, take: 30 },
-  _count: { select: { vehicles: true, escorts: true } },
+  _count: {
+    select: {
+      vehicles: true,
+      escorts: true,
+      receivedMessages: { where: { read: false, deletedByTo: false } },
+    },
+  },
+} as const;
+
+const playerOmit = {
+  hashedPassword: true,
+  totpSecret: true,
+  totpPending: true,
 } as const;
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
 }
 
-export async function tickPlayer(userId: string, opts?: { economy?: boolean }) {
+async function loadPlayerRow(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    omit: playerOmit,
+    include: playerInclude,
+  });
+}
+
+type PlayerRow = NonNullable<Awaited<ReturnType<typeof loadPlayerRow>>>;
+
+export async function tickPlayer(
+  userId: string,
+  opts?: { economy?: boolean; persist?: "await" | "after" },
+) {
   const now = new Date();
   const economy = opts?.economy === true;
+  const persistMode = opts?.persist ?? "await";
 
   const [user, ranks] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      include: playerInclude,
-    }),
+    loadPlayerRow(userId),
     getRanksCached(),
   ]);
 
@@ -136,85 +159,81 @@ export async function tickPlayer(userId: string, opts?: { economy?: boolean }) {
     patch.rankId = matching.id;
   }
 
-  let updated =
-    Object.keys(patch).length > 0
-      ? await prisma.user.update({
-          where: { id: userId },
-          data: patch,
-          include: playerInclude,
-        })
-      : user;
+  const live = {
+    ...user,
+    ...patch,
+    rank: patch.rankId && matching ? matching : user.rank,
+  };
 
-  if (patch.rankId && matching && matching.id !== user.rankId) {
-    await prisma.gameLog.create({
-      data: {
-        userId,
-        type: "RANK",
-        message: `Je bent gepromoveerd tot ${matching.name}.`,
-      },
-    });
-  }
+  const pimpDue = now.getTime() - live.lastPimpTickAt.getTime() >= PIMP_HOUR_MS;
+  const runPimp = pimpDue || (economy && live._count.escorts > 0);
+  const familyDue =
+    !!live.familyId &&
+    !!live.family &&
+    now.getTime() - live.family.lastIncomeAt.getTime() >= FAMILY_HOUR_MS;
 
-  if (arriving) {
-    const dest = getAirport(user.travelDestinationId ?? "ams");
-    await prisma.gameLog.create({
-      data: {
-        userId,
-        type: "TRAVEL",
-        message: `Je landt op ${dest.airport} in ${dest.city}. De douane wuift je door — of kijkt de andere kant op.`,
-      },
-    });
-    await firePriceAlerts(userId, dest.id);
-  }
-
-  const pimpDue = now.getTime() - updated.lastPimpTickAt.getTime() >= PIMP_HOUR_MS;
-  if (pimpDue || (economy && updated._count.escorts > 0)) {
-    const pimp = await tickPimpEconomy(userId, now);
-    if (pimp.changed) {
-      const again = await prisma.user.findUnique({
+  const persist = async () => {
+    if (Object.keys(patch).length > 0) {
+      await prisma.user.update({
         where: { id: userId },
-        include: playerInclude,
+        data: patch,
       });
-      if (again) updated = again;
+    }
+
+    if (patch.rankId && matching && matching.id !== user.rankId) {
+      await prisma.gameLog.create({
+        data: {
+          userId,
+          type: "RANK",
+          message: `Je bent gepromoveerd tot ${matching.name}.`,
+        },
+      });
+    }
+
+    if (arriving) {
+      const dest = getAirport(user.travelDestinationId ?? "ams");
+      await prisma.gameLog.create({
+        data: {
+          userId,
+          type: "TRAVEL",
+          message: `Je landt op ${dest.airport} in ${dest.city}. De douane wuift je door — of kijkt de andere kant op.`,
+        },
+      });
+      await firePriceAlerts(userId, dest.id);
+    }
+
+    if (runPimp) {
+      await tickPimpEconomy(userId, now);
+    }
+    if (familyDue && live.familyId) {
+      await tickFamilyEconomy(live.familyId, now);
+    }
+  };
+
+  const needsWork =
+    Object.keys(patch).length > 0 || arriving || runPimp || familyDue;
+
+  if (needsWork) {
+    if (persistMode === "after") {
+      after(() => {
+        void persist().catch(() => undefined);
+      });
+    } else {
+      await persist();
+      if (runPimp) {
+        const again = await loadPlayerRow(userId);
+        if (again) {
+          return toSnapshot(again, ranks);
+        }
+      }
     }
   }
 
-  const familyDue =
-    !!updated.familyId &&
-    !!updated.family &&
-    now.getTime() - updated.family.lastIncomeAt.getTime() >= FAMILY_HOUR_MS;
-  if (familyDue) {
-    await tickFamilyEconomy(updated.familyId!, now);
-  }
-
-  return toSnapshot(updated, ranks);
+  return toSnapshot(live, ranks);
 }
 
 function toSnapshot(
-  user: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>> & {
-    rank: { id: string; slug: string; name: string; minExp: number; order: number };
-    family: { id: string; name: string; lastIncomeAt: Date } | null;
-    familyMembership: { role: string } | null;
-    equippedWeapon: { id: string; name: string; attack: number; defense: number } | null;
-    equippedArmor: { id: string; name: string; attack: number; defense: number } | null;
-    receivedMessages: { id: string }[];
-    _count: { vehicles: number; escorts: number };
-    pimpExp: number;
-    mainEscortId: string | null;
-    lastRaidAt: Date | null;
-    blackmailTapes: number;
-    outbreakUntil: Date | null;
-    streetProtectUntil: Date | null;
-    strength: number;
-    condition: number;
-    fightSkill: number;
-    gymExp: number;
-    gymFloor: number;
-    gymCooldownUntil: Date | null;
-    casinoCooldownUntil: Date | null;
-    casinoPeekUntil: Date | null;
-    casinoPokerJson: string | null;
-  },
+  user: PlayerRow,
   ranks: { id: string; slug: string; name: string; minExp: number; order: number }[],
 ): PlayerSnapshot {
   const nextRank = ranks.find((rank) => rank.order === user.rank.order + 1) ?? null;
@@ -261,7 +280,7 @@ function toSnapshot(
     family: user.family
       ? { id: user.family.id, name: user.family.name, role: user.familyMembership?.role ?? null }
       : null,
-    unreadMessages: user.receivedMessages.length,
+    unreadMessages: user._count.receivedMessages,
     equippedWeapon: user.equippedWeapon,
     equippedArmor: user.equippedArmor,
     vehicleCount: user._count.vehicles,

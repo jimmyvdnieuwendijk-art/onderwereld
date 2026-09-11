@@ -49,7 +49,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { CardArt } from "@/components/game/card-art";
 import { Countdown } from "@/components/game/countdown";
-import { usePlayer } from "@/hooks/use-player";
+import { useLivePlayer } from "@/hooks/use-player";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -84,15 +84,14 @@ export function HoerenClient({
   zones,
   logs,
 }: {
-  initialPlayer: PlayerSnapshot;
+  initialPlayer?: PlayerSnapshot;
   escorts: EscortDTO[];
   windows: WindowDTO[];
   market: MarketEscortDTO[];
   zones: StreetZoneDTO[];
   logs: { id: string; message: string; createdAt: string }[];
 }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+  const p = useLivePlayer(initialPlayer)!;
   const router = useRouter();
   const progress = pimpRankProgress(p.pimpExp);
   const rank = progress.current;

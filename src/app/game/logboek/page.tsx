@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requirePlayer, pruneGameLogs } from "@/lib/actions/helpers";
+import { requireUserIdOrRedirect, pruneGameLogs } from "@/lib/actions/helpers";
 import { LOG_MAX_PAGES, LOG_PAGE_SIZE } from "@/lib/constants";
-import { redirect } from "next/navigation";
 import { formatDateTime } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -12,21 +12,25 @@ export default async function LogPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
-  await pruneGameLogs(player.id);
+  const userId = await requireUserIdOrRedirect();
+  after(() => {
+    void pruneGameLogs(userId).catch(() => undefined);
+  });
 
   const raw = Number((await searchParams).page ?? "1");
   const page = Math.min(LOG_MAX_PAGES, Math.max(1, Number.isFinite(raw) ? Math.floor(raw) : 1));
-  const total = await prisma.gameLog.count({ where: { userId: player.id } });
+  const [total, logs] = await Promise.all([
+    prisma.gameLog.count({ where: { userId } }),
+    prisma.gameLog.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * LOG_PAGE_SIZE,
+      take: LOG_PAGE_SIZE,
+      select: { id: true, type: true, message: true, createdAt: true },
+    }),
+  ]);
   const pages = Math.min(LOG_MAX_PAGES, Math.max(1, Math.ceil(total / LOG_PAGE_SIZE)));
   const current = Math.min(page, pages);
-  const logs = await prisma.gameLog.findMany({
-    where: { userId: player.id },
-    orderBy: { createdAt: "desc" },
-    skip: (current - 1) * LOG_PAGE_SIZE,
-    take: LOG_PAGE_SIZE,
-  });
 
   return (
     <div className="space-y-3">

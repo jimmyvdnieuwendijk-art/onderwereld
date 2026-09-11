@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requirePlayer } from "@/lib/actions/helpers";
-import { redirect } from "next/navigation";
+import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { LISTING_ITEM, LISTING_VEHICLE } from "@/lib/constants";
 import type { ListingDTO } from "@/lib/market";
 import { PlayerMarketClient } from "./player-market-client";
@@ -38,8 +37,7 @@ function serializeListing(row: {
 }
 
 export default async function SpelersmarktPage() {
-  const player = await requirePlayer();
-  if (!player) redirect("/inloggen");
+  const userId = await requireUserIdOrRedirect();
   const include = {
     seller: { select: { username: true } },
     buyer: { select: { username: true } },
@@ -53,8 +51,7 @@ export default async function SpelersmarktPage() {
   });
   return (
     <PlayerMarketClient
-      userId={player.id}
-      traveling={player.isTraveling}
+      userId={userId}
       listings={listings.map(serializeListing)}
     />
   );

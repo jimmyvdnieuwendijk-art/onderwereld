@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -13,11 +14,17 @@ export const requireUserId = cache(async () => {
   return id;
 });
 
-/** One player tick per incoming request — layout and page share this. */
+export async function requireUserIdOrRedirect() {
+  const id = await requireUserId();
+  if (!id) redirect("/inloggen");
+  return id;
+}
+
+/** Layout snapshot: one read, writes scheduled after the response. */
 export const requirePlayer = cache(async () => {
   const id = await requireUserId();
   if (!id) return null;
-  return tickPlayer(id);
+  return tickPlayer(id, { persist: "after" });
 });
 
 export function fail(

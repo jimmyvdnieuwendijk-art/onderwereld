@@ -29,7 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogOut } from "lucide-react";
 import { PlayerAvatar } from "@/components/game/player-avatar";
-import { useGameAction, usePlayer } from "@/hooks/use-player";
+import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
 
 function FormMessage({ state }: { state: ActionResult | null }) {
@@ -48,9 +48,8 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot }) {
-  const { data: player } = usePlayer(initialPlayer);
-  const p = player ?? initialPlayer;
+export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
+  const p = useLivePlayer(initialPlayer)!;
   const avatarAct = useGameAction();
   const bioAct = useGameAction();
   const lookAct = useGameAction();
@@ -59,10 +58,10 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const previewRef = useRef<string | null>(null);
-  const [bio, setBio] = useState(initialPlayer.bio ?? "");
-  const [displayName, setDisplayName] = useState(initialPlayer.displayName ?? "");
-  const [bioHidden, setBioHidden] = useState(initialPlayer.bioHidden);
-  const [hideOnline, setHideOnline] = useState(initialPlayer.hideOnline);
+  const [bio, setBio] = useState(p.bio ?? "");
+  const [displayName, setDisplayName] = useState(p.displayName ?? "");
+  const [bioHidden, setBioHidden] = useState(p.bioHidden);
+  const [hideOnline, setHideOnline] = useState(p.hideOnline);
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
