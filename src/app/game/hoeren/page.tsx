@@ -1,6 +1,7 @@
 import { requirePlayer } from "@/lib/actions/helpers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { tickPimpEconomy } from "@/lib/game/pimp-tick";
 import { cityDisplayName, normalizeCityId } from "@/lib/airports";
 import {
   WINDOWS_PER_CITY,
@@ -23,6 +24,7 @@ export const metadata = {
 export default async function HoerenPage() {
   const player = await requirePlayer();
   if (!player) redirect("/inloggen");
+  await tickPimpEconomy(player.id);
 
   const cityId = normalizeCityId(player.currentCity);
   const now = Date.now();

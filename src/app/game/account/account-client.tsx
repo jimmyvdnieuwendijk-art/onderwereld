@@ -92,7 +92,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer: PlayerSnapshot
           </div>
           <Link
             href={`/game/spelers/${p.username}`}
-            prefetch
             className="text-sm text-primary hover:underline"
           >
             Bekijk publiek profiel

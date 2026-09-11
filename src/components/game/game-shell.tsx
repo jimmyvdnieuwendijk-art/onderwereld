@@ -55,7 +55,6 @@ function NavItemLinks({
           <div key={item.href}>
           <Link
             href={item.href}
-            prefetch
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
@@ -81,7 +80,6 @@ function NavItemLinks({
                   <Link
                     key={child.href}
                     href={child.href}
-                    prefetch
                     onClick={onNavigate}
                     aria-current={childActive ? "page" : undefined}
                     className={cn(
@@ -200,7 +198,7 @@ export function GameShell({
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r border-border/70 bg-sidebar/80 p-3 md:flex md:flex-col">
-        <Link href="/game" prefetch className="mb-4 px-1">
+        <Link href="/game" className="mb-4 px-1">
           <p className="font-heading text-xl tracking-wide text-primary">Onderwereld</p>
           <p className="text-xs text-muted-foreground">{p.displayName?.trim() || p.username} · {p.currentCityName}</p>
         </Link>
@@ -321,7 +319,6 @@ export function GameShell({
             <Link
               key={item.href}
               href={item.href}
-              prefetch
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-2 text-[10px]",

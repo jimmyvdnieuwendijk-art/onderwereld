@@ -1,13 +1,12 @@
 "use server";
 
-import { hash, compare } from "bcryptjs";
+import { hash } from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
 import { fail, ok } from "@/lib/actions/helpers";
 import { ensureLiveBootstrap } from "@/lib/ensure-catalog";
-import { verifyTotp } from "@/lib/totp";
 import type { ActionResult } from "@/types/game";
 
 function safeCallback(raw: string) {
@@ -19,7 +18,6 @@ export async function loginAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await ensureLiveBootstrap();
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
@@ -30,18 +28,11 @@ export async function loginAction(
 
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { hashedPassword: true, totpEnabled: true, totpSecret: true },
+    select: { totpEnabled: true },
   });
   if (!user) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
-  const valid = await compare(password, user.hashedPassword);
-  if (!valid) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
-  if (user.totpEnabled) {
-    if (!totp) {
-      return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
-    }
-    if (!user.totpSecret || !verifyTotp(user.totpSecret, totp)) {
-      return fail("Ongeldige authenticatorcode.", "error", { needsTotp: true });
-    }
+  if (user.totpEnabled && !totp) {
+    return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
   }
 
   try {

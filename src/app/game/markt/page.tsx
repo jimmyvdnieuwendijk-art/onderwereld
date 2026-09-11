@@ -37,7 +37,7 @@ export default function MarktHubPage() {
         {HUB.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href} prefetch>
+            <Link key={item.href} href={item.href}>
               <Card className="h-full border-[#d4a359]/25 bg-[#1a1510] transition-colors hover:border-[#d4a359]/55">
                 <CardHeader>
                   <CardTitle className="font-heading flex items-center gap-2 text-[#d4a359]">

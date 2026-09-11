@@ -18,7 +18,6 @@ export function MarktSubnav() {
           <Link
             key={item.href}
             href={item.href}
-            prefetch
             aria-current={active ? "page" : undefined}
             className={cn(
               "shrink-0 rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors",

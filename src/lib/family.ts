@@ -344,7 +344,6 @@ export async function migrateFamilyRoles(familyId: string) {
 }
 
 export async function tickFamilyEconomy(familyId: string, now = new Date()) {
-  await migrateFamilyRoles(familyId);
   const family = await prisma.family.findUnique({
     where: { id: familyId },
     include: { buildings: true },

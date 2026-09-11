@@ -4,6 +4,7 @@ import {
   BANK_INTEREST_RATE,
   ENERGY_PER_TICK,
   ENERGY_TICK_MS,
+  FAMILY_HOUR_MS,
   LAST_SEEN_WRITE_MS,
   MAX_ENERGY,
 } from "@/lib/constants";
@@ -17,33 +18,16 @@ import { firePriceAlerts } from "@/lib/game/price-alerts";
 import { getRanksCached } from "@/lib/catalog";
 import type { PlayerSnapshot } from "@/types/game";
 
-/** Skip pimp DB work on rapid navigations; still run when an in-game hour is due. */
-const PIMP_NAV_THROTTLE_MS = 12_000;
-const lastPimpCallAt = new Map<string, number>();
-
-function shouldTickPimp(userId: string, lastPimpTickAt: Date, now: Date) {
-  const incomeDue = now.getTime() - lastPimpTickAt.getTime() >= PIMP_HOUR_MS;
-  const lastCall = lastPimpCallAt.get(userId) ?? 0;
-  if (!incomeDue && now.getTime() - lastCall < PIMP_NAV_THROTTLE_MS) {
-    return false;
-  }
-  lastPimpCallAt.set(userId, now.getTime());
-  if (lastPimpCallAt.size > 1500) {
-    const cutoff = now.getTime() - 60_000;
-    for (const [id, at] of lastPimpCallAt) {
-      if (at < cutoff) lastPimpCallAt.delete(id);
-    }
-  }
-  return true;
-}
+/** Persist energy at most every 30s so nav does not write on every request. */
+const ENERGY_PERSIST_TICKS = 3;
 
 const playerInclude = {
   rank: true,
-  family: true,
-  familyMembership: true,
+  family: { select: { id: true, name: true, lastIncomeAt: true } },
+  familyMembership: { select: { role: true } },
   equippedWeapon: true,
   equippedArmor: true,
-  receivedMessages: { where: { read: false, deletedByTo: false }, select: { id: true } },
+  receivedMessages: { where: { read: false, deletedByTo: false }, select: { id: true }, take: 30 },
   _count: { select: { vehicles: true, escorts: true } },
 } as const;
 
@@ -51,13 +35,17 @@ function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
 }
 
-export async function tickPlayer(userId: string) {
+export async function tickPlayer(userId: string, opts?: { economy?: boolean }) {
   const now = new Date();
+  const economy = opts?.economy === true;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: playerInclude,
-  });
+  const [user, ranks] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      include: playerInclude,
+    }),
+    getRanksCached(),
+  ]);
 
   if (!user) return null;
 
@@ -108,9 +96,13 @@ export async function tickPlayer(userId: string) {
   const energyElapsed = now.getTime() - user.lastEnergyAt.getTime();
   const energyTicks = Math.floor(energyElapsed / ENERGY_TICK_MS);
   if (energyTicks > 0 && user.energy < MAX_ENERGY) {
-    patch.energy = Math.min(MAX_ENERGY, user.energy + energyTicks * ENERGY_PER_TICK);
-    patch.lastEnergyAt = new Date(user.lastEnergyAt.getTime() + energyTicks * ENERGY_TICK_MS);
-  } else if (user.energy >= MAX_ENERGY) {
+    const nextEnergy = Math.min(MAX_ENERGY, user.energy + energyTicks * ENERGY_PER_TICK);
+    user.energy = nextEnergy;
+    if (energyTicks >= ENERGY_PERSIST_TICKS || nextEnergy >= MAX_ENERGY) {
+      patch.energy = nextEnergy;
+      patch.lastEnergyAt = new Date(user.lastEnergyAt.getTime() + energyTicks * ENERGY_TICK_MS);
+    }
+  } else if (user.energy >= MAX_ENERGY && energyElapsed >= LAST_SEEN_WRITE_MS) {
     patch.lastEnergyAt = now;
   }
 
@@ -138,7 +130,6 @@ export async function tickPlayer(userId: string) {
     if (user.health < 25) patch.health = 25;
   }
 
-  const ranks = await getRanksCached();
   const currentExp = user.exp;
   const matching = [...ranks].reverse().find((rank) => currentExp >= rank.minExp) ?? ranks[0];
   if (matching && matching.id !== user.rankId) {
@@ -176,7 +167,8 @@ export async function tickPlayer(userId: string) {
     await firePriceAlerts(userId, dest.id);
   }
 
-  if (shouldTickPimp(userId, updated.lastPimpTickAt, now)) {
+  const pimpDue = now.getTime() - updated.lastPimpTickAt.getTime() >= PIMP_HOUR_MS;
+  if (pimpDue || (economy && updated._count.escorts > 0)) {
     const pimp = await tickPimpEconomy(userId, now);
     if (pimp.changed) {
       const again = await prisma.user.findUnique({
@@ -187,8 +179,12 @@ export async function tickPlayer(userId: string) {
     }
   }
 
-  if (updated.familyId) {
-    await tickFamilyEconomy(updated.familyId, now);
+  const familyDue =
+    !!updated.familyId &&
+    !!updated.family &&
+    now.getTime() - updated.family.lastIncomeAt.getTime() >= FAMILY_HOUR_MS;
+  if (familyDue) {
+    await tickFamilyEconomy(updated.familyId!, now);
   }
 
   return toSnapshot(updated, ranks);
@@ -197,7 +193,7 @@ export async function tickPlayer(userId: string) {
 function toSnapshot(
   user: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>> & {
     rank: { id: string; slug: string; name: string; minExp: number; order: number };
-    family: { id: string; name: string } | null;
+    family: { id: string; name: string; lastIncomeAt: Date } | null;
     familyMembership: { role: string } | null;
     equippedWeapon: { id: string; name: string; attack: number; defense: number } | null;
     equippedArmor: { id: string; name: string; attack: number; defense: number } | null;

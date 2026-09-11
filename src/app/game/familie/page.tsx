@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requirePlayer } from "@/lib/actions/helpers";
-import { tickFamilyEconomy } from "@/lib/family";
+import { migrateFamilyRoles, tickFamilyEconomy } from "@/lib/family";
 import { ONLINE_WINDOW_MS } from "@/lib/constants";
 import { publicDisplayName } from "@/lib/game/public-player";
 import { redirect } from "next/navigation";
@@ -32,6 +32,13 @@ export default async function FamilyPage() {
     return <FamilyClient selfId={player.id} selfRole={null} hq={null} invites={invites} rivals={[]} />;
   }
 
+  const staleRole = await prisma.familyMember.findFirst({
+    where: { familyId: player.family.id, role: { in: ["LEADER", "OFFICER", "MEMBER"] } },
+    select: { id: true },
+  });
+  if (staleRole) {
+    await migrateFamilyRoles(player.family.id);
+  }
   await tickFamilyEconomy(player.family.id);
 
   const family = await prisma.family.findUnique({

@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyTotp } from "@/lib/totp";
+import { DEMO_EMAIL, grantDemoTestCash } from "@/lib/ensure-catalog";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -28,7 +29,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const totp = String(credentials?.totp ?? "").trim();
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            hashedPassword: true,
+            totpEnabled: true,
+            totpSecret: true,
+          },
+        });
         if (!user) return null;
 
         const valid = await compare(password, user.hashedPassword);
@@ -38,10 +49,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!user.totpSecret || !verifyTotp(user.totpSecret, totp)) return null;
         }
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastLoginAt: new Date() },
-        });
+        if (email === DEMO_EMAIL) {
+          await grantDemoTestCash();
+        }
+
+        void prisma.user
+          .update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          })
+          .catch(() => undefined);
 
         return { id: user.id, email: user.email, name: user.username };
       },

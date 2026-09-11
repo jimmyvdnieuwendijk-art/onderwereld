@@ -38,8 +38,8 @@ export function DashboardClient({
       if (!res.ok) throw new Error("shoutbox");
       return res.json() as Promise<Shout[]>;
     },
-    staleTime: 6_000,
-    refetchInterval: 8_000,
+    staleTime: 15_000,
+    refetchInterval: 20_000,
   });
 
   const statusChips = [
@@ -92,7 +92,6 @@ export function DashboardClient({
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch
                 className={cn(
                   "group rounded-xl border border-border/60 bg-card/70 p-3 transition-colors",
                   "hover:border-primary/40 hover:bg-card",
@@ -128,7 +127,7 @@ export function DashboardClient({
             {logs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Nog geen geschiedenis.{" "}
-                <Link href="/game/misdaden" prefetch className="text-primary hover:underline">
+                <Link href="/game/misdaden" className="text-primary hover:underline">
                   Pleeg een misdaad
                 </Link>
                 .
