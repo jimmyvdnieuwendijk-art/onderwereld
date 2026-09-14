@@ -243,35 +243,37 @@ export async function createListing(input: {
     const unit = Math.floor(price / qty);
     const margin = listingUnitError(unit, owned.item.price);
     if (margin) return fail(margin);
-    if (owned.quantity === qty) {
-      await prisma.inventoryItem.delete({ where: { id: owned.id } });
-    } else {
-      await prisma.inventoryItem.update({
-        where: { id: owned.id },
-        data: { quantity: { decrement: qty } },
-      });
-    }
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (user?.equippedWeaponId === owned.itemId && owned.quantity <= qty) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { equippedWeaponId: null, attackPower: BASE_ATTACK },
+    await prisma.$transaction(async (tx) => {
+      if (owned.quantity === qty) {
+        await tx.inventoryItem.delete({ where: { id: owned.id } });
+      } else {
+        await tx.inventoryItem.update({
+          where: { id: owned.id },
+          data: { quantity: { decrement: qty } },
+        });
+      }
+      if (user?.equippedWeaponId === owned.itemId && owned.quantity <= qty) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { equippedWeaponId: null, attackPower: BASE_ATTACK },
+        });
+      }
+      if (user?.equippedArmorId === owned.itemId && owned.quantity <= qty) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { equippedArmorId: null, defense: 0 },
+        });
+      }
+      await tx.marketListing.create({
+        data: {
+          sellerId: userId,
+          type: LISTING_ITEM,
+          quantity: qty,
+          price,
+          itemId: owned.itemId,
+        },
       });
-    }
-    if (user?.equippedArmorId === owned.itemId && owned.quantity <= qty) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { equippedArmorId: null, defense: 0 },
-      });
-    }
-    await prisma.marketListing.create({
-      data: {
-        sellerId: userId,
-        type: LISTING_ITEM,
-        quantity: qty,
-        price,
-        itemId: owned.itemId,
-      },
     });
     return ok(`Je zet ${qty}× ${owned.item.name} te koop.`);
   }
