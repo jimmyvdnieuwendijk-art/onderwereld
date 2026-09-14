@@ -202,7 +202,7 @@ export async function payHospital(): Promise<ActionResult> {
   const player = await tickPlayer(userId);
   if (!player) return fail("Speler niet gevonden.");
   const ms = remainingMs(player.inHospitalUntil);
-  if (ms <= 0 && !player.isDead) return fail("Je ligt niet in het ziekenhuis.");
+  if (ms <= 0) return fail("Je ligt niet in het ziekenhuis.");
 
   const minutes = Math.max(1, Math.ceil(ms / 60_000));
   const cost = minutes * HOSPITAL_PER_MINUTE;

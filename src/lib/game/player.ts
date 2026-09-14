@@ -386,7 +386,7 @@ export function blockedReason(
       : player.inHospitalUntil.getTime()) > now;
 
   if (jail) return "Je zit in de gevangenis. Wacht of betaal borg.";
-  if (hospital || player.isDead) return "Je ligt in het ziekenhuis en kunt nu niets ondernemen.";
+  if (hospital) return "Je ligt in het ziekenhuis en kunt nu niets ondernemen.";
   if (opts?.travel !== false && isPlayerTraveling(player)) {
     return "Je zit in het vliegtuig. Misdaden, handel en gevechten moeten wachten tot je landt.";
   }
