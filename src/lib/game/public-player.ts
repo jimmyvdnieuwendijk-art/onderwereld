@@ -32,6 +32,9 @@ export function toPublicPlayer(user: {
   const bio = user.bio?.trim() ? user.bio : null;
   const seen = user.lastSeenAt?.getTime() ?? 0;
   const isOnline = !user.hideOnline && seen > 0 && now - seen <= ONLINE_WINDOW_MS;
+  const inJail = !!(user.inJailUntil && user.inJailUntil.getTime() > now);
+  const inHospital = !!(user.inHospitalUntil && user.inHospitalUntil.getTime() > now);
+  const isDead = !!user.isDead && inHospital;
   return {
     id: user.id,
     username: user.username,
@@ -40,10 +43,10 @@ export function toPublicPlayer(user: {
     rankOrder: user.rank.order,
     exp: user.exp,
     cash: user.cash,
-    health: user.health,
-    isDead: user.isDead,
-    inJail: !!(user.inJailUntil && user.inJailUntil.getTime() > now),
-    inHospital: !!(user.inHospitalUntil && user.inHospitalUntil.getTime() > now),
+    health: isDead || inHospital ? user.health : user.isDead ? 25 : user.health,
+    isDead,
+    inJail,
+    inHospital,
     isTraveling: !!(user.travelEndAt && user.travelEndAt.getTime() > now),
     killCount: user.killCount,
     familyName: user.family?.name ?? null,

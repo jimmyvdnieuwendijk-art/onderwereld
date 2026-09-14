@@ -8,9 +8,7 @@ export function hospitalMsForHealth(health: number, killed: boolean, factor = 1)
 }
 
 export function hospitalOccupantWhere(now = new Date()) {
-  return {
-    OR: [{ isDead: true }, { inHospitalUntil: { gt: now } }],
-  };
+  return { inHospitalUntil: { gt: now } };
 }
 
 export function jailOccupantWhere(now = new Date()) {
