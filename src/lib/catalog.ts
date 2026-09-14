@@ -35,6 +35,6 @@ export const getShopCatalog = unstable_cache(
     await ensureGameCatalog();
     return prisma.shopItem.findMany({ orderBy: { price: "asc" } });
   },
-  ["shop-catalog-v2"],
+  ["shop-catalog-v3"],
   { revalidate: 600 },
 );

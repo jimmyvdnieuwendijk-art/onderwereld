@@ -3,7 +3,7 @@
 import { buyItemForm } from "@/lib/actions/economy";
 import { ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
-import { ammoKindMeta } from "@/lib/shop-catalog";
+import { ammoKindForWeapon, ammoKindMeta } from "@/lib/shop-catalog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +74,7 @@ export function ShopClient({
               .filter((item) => item.type === g.key)
               .map((item) => {
                 const locked = p.rank.order < item.minRankOrder;
-                const ammo = ammoKindMeta(item.ammoKind);
+                const ammo = ammoKindMeta(ammoKindForWeapon(item));
                 return (
                   <Card key={item.id} className="overflow-hidden">
                     <CardHeader className="space-y-3">
