@@ -1,13 +1,44 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE } from "@/lib/constants";
+import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE, ITEM_AMMO } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { remainingMs } from "@/lib/format";
 import { hospitalMsForHealth } from "@/lib/hospital";
 import { getFamilyPerks } from "@/lib/family";
+import { ammoKindMeta } from "@/lib/shop-catalog";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
+import type { Prisma } from "@prisma/client";
+
+async function consumeMatchingAmmo(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  ammoKind: string,
+  amount: number,
+) {
+  const stacks = await tx.inventoryItem.findMany({
+    where: { userId, item: { type: ITEM_AMMO, ammoKind } },
+    orderBy: { quantity: "asc" },
+  });
+  const have = stacks.reduce((sum, row) => sum + row.quantity, 0);
+  if (have < amount) return false;
+  let left = amount;
+  for (const stack of stacks) {
+    if (left <= 0) break;
+    const take = Math.min(stack.quantity, left);
+    if (take >= stack.quantity) {
+      await tx.inventoryItem.delete({ where: { id: stack.id } });
+    } else {
+      await tx.inventoryItem.update({
+        where: { id: stack.id },
+        data: { quantity: { decrement: take } },
+      });
+    }
+    left -= take;
+  }
+  return true;
+}
 
 export async function attackPlayer(defenderId: string, bulletsUsed: number): Promise<ActionResult> {
   const userId = await requireUserId();
@@ -19,9 +50,24 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   const blocked = blockedReason(attacker);
   if (blocked) return fail(blocked, "warning");
 
-  const bullets = Math.max(1, Math.min(25, Math.floor(bulletsUsed)));
-  if (!attacker.equippedWeapon) return fail("Rust eerst een wapen uit in de winkel.");
-  if (attacker.bullets < bullets) return fail("Niet genoeg kogels.");
+  if (!attacker.equippedWeapon) return fail("Rust eerst een wapen uit via Overzicht of de winkel.");
+
+  const ammoKind = attacker.equippedWeapon.ammoKind;
+  const ammoMeta = ammoKindMeta(ammoKind);
+  const shots = ammoKind
+    ? Math.max(1, Math.min(25, Math.floor(bulletsUsed)))
+    : 1;
+
+  if (ammoKind && ammoMeta) {
+    const have = (attacker.inventory ?? [])
+      .filter((row) => row.item.type === ITEM_AMMO && row.item.ammoKind === ammoKind)
+      .reduce((sum, row) => sum + row.quantity, 0);
+    if (have < shots) {
+      return fail(
+        `Niet genoeg ${ammoMeta.ammoName}. ${attacker.equippedWeapon.name} schiet alleen ${ammoMeta.caliber} (${have} van ${shots}).`,
+      );
+    }
+  }
 
   const defenderLive = await tickPlayer(defenderId);
   if (!defenderLive) return fail("Doelwit niet gevonden.");
@@ -35,7 +81,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
     return fail("Dit doelwit zit in de lucht. Wacht tot het vliegtuig landt.");
   }
 
-  const attackScore = attacker.attackPower * bullets * (0.85 + Math.random() * 0.3);
+  const attackScore = attacker.attackPower * shots * (0.85 + Math.random() * 0.3);
   const escortMult = 1 + (defenderLive.escortDefenseBonus ?? 0);
   const defenderPerks = await getFamilyPerks(defenderLive.family?.id);
   const defenseScore =
@@ -49,12 +95,22 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
     : Math.floor(defenderLive.cash * 0.18);
   const stayMs = hospitalMsForHealth(newHealth, killed, defenderPerks?.hospitalFactor ?? 1);
   const hospitalUntil = new Date(Date.now() + stayMs);
+  const lostGoods = killed
+    ? {
+        drugs: defenderLive.drugs,
+        weaponCrates: defenderLive.weaponCrates,
+        bullets: defenderLive.bullets,
+      }
+    : null;
 
-  await prisma.$transaction(async (tx) => {
+  const spent = await prisma.$transaction(async (tx) => {
+    if (ammoKind) {
+      const okAmmo = await consumeMatchingAmmo(tx, userId, ammoKind, shots);
+      if (!okAmmo) return false;
+    }
     await tx.user.update({
       where: { id: userId },
       data: {
-        bullets: { decrement: bullets },
         cash: { increment: stolen },
         exp: { increment: killed ? 80 : 25 },
         killCount: { increment: killed ? 1 : 0 },
@@ -67,18 +123,28 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
         cash: { decrement: stolen },
         isDead: killed,
         inHospitalUntil: hospitalUntil,
+        ...(killed ? { drugs: 0, weaponCrates: 0, bullets: 0 } : {}),
       },
     });
     await tx.attackLog.create({
       data: {
         attackerId: userId,
         defenderId,
-        bulletsUsed: bullets,
+        bulletsUsed: shots,
         damage: applied,
         outcome: killed ? "KILL" : "HIT",
       },
     });
+    return true;
   });
+
+  if (!spent) {
+    return fail(
+      ammoMeta
+        ? `Niet genoeg ${ammoMeta.ammoName} voor ${attacker.equippedWeapon.name}.`
+        : "Niet genoeg munitie.",
+    );
+  }
 
   const outcome = killed
     ? `Je schakelt ${defenderLive.username} uit (${applied} schade) en rooft ${stolen} euro.`
@@ -90,6 +156,18 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
     "ATTACK",
     `${attacker.username} valt je aan (${applied} schade). Je ligt in het ziekenhuis.`,
   );
+  if (lostGoods && (lostGoods.drugs > 0 || lostGoods.weaponCrates > 0 || lostGoods.bullets > 0)) {
+    const parts = [
+      lostGoods.drugs > 0 ? `${lostGoods.drugs} drugs` : null,
+      lostGoods.weaponCrates > 0 ? `${lostGoods.weaponCrates} wapenkisten` : null,
+      lostGoods.bullets > 0 ? `${lostGoods.bullets} smokkelkogels` : null,
+    ].filter(Boolean);
+    await logEvent(
+      defenderId,
+      "ATTACK",
+      `Bij de nederlaag verlies je je zwarte handel: ${parts.join(", ")}.`,
+    );
+  }
   await tickPlayer(userId);
   return ok(outcome);
 }

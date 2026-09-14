@@ -27,7 +27,7 @@ export function PlayerMarketClient({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="font-heading text-3xl">Spelersmarkt</h1>
+        <h1 className="font-heading text-3xl">Handelsmarkt</h1>
         <p className="text-sm text-muted-foreground">
           Voertuigen en winkelitems van andere spelers. Auto’s plaats je via je{" "}
           <Link href="/game/garage" className="text-primary underline">
@@ -37,15 +37,16 @@ export function PlayerMarketClient({
           <Link href="/game/markt/zwarte-markt" className="text-primary underline">
             Zwarte Markt
           </Link>
-          .
+          . Prijzen mogen maximaal 100% van de catalogusprijs afwijken.
         </p>
         {traveling && <p className="mt-2 text-sm text-destructive">Je zit in de lucht — kopen is gesloten.</p>}
       </div>
 
       {listings.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center">
-          <p className="font-heading text-xl">Geen P2P-aanbod</p>
-          <p className="mt-2 text-sm text-muted-foreground">Zet een auto te koop in de garage of wacht op andere spelers.</p>
+          <p className="text-sm text-muted-foreground">
+            Nog geen advertenties. Zet een auto te koop in de garage.
+          </p>
         </div>
       ) : (
         <div className="grid gap-3">

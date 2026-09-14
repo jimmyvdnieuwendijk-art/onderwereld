@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { DASHBOARD_LINKS } from "@/components/game/nav-config";
+import { InventoryPanel } from "@/components/game/inventory-panel";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -116,6 +117,8 @@ export function DashboardClient({
         <Stat label="Wapen" value={p.equippedWeapon?.name ?? "Ongewapend"} />
         <Stat label="Pantser" value={p.equippedArmor?.name ?? "Geen vest"} />
       </section>
+
+      <InventoryPanel player={p} />
 
       <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
         <Card size="sm" className="border-border/50">

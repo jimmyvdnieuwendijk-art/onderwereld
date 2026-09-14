@@ -12,12 +12,13 @@ import {
   LISTING_VEHICLE,
   MAX_ENERGY,
   MAX_HEALTH,
+  bankWithdrawPayout,
 } from "@/lib/constants";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { cityDisplayName, normalizeCityId, smugglePrice, type SmuggleGood } from "@/lib/airports";
 import { clamp } from "@/lib/format";
 import { firePriceAlerts } from "@/lib/game/price-alerts";
-import { listingLabel, stockFieldForType } from "@/lib/market";
+import { goodForListingType, listingLabel, listingUnitError, stockFieldForType } from "@/lib/market";
 import type { ActionResult } from "@/types/game";
 
 export async function bankDeposit(amount: number): Promise<ActionResult> {
@@ -50,16 +51,19 @@ export async function bankWithdraw(amount: number): Promise<ActionResult> {
   const blocked = blockedReason(player, { travel: false });
   if (blocked) return fail(blocked, "warning");
 
-  const value = Math.floor(amount);
+  const { value, received, fee } = bankWithdrawPayout(amount);
   if (value <= 0) return fail("Ongeldig bedrag.");
+  if (received < 1) {
+    return fail("Opname te klein: na 1% kosten blijft er niets over. Neem minstens 2 euro op.");
+  }
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || user.bankBalance < value) return fail("Onvoldoende saldo.");
 
   await prisma.user.update({
     where: { id: userId },
-    data: { cash: { increment: value }, bankBalance: { decrement: value } },
+    data: { cash: { increment: received }, bankBalance: { decrement: value } },
   });
-  const message = `Je neemt ${value} euro op.`;
+  const message = `Je neemt ${value} euro op. 1% kosten (${fee} euro) gaan eraf — je ontvangt ${received} euro contant.`;
   await logEvent(userId, "BANK", message);
   return ok(message);
 }
@@ -81,28 +85,20 @@ export async function buyItem(itemId: string, quantity = 1): Promise<ActionResul
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || user.cash < total) return fail("Niet genoeg contant geld.");
 
-  if (item.type === ITEM_AMMO) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        cash: { decrement: total },
-        bullets: { increment: item.bulletsAmount * qty },
-      },
-    });
-    const message = `Je koopt ${qty}× ${item.name} (+${item.bulletsAmount * qty} kogels).`;
-    await logEvent(userId, "SHOP", message);
-    return ok(message);
-  }
+  const addQty = item.type === ITEM_AMMO ? Math.max(1, item.bulletsAmount) * qty : qty;
 
   await prisma.$transaction([
     prisma.user.update({ where: { id: userId }, data: { cash: { decrement: total } } }),
     prisma.inventoryItem.upsert({
       where: { userId_itemId: { userId, itemId: item.id } },
-      update: { quantity: { increment: qty } },
-      create: { userId, itemId: item.id, quantity: qty },
+      update: { quantity: { increment: addQty } },
+      create: { userId, itemId: item.id, quantity: addQty },
     }),
   ]);
-  const message = `Je koopt ${qty}× ${item.name}.`;
+  const message =
+    item.type === ITEM_AMMO
+      ? `Je koopt ${qty}× ${item.name} (+${addQty} patronen in je inventaris).`
+      : `Je koopt ${qty}× ${item.name}.`;
   await logEvent(userId, "SHOP", message);
   return ok(message);
 }
@@ -200,6 +196,12 @@ export async function createListing(input: {
         ? Math.floor(input.unitPrice) * qty
         : price;
     if (total < 1) return fail("Prijs moet minstens 1 euro zijn.");
+    const unit = Math.floor(total / qty);
+    const good = goodForListingType(input.type);
+    if (good) {
+      const margin = listingUnitError(unit, smugglePrice(player.currentCity, good, "buy"));
+      if (margin) return fail(margin);
+    }
     await prisma.$transaction([
       prisma.user.update({ where: { id: userId }, data: { [stockField]: { decrement: qty } } }),
       prisma.marketListing.create({
@@ -217,6 +219,8 @@ export async function createListing(input: {
       include: { vehicleType: true },
     });
     if (!vehicle) return fail("Auto niet gevonden.");
+    const margin = listingUnitError(price, vehicle.vehicleType.baseValue);
+    if (margin) return fail(margin);
     await prisma.marketListing.create({
       data: {
         sellerId: userId,
@@ -236,6 +240,9 @@ export async function createListing(input: {
       include: { item: true },
     });
     if (!owned || owned.quantity < qty) return fail("Niet genoeg van dit item.");
+    const unit = Math.floor(price / qty);
+    const margin = listingUnitError(unit, owned.item.price);
+    if (margin) return fail(margin);
     if (owned.quantity === qty) {
       await prisma.inventoryItem.delete({ where: { id: owned.id } });
     } else {
@@ -396,8 +403,19 @@ export async function updateListing(listingId: string, unitPrice: number): Promi
   if (unit < 1) return fail("Ask per stuk moet minstens 1 euro zijn.");
   const listing = await prisma.marketListing.findFirst({
     where: { id: listingId, sellerId: userId, active: true },
+    include: { vehicle: { include: { vehicleType: true } }, item: true },
   });
   if (!listing) return fail("Advertentie niet gevonden.");
+
+  const good = goodForListingType(listing.type);
+  const fair = good
+    ? smugglePrice(player.currentCity, good, "buy")
+    : listing.vehicle?.vehicleType.baseValue ?? listing.item?.price ?? null;
+  if (fair != null) {
+    const margin = listingUnitError(unit, fair);
+    if (margin) return fail(margin);
+  }
+
   const total = unit * listing.quantity;
   await prisma.marketListing.update({
     where: { id: listing.id },

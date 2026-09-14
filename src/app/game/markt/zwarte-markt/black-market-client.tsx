@@ -29,6 +29,7 @@ import {
   cityTip,
   listingLabel,
   listingTypeForGood,
+  listingUnitRange,
   unitAsk,
   type ListingDTO,
   type PriceAlertDTO,
@@ -245,11 +246,15 @@ function QuickTrade({
                     Ask per stuk
                     <Input
                       type="number"
-                      min={1}
+                      min={listingUnitRange(buy).minUnit}
+                      max={listingUnitRange(buy).maxUnit}
                       value={ask[good.id]}
                       onChange={(e) => setAsk((s) => ({ ...s, [good.id]: Number(e.target.value) || 1 }))}
                       className="mt-1"
                     />
+                    <span className="mt-1 block text-[11px]">
+                      Max. 100% t.o.v. straatprijs ({formatMoney(buy)}), tot {formatMoney(listingUnitRange(buy).maxUnit)}.
+                    </span>
                   </label>
                 )}
                 {mode === "order" && side === "buy" && (

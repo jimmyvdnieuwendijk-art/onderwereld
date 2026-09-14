@@ -43,7 +43,7 @@ const logboek = { href: "/game/logboek", label: "Logboek", icon: MessageSquare }
 export const MARKT_NAV_CHILDREN = [
   { href: "/game/markt/smokkelmarkt", label: "Smokkelmarkt" },
   { href: "/game/markt/zwarte-markt", label: "Zwarte Markt" },
-  { href: "/game/markt/spelersmarkt", label: "Spelersmarkt" },
+  { href: "/game/markt/handelsmarkt", label: "Handelsmarkt" },
 ] as const;
 
 export const NAV_GROUPS = [
@@ -78,7 +78,7 @@ export const MOBILE_PRIMARY = [
 export const DASHBOARD_LINKS = [
   { href: "/game/misdaden", label: "Misdaden", hint: "Cash en exp op straat", icon: Skull },
   { href: "/game/vliegveld", label: "Vliegveld", hint: "Tien steden, tickets", icon: Plane },
-  { href: "/game/markt", label: "Markt", hint: "Smokkel, zwart en P2P", icon: Scale },
+  { href: "/game/markt", label: "Markt", hint: "Smokkel, zwart en handel", icon: Scale },
   { href: "/game/hoeren", label: "Hoeren", hint: "Ramen, crew en empire", icon: VenetianMask },
   { href: "/game/gym", label: "Gym", hint: "Kracht, conditie, vuisten", icon: Dumbbell },
   { href: "/game/casino", label: "Casino", hint: "Roulette, poker, de kooi", icon: Dices },

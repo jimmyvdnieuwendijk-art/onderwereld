@@ -13,7 +13,7 @@ export const MARKT_SUBNAV = [
   { href: "/game/markt", label: "Overzicht" },
   { href: "/game/markt/smokkelmarkt", label: "Smokkelmarkt" },
   { href: "/game/markt/zwarte-markt", label: "Zwarte Markt" },
-  { href: "/game/markt/spelersmarkt", label: "Spelersmarkt" },
+  { href: "/game/markt/handelsmarkt", label: "Handelsmarkt" },
 ] as const;
 
 export function listingTypeForGood(good: SmuggleGood) {
@@ -51,6 +51,20 @@ export function listingLabel(type: string, quantity: number, extra?: string | nu
 export function unitAsk(price: number, quantity: number) {
   if (quantity <= 0) return price;
   return Math.round(price / quantity);
+}
+
+/** Listings may sit ±100% around the city/catalog price (floor 1 euro). */
+export function listingUnitRange(fairPrice: number) {
+  const fair = Math.max(1, Math.floor(fairPrice));
+  return { fair, minUnit: 1, maxUnit: fair * 2 };
+}
+
+export function listingUnitError(unit: number, fairPrice: number) {
+  const { minUnit, maxUnit, fair } = listingUnitRange(fairPrice);
+  if (!Number.isFinite(unit) || unit < minUnit || unit > maxUnit) {
+    return `Prijs per stuk moet tussen ${minUnit} en ${maxUnit} euro liggen (max. 100% boven of onder de referentieprijs van ${fair} euro).`;
+  }
+  return null;
 }
 
 export function cityTip(good: SmuggleGood, cityId: string) {

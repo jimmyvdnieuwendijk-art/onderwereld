@@ -18,7 +18,28 @@ export type EquippedItem = {
   name: string;
   attack: number;
   defense: number;
+  ammoKind: string | null;
 } | null;
+
+export type InventoryItemView = {
+  itemId: string;
+  quantity: number;
+  item: {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    type: string;
+    attack: number;
+    defense: number;
+    healAmount: number;
+    energyAmount: number;
+    bulletsAmount: number;
+    ammoKind: string | null;
+    price: number;
+    minRankOrder: number;
+  };
+};
 
 export type PlayerSnapshot = {
   id: string;
@@ -62,6 +83,7 @@ export type PlayerSnapshot = {
   unreadMessages: number;
   equippedWeapon: EquippedItem;
   equippedArmor: EquippedItem;
+  inventory: InventoryItemView[];
   vehicleCount: number;
   pimpExp: number;
   pimpRankName: string;

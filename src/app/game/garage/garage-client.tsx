@@ -4,6 +4,7 @@ import { repairVehicle, sellVehicle } from "@/lib/actions/garage";
 import { createListing } from "@/lib/actions/economy";
 import { LISTING_VEHICLE } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
+import { listingUnitRange } from "@/lib/market";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,8 +45,8 @@ export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
         <h1 className="font-heading text-3xl">Garage</h1>
         <p className="text-sm text-muted-foreground">
           Advertenties verschijnen op de{" "}
-          <Link href="/game/markt/spelersmarkt" className="text-primary underline">
-            Spelersmarkt
+          <Link href="/game/markt/handelsmarkt" className="text-primary underline">
+            Handelsmarkt
           </Link>
           .
         </p>
@@ -60,6 +61,7 @@ export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
             15,
             Math.floor(((100 - car.condition) / 100) * car.vehicleType.baseValue * 0.28),
           );
+          const range = listingUnitRange(car.vehicleType.baseValue);
           return (
             <Card key={car.id} className="overflow-hidden">
               <CardHeader className="space-y-3">
@@ -85,31 +87,37 @@ export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
                     Repareren ({formatMoney(repair)})
                   </Button>
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Marktprijs"
-                    value={prices[car.id] ?? ""}
-                    onChange={(e) => setPrices((s) => ({ ...s, [car.id]: e.target.value }))}
-                  />
-                  <Button
-                    variant="secondary"
-                    disabled={pending}
-                    onClick={() =>
-                      run(
-                        () =>
-                          createListing({
-                            type: LISTING_VEHICLE,
-                            price: Number(prices[car.id] || 0),
-                            vehicleId: car.id,
-                          }),
-                        refresh,
-                      )
-                    }
-                  >
-                    Te koop
-                  </Button>
+                <div className="space-y-1.5">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={range.minUnit}
+                      max={range.maxUnit}
+                      placeholder={`Prijs (${range.minUnit}–${range.maxUnit})`}
+                      value={prices[car.id] ?? ""}
+                      onChange={(e) => setPrices((s) => ({ ...s, [car.id]: e.target.value }))}
+                    />
+                    <Button
+                      variant="secondary"
+                      disabled={pending}
+                      onClick={() =>
+                        run(
+                          () =>
+                            createListing({
+                              type: LISTING_VEHICLE,
+                              price: Number(prices[car.id] || 0),
+                              vehicleId: car.id,
+                            }),
+                          refresh,
+                        )
+                      }
+                    >
+                      Te koop
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Max. 100% boven of onder catalogus ({formatMoney(range.fair)}).
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -1,6 +1,7 @@
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { ensureRankLadder } from "@/lib/ensure-ranks";
+import { SHOP_ITEMS } from "@/lib/shop-catalog";
 
 /** Exact cash for the shared DonDemo test account. */
 export const DEMO_TEST_CASH = 500_000;
@@ -132,6 +133,13 @@ let liveBoot: Promise<void> | null = null;
 export async function ensureGameCatalog() {
   if (!catalogSync) {
     catalogSync = (async () => {
+      for (const item of SHOP_ITEMS) {
+        await prisma.shopItem.upsert({
+          where: { slug: item.slug },
+          create: { ...item },
+          update: { ...item },
+        });
+      }
       const extraCrime = await prisma.crime.findUnique({
         where: { slug: "arsenaal" },
         select: { id: true },

@@ -10,11 +10,18 @@ import { Badge } from "@/components/ui/badge";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PlayerAvatar } from "@/components/game/player-avatar";
+import { useLivePlayer } from "@/hooks/use-player";
+import { ammoKindMeta, ammoQtyForKind } from "@/lib/shop-catalog";
 import type { PublicPlayer } from "@/types/game";
 
 export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
   const [attackState, attackAction, attacking] = useFormAction(attackPlayerForm);
   const [msgState, msgAction, messaging] = useFormAction(sendMessageForm);
+  const me = useLivePlayer();
+  const ammoMeta = ammoKindMeta(me?.equippedWeapon?.ammoKind);
+  const haveAmmo = ammoQtyForKind(me?.inventory ?? [], me?.equippedWeapon?.ammoKind);
+  const needsAmmo = !!ammoMeta;
+  const canShoot = !!me?.equippedWeapon && (!needsAmmo || haveAmmo >= 1);
 
   return (
     <div className="mx-auto grid max-w-3xl gap-4">
@@ -54,15 +61,39 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
           </div>
           <form action={attackAction} className="flex flex-wrap items-end gap-2">
             <input type="hidden" name="defenderId" value={target.id} />
-            <Input type="number" min={1} max={25} name="bullets" defaultValue="5" className="w-24" />
-            <Button type="submit" disabled={attacking || target.inJail || target.inHospital || target.isDead || target.isTraveling}>
+            {needsAmmo ? (
+              <Input
+                type="number"
+                min={1}
+                max={Math.min(25, Math.max(1, haveAmmo))}
+                name="bullets"
+                defaultValue={String(Math.min(5, Math.max(1, haveAmmo)))}
+                className="w-24"
+              />
+            ) : (
+              <input type="hidden" name="bullets" value="1" />
+            )}
+            <Button
+              type="submit"
+              disabled={
+                attacking ||
+                !canShoot ||
+                target.inJail ||
+                target.inHospital ||
+                target.isDead ||
+                target.isTraveling
+              }
+            >
               {target.isTraveling ? "In de lucht" : "Aanvallen"}
             </Button>
           </form>
           <ActionFeedback state={attackState} />
           <p className="text-xs text-muted-foreground">
-            Vereist een uitgerust wapen en kogels. Cash op zak van het slachtoffer kan worden geroofd.
-            Banksaldo blijft veilig.
+            {!me?.equippedWeapon
+              ? "Rust eerst een wapen uit via Overzicht."
+              : needsAmmo
+                ? `${me.equippedWeapon?.name} gebruikt alleen ${ammoMeta?.ammoName} (${haveAmmo} patronen). Cash op zak kan worden geroofd; banksaldo blijft veilig.`
+                : `${me.equippedWeapon?.name} heeft geen munitie nodig. Cash op zak kan worden geroofd; banksaldo blijft veilig.`}
           </p>
         </CardContent>
       </Card>

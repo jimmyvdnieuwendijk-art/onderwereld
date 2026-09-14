@@ -10,9 +10,17 @@ export const ENERGY_PER_TICK = 2;
 /** Milliseconds between energy ticks. */
 export const ENERGY_TICK_MS = 10_000;
 
-/** Simple bank interest applied on player tick (not a real cron). */
+/** Bank interest applied on player tick. */
 export const BANK_INTEREST_RATE = 0.01;
 export const BANK_INTEREST_INTERVAL_MS = 60 * 60 * 1000;
+/** One-time fee taken from a bank withdrawal. Player receives 99%. */
+export const BANK_WITHDRAW_KEEP = 0.99;
+
+export function bankWithdrawPayout(amount: number) {
+  const value = Math.floor(amount);
+  const received = Math.floor(value * BANK_WITHDRAW_KEEP);
+  return { value, received, fee: value - received };
+}
 
 export const FAMILY_CREATE_COST = 25_000;
 export const BAIL_PER_MINUTE = 80;

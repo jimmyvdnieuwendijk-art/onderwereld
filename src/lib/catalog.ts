@@ -31,7 +31,10 @@ export const getVehicleCatalog = unstable_cache(
 );
 
 export const getShopCatalog = unstable_cache(
-  async () => prisma.shopItem.findMany({ orderBy: { price: "asc" } }),
-  ["shop-catalog-v1"],
+  async () => {
+    await ensureGameCatalog();
+    return prisma.shopItem.findMany({ orderBy: { price: "asc" } });
+  },
+  ["shop-catalog-v2"],
   { revalidate: 600 },
 );

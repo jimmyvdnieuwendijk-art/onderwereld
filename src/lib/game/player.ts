@@ -28,6 +28,7 @@ const playerInclude = {
   familyMembership: { select: { role: true } },
   equippedWeapon: true,
   equippedArmor: true,
+  inventory: { include: { item: true } },
   _count: {
     select: {
       vehicles: true,
@@ -281,8 +282,45 @@ function toSnapshot(
       ? { id: user.family.id, name: user.family.name, role: user.familyMembership?.role ?? null }
       : null,
     unreadMessages: user._count.receivedMessages,
-    equippedWeapon: user.equippedWeapon,
-    equippedArmor: user.equippedArmor,
+    equippedWeapon: user.equippedWeapon
+      ? {
+          id: user.equippedWeapon.id,
+          name: user.equippedWeapon.name,
+          attack: user.equippedWeapon.attack,
+          defense: user.equippedWeapon.defense,
+          ammoKind: user.equippedWeapon.ammoKind ?? null,
+        }
+      : null,
+    equippedArmor: user.equippedArmor
+      ? {
+          id: user.equippedArmor.id,
+          name: user.equippedArmor.name,
+          attack: user.equippedArmor.attack,
+          defense: user.equippedArmor.defense,
+          ammoKind: user.equippedArmor.ammoKind ?? null,
+        }
+      : null,
+    inventory: [...user.inventory]
+      .sort((a, b) => a.item.name.localeCompare(b.item.name, "nl"))
+      .map((row) => ({
+        itemId: row.itemId,
+        quantity: row.quantity,
+        item: {
+          id: row.item.id,
+          slug: row.item.slug,
+          name: row.item.name,
+          description: row.item.description,
+          type: row.item.type,
+          attack: row.item.attack,
+          defense: row.item.defense,
+          healAmount: row.item.healAmount,
+          energyAmount: row.item.energyAmount,
+          bulletsAmount: row.item.bulletsAmount,
+          ammoKind: row.item.ammoKind ?? null,
+          price: row.item.price,
+          minRankOrder: row.item.minRankOrder,
+        },
+      })),
     vehicleCount: user._count.vehicles,
     pimpExp: user.pimpExp,
     pimpRankName: pimpRank.name,
