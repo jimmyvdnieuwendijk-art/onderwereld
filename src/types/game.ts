@@ -15,6 +15,7 @@ export type RankInfo = {
 
 export type EquippedItem = {
   id: string;
+  slug?: string;
   name: string;
   attack: number;
   defense: number;

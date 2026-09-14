@@ -3,7 +3,7 @@
 import { consumeItem, equipItem } from "@/lib/actions/economy";
 import { ITEM_AMMO, ITEM_ARMOR, ITEM_CONSUMABLE, ITEM_WEAPON } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
-import { ammoKindMeta } from "@/lib/shop-catalog";
+import { ammoKindForWeapon, ammoKindMeta } from "@/lib/shop-catalog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +59,7 @@ export function InventoryPanel({ player }: { player: PlayerSnapshot }) {
                 </h3>
                 <ul className="space-y-2">
                   {group.rows.map((row) => {
-                    const ammo = ammoKindMeta(row.item.ammoKind);
+                    const ammo = ammoKindMeta(row.item.ammoKind) ?? ammoKindMeta(ammoKindForWeapon(row.item));
                     const equippedWeapon = player.equippedWeapon?.id === row.itemId;
                     const equippedArmor = player.equippedArmor?.id === row.itemId;
                     return (

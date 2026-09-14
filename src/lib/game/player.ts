@@ -285,6 +285,7 @@ function toSnapshot(
     equippedWeapon: user.equippedWeapon
       ? {
           id: user.equippedWeapon.id,
+          slug: user.equippedWeapon.slug,
           name: user.equippedWeapon.name,
           attack: user.equippedWeapon.attack,
           defense: user.equippedWeapon.defense,
@@ -294,6 +295,7 @@ function toSnapshot(
     equippedArmor: user.equippedArmor
       ? {
           id: user.equippedArmor.id,
+          slug: user.equippedArmor.slug,
           name: user.equippedArmor.name,
           attack: user.equippedArmor.attack,
           defense: user.equippedArmor.defense,

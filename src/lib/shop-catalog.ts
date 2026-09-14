@@ -343,6 +343,21 @@ export function ammoKindMeta(kind: string | null | undefined) {
   return AMMO_KINDS[kind];
 }
 
+export function ammoKindForWeapon(weapon: {
+  ammoKind?: string | null;
+  slug?: string | null;
+  name?: string | null;
+} | null | undefined) {
+  if (!weapon) return null;
+  if (isAmmoKind(weapon.ammoKind)) return weapon.ammoKind;
+  const match = SHOP_ITEMS.find(
+    (item) =>
+      item.type === ITEM_WEAPON &&
+      ((weapon.slug && item.slug === weapon.slug) || (weapon.name && item.name === weapon.name)),
+  );
+  return match?.ammoKind ?? null;
+}
+
 export function ammoQtyForKind(
   inventory: { quantity: number; item: { type: string; ammoKind?: string | null } }[],
   kind: string | null | undefined,

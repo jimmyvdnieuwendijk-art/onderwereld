@@ -11,15 +11,16 @@ import { ActionFeedback, useFormAction } from "@/components/game/action-feedback
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PlayerAvatar } from "@/components/game/player-avatar";
 import { useLivePlayer } from "@/hooks/use-player";
-import { ammoKindMeta, ammoQtyForKind } from "@/lib/shop-catalog";
+import { ammoKindForWeapon, ammoKindMeta, ammoQtyForKind } from "@/lib/shop-catalog";
 import type { PublicPlayer } from "@/types/game";
 
 export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
   const [attackState, attackAction, attacking] = useFormAction(attackPlayerForm);
   const [msgState, msgAction, messaging] = useFormAction(sendMessageForm);
   const me = useLivePlayer();
-  const ammoMeta = ammoKindMeta(me?.equippedWeapon?.ammoKind);
-  const haveAmmo = ammoQtyForKind(me?.inventory ?? [], me?.equippedWeapon?.ammoKind);
+  const ammoKind = ammoKindForWeapon(me?.equippedWeapon);
+  const ammoMeta = ammoKindMeta(ammoKind);
+  const haveAmmo = ammoQtyForKind(me?.inventory ?? [], ammoKind);
   const needsAmmo = !!ammoMeta;
   const canShoot = !!me?.equippedWeapon && (!needsAmmo || haveAmmo >= 1);
 

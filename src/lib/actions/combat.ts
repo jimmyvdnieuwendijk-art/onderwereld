@@ -6,7 +6,7 @@ import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { remainingMs } from "@/lib/format";
 import { hospitalMsForHealth } from "@/lib/hospital";
 import { getFamilyPerks } from "@/lib/family";
-import { ammoKindMeta } from "@/lib/shop-catalog";
+import { ammoKindForWeapon, ammoKindMeta } from "@/lib/shop-catalog";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import type { ActionResult } from "@/types/game";
 import type { Prisma } from "@prisma/client";
@@ -52,11 +52,13 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
 
   if (!attacker.equippedWeapon) return fail("Rust eerst een wapen uit via Overzicht of de winkel.");
 
-  const ammoKind = attacker.equippedWeapon.ammoKind;
+  const weaponRow = await prisma.shopItem.findUnique({
+    where: { id: attacker.equippedWeapon.id },
+    select: { id: true, slug: true, name: true, ammoKind: true },
+  });
+  const ammoKind = ammoKindForWeapon(weaponRow ?? attacker.equippedWeapon);
   const ammoMeta = ammoKindMeta(ammoKind);
-  const shots = ammoKind
-    ? Math.max(1, Math.min(25, Math.floor(bulletsUsed)))
-    : 1;
+  const shots = ammoKind ? Math.max(1, Math.min(25, Math.floor(bulletsUsed))) : 1;
 
   if (ammoKind && ammoMeta) {
     const have = (attacker.inventory ?? [])
