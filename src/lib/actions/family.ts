@@ -21,6 +21,7 @@ import {
   FAMILY_ROLE_LADDER,
   FAMILY_UPGRADES,
   familyBuildingDef,
+  familyHeistCooldownUntil,
   familyHeistDef,
   familyLevel,
   familyRoleRank,
@@ -491,6 +492,16 @@ export async function openFamilyHeist(slug: string): Promise<ActionResult> {
     where: { familyId: ctx.familyId, status: "OPEN" },
   });
   if (open) return fail("Er loopt al een open klus. Rond die eerst af.");
+
+  const last = await prisma.familyHeist.findFirst({
+    where: { familyId: ctx.familyId, status: { in: ["DONE", "FAILED"] }, resolvedAt: { not: null } },
+    orderBy: { resolvedAt: "desc" },
+    select: { slug: true, resolvedAt: true },
+  });
+  const coolingUntil = last?.resolvedAt ? familyHeistCooldownUntil(last.slug, last.resolvedAt) : null;
+  if (coolingUntil && coolingUntil.getTime() > Date.now()) {
+    return fail("De straat is nog heet. Wacht de cooldown af voordat je een nieuwe klus opent.", "warning");
+  }
 
   const heist = await prisma.familyHeist.create({
     data: {

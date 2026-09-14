@@ -114,7 +114,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
       where: { id: userId },
       data: {
         cash: { increment: stolen },
-        exp: { increment: killed ? 80 : 25 },
+        exp: { increment: killed ? 55 : 18 },
         killCount: { increment: killed ? 1 : 0 },
       },
     });

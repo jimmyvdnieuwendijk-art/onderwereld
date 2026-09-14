@@ -8,7 +8,6 @@ import {
   MAX_STRENGTH,
   MIN_TRAIN_HEALTH,
   canUnlockFloor,
-  energyRefundAmount,
   gymAttackBonus,
   gymDefenseBonus,
 } from "@/lib/gym";
@@ -122,8 +121,8 @@ export function GymClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot })
             <Meter label="Vechtkunst" value={p.fightSkill} max={MAX_FIGHT_SKILL} barClass="bg-gradient-to-r from-fuchsia-500 to-cyan-300" />
             <Meter label="Energie" value={p.energy} max={MAX_ENERGY} barClass="bg-gradient-to-r from-cyan-600 to-fuchsia-500" />
             <p className="text-xs text-muted-foreground">
-              Buiten de gym: +2 energie per 10 seconden, max {MAX_ENERGY}. Energiedrank in de winkel +40. Training
-              kost eerst energie, daarna een recovery-procent van het maximum.
+              Buiten de gym: +1 energie per 12 seconden, max {MAX_ENERGY}. Energiedrank in de winkel +40. Training
+              kost eerst energie, daarna een recovery-procent van het maximum — nooit meer dan de set kost.
             </p>
           </CardContent>
         </Card>

@@ -24,7 +24,7 @@ export function BankClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }
         <p className="text-[11px] uppercase tracking-[0.28em] text-primary/80">Kluis</p>
         <h1 className="font-heading text-3xl">Bank</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Cash op zak kan bij een overval verdwijnen. Geld op de rekening blijft staan en krijgt 1% rente per uur.
+          Cash op zak kan bij een overval verdwijnen. Geld op de rekening blijft staan en krijgt 0,1% rente per uur. Opnemen kost 1%.
         </p>
       </header>
 

@@ -59,6 +59,7 @@ export type FamilyHq = {
     slug: string;
     seats: { roleKey: string; username: string | null }[];
   } | null;
+  heistCooldownUntil: string | null;
   bannerUrl: string | null;
   pageText: string;
   pageImages: { id: string; caption: string; url: string }[];

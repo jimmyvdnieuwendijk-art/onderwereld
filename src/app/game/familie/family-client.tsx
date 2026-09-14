@@ -48,6 +48,7 @@ import {
   FAMILY_UPGRADES,
   HEIST_TIER_META,
   familyExpToNext,
+  familyHeistCooldownMs,
   familyHeistDef,
   familyLevel,
   familyRoleLabel,
@@ -63,6 +64,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PlayerAvatar } from "@/components/game/player-avatar";
+import { Countdown } from "@/components/game/countdown";
 import { useGameAction } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import type { FamilyHq, FamilyInviteRow, FamilyRival } from "./hq-types";
@@ -594,6 +596,7 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
   const level = familyLevel(hq.exp);
   const open = hq.openHeist;
   const openDef = open ? familyHeistDef(open.slug) : null;
+  const cooling = !!(hq.heistCooldownUntil && new Date(hq.heistCooldownUntil).getTime() > Date.now());
 
   return (
     <div className="space-y-4">
@@ -639,6 +642,12 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
         </div>
       ) : (
         <div className="space-y-5">
+          {cooling ? (
+            <p className="text-sm text-muted-foreground">
+              De straat is nog heet.{" "}
+              <Countdown until={hq.heistCooldownUntil} label="Nieuwe klus:" />
+            </p>
+          ) : null}
           {HEIST_TIER_META.map((tier) => {
             const rows = FAMILY_HEISTS.filter((def) => def.tier === tier.id);
             return (
@@ -656,6 +665,7 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
                       <p className="text-xs text-muted-foreground">{def.blurb}</p>
                       <p className="mt-1 text-xs">
                         {def.seats.length === 1 ? "1 speler" : `${def.seats.length} spelers`} · lv {def.minLevel} · {def.energy} energie
+                        {" · "}cooldown {Math.round(familyHeistCooldownMs(def.tier) / 60_000)} min
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Buit {formatMoney(def.cashMin)}–{formatMoney(def.cashMax)}
@@ -669,10 +679,10 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
                         <Button
                           size="sm"
                           className="mt-2"
-                          disabled={pending || level < def.minLevel}
+                          disabled={pending || cooling || level < def.minLevel}
                           onClick={() => run(() => openFamilyHeist(def.slug), refresh)}
                         >
-                          {level < def.minLevel ? `Level ${def.minLevel}` : "Openen"}
+                          {level < def.minLevel ? `Level ${def.minLevel}` : cooling ? "Cooldown" : "Openen"}
                         </Button>
                       ) : (
                         <p className="mt-2 text-xs text-muted-foreground">Wacht tot een Capo de klus opent.</p>

@@ -11,7 +11,7 @@
  */
 
 export const MIN_FLIGHT_COST = 50;
-export const MIN_FLIGHT_TIME_SEC = 15;
+export const MIN_FLIGHT_TIME_SEC = 20;
 export const PRIVATE_JET_COST_MULT = 3;
 export const PRIVATE_JET_TIME_MULT = 0.5;
 export const CUSTOMS_WANTED_THRESHOLD = 70;
@@ -105,9 +105,9 @@ export const CITY_MARKETS: Record<AirportId, CityMarket> = {
   nyc: { drugsBuy: 1600, drugsSell: 1200, weaponsBuy: 2800, weaponsSell: 2100, bulletsBuy: 22, bulletsSell: 15 },
   mia: { drugsBuy: 1300, drugsSell: 950, weaponsBuy: 2400, weaponsSell: 1800, bulletsBuy: 6, bulletsSell: 4 },
   rio: { drugsBuy: 500, drugsSell: 360, weaponsBuy: 1700, weaponsSell: 1200, bulletsBuy: 10, bulletsSell: 6 },
-  med: { drugsBuy: 180, drugsSell: 120, weaponsBuy: 1500, weaponsSell: 1100, bulletsBuy: 11, bulletsSell: 7 },
-  tok: { drugsBuy: 2600, drugsSell: 2100, weaponsBuy: 3200, weaponsSell: 2400, bulletsBuy: 20, bulletsSell: 14 },
-  dub: { drugsBuy: 1900, drugsSell: 1400, weaponsBuy: 3600, weaponsSell: 2700, bulletsBuy: 18, bulletsSell: 12 },
+  med: { drugsBuy: 240, drugsSell: 160, weaponsBuy: 1500, weaponsSell: 1100, bulletsBuy: 11, bulletsSell: 7 },
+  tok: { drugsBuy: 2100, drugsSell: 1550, weaponsBuy: 3200, weaponsSell: 2400, bulletsBuy: 20, bulletsSell: 14 },
+  dub: { drugsBuy: 1900, drugsSell: 1400, weaponsBuy: 3000, weaponsSell: 2200, bulletsBuy: 18, bulletsSell: 12 },
   syd: { drugsBuy: 2100, drugsSell: 1600, weaponsBuy: 3400, weaponsSell: 2500, bulletsBuy: 19, bulletsSell: 13 },
 };
 

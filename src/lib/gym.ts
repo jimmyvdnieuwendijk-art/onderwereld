@@ -109,7 +109,7 @@ export const GYM_LEVELS: GymLevel[] = [
     strength: 5,
     condition: 3,
     fightSkill: 1,
-    energyRefundPct: 30,
+    energyRefundPct: 22,
     energyCost: 28,
     cashCost: 350,
     cooldownMs: 4 * 60_000,
@@ -132,8 +132,11 @@ export function gymDefenseBonus(condition: number, fightSkill: number) {
   return Math.floor(Math.max(0, condition) / 4) + Math.floor(Math.max(0, fightSkill) / 2);
 }
 
-export function energyRefundAmount(pct: number) {
-  return Math.max(0, Math.round((MAX_ENERGY * pct) / 100));
+/** Recovery after a set. Never refund the full cost — gym is a sink, not an energy printer. */
+export function energyRefundAmount(pct: number, energyCost = Number.POSITIVE_INFINITY) {
+  const raw = Math.max(0, Math.round((MAX_ENERGY * pct) / 100));
+  if (!Number.isFinite(energyCost)) return raw;
+  return Math.min(raw, Math.max(0, energyCost - 1));
 }
 
 export function canUnlockFloor(gymFloor: number, gymExp: number, target: GymLevel) {

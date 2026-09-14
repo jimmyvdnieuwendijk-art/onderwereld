@@ -5,6 +5,7 @@ import { createListing } from "@/lib/actions/economy";
 import { LISTING_VEHICLE } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 import { listingUnitRange } from "@/lib/market";
+import { VEHICLE_REPAIR_MULT, VEHICLE_SELL_MULT } from "@/lib/vehicle-catalog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,11 +56,11 @@ export function GarageClient({ vehicles }: { vehicles: VehicleRow[] }) {
         {vehicles.map((car) => {
           const sellValue = Math.max(
             10,
-            Math.floor((car.condition / 100) * car.vehicleType.baseValue * 0.62),
+            Math.floor((car.condition / 100) * car.vehicleType.baseValue * VEHICLE_SELL_MULT),
           );
           const repair = Math.max(
             15,
-            Math.floor(((100 - car.condition) / 100) * car.vehicleType.baseValue * 0.28),
+            Math.floor(((100 - car.condition) / 100) * car.vehicleType.baseValue * VEHICLE_REPAIR_MULT),
           );
           const range = listingUnitRange(car.vehicleType.baseValue);
           return (
