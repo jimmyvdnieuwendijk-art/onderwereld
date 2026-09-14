@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { hashSync } from "bcryptjs";
 
 import { PLAYER_RANKS } from "../src/lib/ranks";
+import { SHOP_ITEMS } from "../src/lib/shop-catalog";
 
 const prisma = new PrismaClient();
 
@@ -235,22 +236,7 @@ const vehicleTypes = [
   { slug: "chiron", name: "Bugatti Chiron", baseValue: 185000, stealDifficulty: 96, rarity: "legendary", minRankOrder: 9 },
 ];
 
-const shopItems = [
-  { slug: "knuppel", name: "Honkbalknuppel", description: "Hout en intentie. Meer niet.", type: "WEAPON", attack: 8, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 250, minRankOrder: 1 },
-  { slug: "mes", name: "Stiletto", description: "Klein, stil, en altijd binnen handbereik.", type: "WEAPON", attack: 15, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 750, minRankOrder: 1 },
-  { slug: "pistool", name: "Glock 17", description: "Standaard straatvuur. Betrouwbaar.", type: "WEAPON", attack: 28, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 2800, minRankOrder: 2 },
-  { slug: "uzi", name: "Uzi", description: "Spray and pray, Rotterdam-stijl.", type: "WEAPON", attack: 46, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 8500, minRankOrder: 4 },
-  { slug: "ak", name: "AK-47", description: "Als onderhandelen klaar is.", type: "WEAPON", attack: 70, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 22000, minRankOrder: 6 },
-  { slug: "sniper", name: "Barrett M82", description: "Eén schot. Eén rekening.", type: "WEAPON", attack: 95, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 55000, minRankOrder: 8 },
-  { slug: "jas", name: "Leren jas", description: "Houdt messen tegen. Kogels minder.", type: "ARMOR", attack: 0, defense: 8, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 400, minRankOrder: 1 },
-  { slug: "vest", name: "Kogelvrij vest", description: "Standaard bescherming voor wie vijanden maakt.", type: "ARMOR", attack: 0, defense: 22, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 3200, minRankOrder: 3 },
-  { slug: "harnas", name: "Tactisch harnas", description: "Zwaar, warm, en het verschil tussen leven en ziekenhuis.", type: "ARMOR", attack: 0, defense: 40, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 14000, minRankOrder: 5 },
-  { slug: "titanium", name: "Titaniumvest", description: "Bijna oneerlijk. Precies zoals het hoort.", type: "ARMOR", attack: 0, defense: 65, healAmount: 0, energyAmount: 0, bulletsAmount: 0, price: 38000, minRankOrder: 7 },
-  { slug: "verband", name: "EHBO-verband", description: "Heelt 30 gezondheid. Geen wonderen.", type: "CONSUMABLE", attack: 0, defense: 0, healAmount: 30, energyAmount: 0, bulletsAmount: 0, price: 180, minRankOrder: 1 },
-  { slug: "energiedrank", name: "Energiedrank", description: "Twijfelachtige smaak, +40 energie.", type: "CONSUMABLE", attack: 0, defense: 0, healAmount: 0, energyAmount: 40, bulletsAmount: 0, price: 220, minRankOrder: 1 },
-  { slug: "kogels50", name: "Doos kogels (50)", description: "Vijftig patronen. Niet vragen waar ze vandaan komen.", type: "AMMO", attack: 0, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 50, price: 600, minRankOrder: 2 },
-  { slug: "kogels200", name: "Krat kogels (200)", description: "Voor als het serieus wordt.", type: "AMMO", attack: 0, defense: 0, healAmount: 0, energyAmount: 0, bulletsAmount: 200, price: 2100, minRankOrder: 4 },
-];
+const shopItems = SHOP_ITEMS;
 
 async function upsertCatalog() {
   for (const crime of crimes) {
@@ -265,6 +251,13 @@ async function upsertCatalog() {
       where: { slug: vehicle.slug },
       create: vehicle,
       update: vehicle,
+    });
+  }
+  for (const item of shopItems) {
+    await prisma.shopItem.upsert({
+      where: { slug: item.slug },
+      create: item,
+      update: item,
     });
   }
 }

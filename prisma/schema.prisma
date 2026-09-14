@@ -177,6 +177,7 @@ model ShopItem {
   healAmount       Int             @default(0)
   energyAmount     Int             @default(0)
   bulletsAmount    Int             @default(0)
+  ammoKind         String?
   price            Int
   minRankOrder     Int             @default(1)
   inventory        InventoryItem[]

@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "2mb",
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/game/markt/spelersmarkt",
+        destination: "/game/markt/handelsmarkt",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

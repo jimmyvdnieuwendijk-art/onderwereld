@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { ActionResult } from "@/types/game";
 
@@ -19,5 +20,15 @@ export function ActionFeedback({ state }: { state: ActionResult | null }) {
 }
 
 export function useFormAction(action: (prev: ActionResult | null, formData: FormData) => Promise<ActionResult>) {
-  return useActionState(action, null);
+  const queryClient = useQueryClient();
+  const triple = useActionState(action, null);
+  const [state] = triple;
+
+  useEffect(() => {
+    if (state?.ok) {
+      void queryClient.invalidateQueries({ queryKey: ["player"] });
+    }
+  }, [state, queryClient]);
+
+  return triple;
 }

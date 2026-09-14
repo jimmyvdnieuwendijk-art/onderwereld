@@ -16,9 +16,9 @@ const HUB = [
     icon: Scale,
   },
   {
-    href: "/game/markt/spelersmarkt",
-    title: "Spelersmarkt",
-    hint: "P2P voor voertuigen en winkelitems. Auto’s zet je te koop vanuit je garage.",
+    href: "/game/markt/handelsmarkt",
+    title: "Handelsmarkt",
+    hint: "Voertuigen en winkelitems van spelers. Auto’s zet je te koop vanuit je garage.",
     icon: Users,
   },
 ] as const;
@@ -29,9 +29,7 @@ export default function MarktHubPage() {
       <div>
         <p className="text-[11px] uppercase tracking-[0.28em] text-[#d4a359]/80">Economie</p>
         <h1 className="font-heading text-3xl text-[#d4a359]">Markt</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Handel zit hier — niet op het vliegveld. Kies een vloer.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Kies een vloer: smokkel, zwart of spelershandel.</p>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         {HUB.map((item) => {

@@ -14,8 +14,19 @@ export function crimeArt(slug: string) {
   return `/game/crimes/${file}.jpg`;
 }
 
+const SHOP_ART_FILE: Record<string, string> = {
+  "kevlar-inleg": "jas",
+  keramiek: "harnas",
+  morfine: "verband",
+  adrenaline: "energiedrank",
+  "kogels-uzi": "kogels50",
+  "kogels-ak": "kogels200",
+  "kogels-barrett": "kogels200",
+};
+
 export function shopArt(slug: string) {
-  return `/game/shop/${slug}.jpg`;
+  const file = SHOP_ART_FILE[slug] ?? slug;
+  return `/game/shop/${file}.jpg`;
 }
 
 export function airportArt(id: string) {
