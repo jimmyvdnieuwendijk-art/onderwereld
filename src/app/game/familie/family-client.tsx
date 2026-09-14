@@ -655,7 +655,7 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
                       <p className="font-heading">{def.name}</p>
                       <p className="text-xs text-muted-foreground">{def.blurb}</p>
                       <p className="mt-1 text-xs">
-                        {def.seats.length} spelers · lv {def.minLevel} · {def.energy} energie
+                        {def.seats.length === 1 ? "1 speler" : `${def.seats.length} spelers`} · lv {def.minLevel} · {def.energy} energie
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Buit {formatMoney(def.cashMin)}–{formatMoney(def.cashMax)}
