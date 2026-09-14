@@ -15,7 +15,7 @@ export function RegisterForm() {
   return (
     <AuthShell
       title="Nieuw in de stad"
-      description="Kies een naam en een wachtwoord. Je start als Schooier in Amsterdam (Schiphol) met €500 cash."
+      description="Kies een naam en een wachtwoord. Je start als Scum in Amsterdam (Schiphol) met €500 cash."
       footer={
         <>
           Al een account?{" "}

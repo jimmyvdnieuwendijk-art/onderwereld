@@ -38,7 +38,7 @@ export default async function PlayersPage({
         family: { select: { name: true } },
       },
       orderBy: [{ exp: "desc" }, { killCount: "desc" }, { cash: "desc" }],
-      take: 80,
+      take: 120,
     }),
     prisma.family.findMany({
       include: {

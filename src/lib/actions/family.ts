@@ -5,16 +5,20 @@ import { prisma } from "@/lib/prisma";
 import {
   FAMILY_ANNOUNCE_MAX,
   FAMILY_CREATE_COST,
+  FAMILY_MEMBER_LIMIT_MAX,
   FAMILY_MEMBER_LIMIT_START,
+  FAMILY_PAGE_IMAGES_MAX,
+  FAMILY_PAGE_TEXT_MAX,
+  ROLE_ASSOCIATE,
   ROLE_DON,
-  ROLE_SOLDIER,
   ROLE_UNDERBOSS,
-  ROLE_CAPO,
 } from "@/lib/constants";
 import {
   canInviteKick,
   canLeadJobs,
   canManageFamily,
+  canPromoteFamily,
+  FAMILY_ROLE_LADDER,
   FAMILY_UPGRADES,
   familyBuildingDef,
   familyHeistDef,
@@ -25,6 +29,7 @@ import {
   slotsUpgradeCost,
   tickFamilyEconomy,
 } from "@/lib/family";
+import { familyBannerPath, familyPageImagePath, readAvatarFile } from "@/lib/avatar";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { randomInt } from "@/lib/format";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
@@ -194,7 +199,7 @@ export async function payoutFromFamily(
 ): Promise<ActionResult> {
   const ctx = await requireFamilyActor();
   if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
-  if (!canManageFamily(ctx.membership.role)) return fail("Alleen Don of Underboss kan uitbetalen.");
+  if (!canPromoteFamily(ctx.membership.role)) return fail("Alleen Don of Underboss kan uitbetalen.");
   const value = Math.floor(amount);
   if (value < 1) return fail("Ongeldig bedrag.");
 
@@ -283,7 +288,7 @@ export async function acceptFamilyInvite(inviteId: string): Promise<ActionResult
 
   await prisma.$transaction([
     prisma.familyMember.create({
-      data: { familyId: invite.familyId, userId, role: ROLE_SOLDIER },
+      data: { familyId: invite.familyId, userId, role: ROLE_ASSOCIATE },
     }),
     prisma.user.update({ where: { id: userId }, data: { familyId: invite.familyId } }),
     prisma.familyInvite.deleteMany({ where: { toUserId: userId } }),
@@ -326,12 +331,12 @@ export async function kickFamilyMember(memberUserId: string): Promise<ActionResu
   return ok("Lid uit de familie gezet.");
 }
 
-const ROLE_LADDER = [ROLE_SOLDIER, ROLE_CAPO, ROLE_UNDERBOSS, ROLE_DON] as const;
+const ROLE_LADDER = FAMILY_ROLE_LADDER;
 
 export async function setFamilyMemberRole(memberUserId: string, direction: "up" | "down"): Promise<ActionResult> {
   const ctx = await requireFamilyActor();
   if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
-  if (familyRoleRank(ctx.membership.role) < 3) return fail("Alleen Don of Underboss kan rangen zetten.");
+  if (!canPromoteFamily(ctx.membership.role)) return fail("Alleen Don of Underboss kan rangen zetten.");
   if (memberUserId === ctx.userId) return fail("Je kunt je eigen rang niet zo wijzigen.");
 
   const target = await prisma.familyMember.findFirst({
@@ -430,14 +435,15 @@ export async function buyFamilyBuilding(slug: string): Promise<ActionResult> {
 export async function buyFamilyUpgrade(key: string): Promise<ActionResult> {
   const ctx = await requireFamilyActor();
   if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
-  if (!canManageFamily(ctx.membership.role)) return fail("Alleen Don of Underboss koopt upgrades.");
+  if (!canPromoteFamily(ctx.membership.role)) return fail("Alleen Don of Underboss koopt upgrades.");
 
   const family = await prisma.family.findUnique({ where: { id: ctx.familyId } });
   if (!family) return fail("Familie niet gevonden.");
 
   if (key === "slots") {
     const next = nextMemberLimit(family.memberLimit);
-    if (!next) return fail("Ledenaantal is al maximaal.");
+    if (!next) return fail("Ledenaantal is al maximaal (40).");
+    if (next > FAMILY_MEMBER_LIMIT_MAX) return fail("Ledenaantal is al maximaal (40).");
     const cost = slotsUpgradeCost(family.memberLimit);
     if (family.bankBalance < cost) return fail(`Dit kost ${cost} euro uit de kluis.`);
     await prisma.family.update({
@@ -593,6 +599,18 @@ export async function runFamilyHeist(heistId: string): Promise<ActionResult> {
         where: { id: heist.id },
         data: { status: "FAILED", resolvedAt: now },
       });
+      for (const member of crew) {
+        const hit = randomInt(1, 100);
+        const patch: { inJailUntil?: Date; inHospitalUntil?: Date } = {};
+        if (hit <= def.jailChance) {
+          patch.inJailUntil = new Date(now.getTime() + def.jailMinutes * 60_000);
+        } else if (def.hospitalMinutes > 0 && hit <= def.jailChance + 18) {
+          patch.inHospitalUntil = new Date(now.getTime() + def.hospitalMinutes * 60_000);
+        }
+        if (patch.inJailUntil || patch.inHospitalUntil) {
+          await tx.user.update({ where: { id: member.id }, data: patch });
+        }
+      }
     }
   });
 
@@ -601,14 +619,33 @@ export async function runFamilyHeist(heistId: string): Promise<ActionResult> {
       await logEvent(id, "FAMILY", `Familieklus ${def.name} gelukt. Buit gedeeld.`);
     }
     revalidateFamily();
-    return ok(`${def.name} gelukt. Kluis + persoonlijke snede.`);
+    return ok(`${def.name} gelukt. Kluis + persoonlijke snede. Kans was ${chance}%.`);
   }
 
   for (const id of crewIds) {
-    await logEvent(id, "FAMILY", `Familieklus ${def.name} mislukt.`);
+    await logEvent(id, "FAMILY", `Familieklus ${def.name} mislukt. Hitte: cel ${def.jailChance}%.`);
   }
   revalidateFamily();
-  return fail(`${def.name} is mislukt. De straat was te heet.`, "warning");
+  return fail(
+    `${def.name} is mislukt. Kans was ${chance}%. Celrisico ${def.jailChance}% · tot ${def.jailMinutes} min vast.`,
+    "warning",
+  );
+}
+
+export async function cancelFamilyHeist(heistId: string): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canLeadJobs(ctx.membership.role)) return fail("Vanaf Caporegime kun je een klus intrekken.");
+  const heist = await prisma.familyHeist.findFirst({
+    where: { id: heistId, familyId: ctx.familyId, status: "OPEN" },
+  });
+  if (!heist) return fail("Geen open klus.");
+  await prisma.familyHeist.update({
+    where: { id: heist.id },
+    data: { status: "CANCELLED", resolvedAt: new Date() },
+  });
+  revalidateFamily();
+  return ok("Klus ingetrokken.");
 }
 
 export async function raidRivalFamily(targetFamilyId: string): Promise<ActionResult> {
@@ -656,4 +693,131 @@ export async function raidRivalFamily(targetFamilyId: string): Promise<ActionRes
   }
   revalidateFamily();
   return fail("De bunker hield stand. Jullie laten bloed en cash achter.", "warning");
+}
+
+export async function uploadFamilyBanner(file: File): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten voor de familiefoto.");
+  const parsed = await readAvatarFile(file);
+  if (!parsed.ok) return fail(parsed.message);
+
+  const bannerUrl = familyBannerPath(ctx.familyId, Date.now());
+  await prisma.$transaction([
+    prisma.familyBanner.upsert({
+      where: { familyId: ctx.familyId },
+      create: { familyId: ctx.familyId, mimeType: parsed.mimeType, bytes: parsed.bytes },
+      update: { mimeType: parsed.mimeType, bytes: parsed.bytes },
+    }),
+    prisma.family.update({
+      where: { id: ctx.familyId },
+      data: { bannerUrl },
+    }),
+  ]);
+  revalidateFamily();
+  return ok("Familiefoto opgeslagen.", "success", { bannerUrl });
+}
+
+export async function removeFamilyBanner(): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten.");
+  await prisma.$transaction([
+    prisma.familyBanner.deleteMany({ where: { familyId: ctx.familyId } }),
+    prisma.family.update({ where: { id: ctx.familyId }, data: { bannerUrl: null } }),
+  ]);
+  revalidateFamily();
+  return ok("Familiefoto verwijderd.");
+}
+
+export async function saveFamilyPage(pageText: string): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten voor de presentatie.");
+  const clean = pageText.slice(0, FAMILY_PAGE_TEXT_MAX);
+  await prisma.family.update({
+    where: { id: ctx.familyId },
+    data: { pageText: clean },
+  });
+  revalidateFamily();
+  return ok("Familiepagina opgeslagen.");
+}
+
+export async function uploadFamilyPageImage(file: File, caption: string): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten.");
+  const parsed = await readAvatarFile(file);
+  if (!parsed.ok) return fail(parsed.message);
+
+  const count = await prisma.familyPageImage.count({ where: { familyId: ctx.familyId } });
+  if (count >= FAMILY_PAGE_IMAGES_MAX) {
+    return fail(`Maximaal ${FAMILY_PAGE_IMAGES_MAX} afbeeldingen op de presentatie.`);
+  }
+
+  const created = await prisma.familyPageImage.create({
+    data: {
+      familyId: ctx.familyId,
+      mimeType: parsed.mimeType,
+      bytes: parsed.bytes,
+      caption: caption.trim().slice(0, 120),
+      sortOrder: count,
+    },
+  });
+  revalidateFamily();
+  return ok("Afbeelding toegevoegd.", "success", {
+    imageId: created.id,
+    url: familyPageImagePath(created.id, created.updatedAt),
+  });
+}
+
+export async function updateFamilyPageImageCaption(imageId: string, caption: string): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten.");
+  const image = await prisma.familyPageImage.findFirst({
+    where: { id: imageId, familyId: ctx.familyId },
+  });
+  if (!image) return fail("Afbeelding niet gevonden.");
+  await prisma.familyPageImage.update({
+    where: { id: image.id },
+    data: { caption: caption.trim().slice(0, 120) },
+  });
+  revalidateFamily();
+  return ok("Bijschrift opgeslagen.");
+}
+
+export async function removeFamilyPageImage(imageId: string): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten.");
+  const image = await prisma.familyPageImage.findFirst({
+    where: { id: imageId, familyId: ctx.familyId },
+  });
+  if (!image) return fail("Afbeelding niet gevonden.");
+  await prisma.familyPageImage.delete({ where: { id: image.id } });
+  revalidateFamily();
+  return ok("Afbeelding verwijderd.");
+}
+
+export async function moveFamilyPageImage(imageId: string, direction: "up" | "down"): Promise<ActionResult> {
+  const ctx = await requireFamilyActor();
+  if (ctx.error || !ctx.membership) return ctx.error ?? fail("Je zit in geen familie.");
+  if (!canManageFamily(ctx.membership.role)) return fail("Geen beheer-rechten.");
+  const images = await prisma.familyPageImage.findMany({
+    where: { familyId: ctx.familyId },
+    orderBy: { sortOrder: "asc" },
+  });
+  const idx = images.findIndex((row) => row.id === imageId);
+  if (idx < 0) return fail("Afbeelding niet gevonden.");
+  const swapWith = direction === "up" ? idx - 1 : idx + 1;
+  if (swapWith < 0 || swapWith >= images.length) return ok("Al aan het uiteinde.");
+  const a = images[idx];
+  const b = images[swapWith];
+  await prisma.$transaction([
+    prisma.familyPageImage.update({ where: { id: a.id }, data: { sortOrder: b.sortOrder } }),
+    prisma.familyPageImage.update({ where: { id: b.id }, data: { sortOrder: a.sortOrder } }),
+  ]);
+  revalidateFamily();
+  return ok("Volgorde aangepast.");
 }

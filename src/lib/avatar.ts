@@ -7,6 +7,16 @@ export function avatarPublicPath(userId: string, version: number | Date) {
   return `/api/avatars/${userId}?v=${v}`;
 }
 
+export function familyBannerPath(familyId: string, version: number | Date) {
+  const v = typeof version === "number" ? version : version.getTime();
+  return `/api/family-banners/${familyId}?v=${v}`;
+}
+
+export function familyPageImagePath(imageId: string, version: number | Date) {
+  const v = typeof version === "number" ? version : version.getTime();
+  return `/api/family-images/${imageId}?v=${v}`;
+}
+
 export function sniffImageMime(bytes: Uint8Array): ImageMime | null {
   if (bytes.length < 12) return null;
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";

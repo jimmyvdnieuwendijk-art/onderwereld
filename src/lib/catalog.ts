@@ -1,11 +1,15 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { ensureGameCatalog } from "@/lib/ensure-catalog";
+import { ensureRankLadder } from "@/lib/ensure-ranks";
 
 export const getRanksCached = unstable_cache(
-  async () => prisma.rank.findMany({ orderBy: { order: "asc" } }),
-  ["ranks-v1"],
-  { revalidate: 300 },
+  async () => {
+    await ensureRankLadder();
+    return prisma.rank.findMany({ orderBy: { order: "asc" } });
+  },
+  ["ranks-v2"],
+  { revalidate: 60 },
 );
 
 export const getCrimeCatalog = unstable_cache(

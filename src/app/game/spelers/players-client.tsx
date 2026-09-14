@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { PLAYER_RANKS } from "@/lib/ranks";
 import type { FamilyBoardRow, PublicPlayer } from "@/types/game";
 
 type PlayerSort = "rank" | "kills" | "cash" | "exp" | "health";
@@ -84,6 +85,7 @@ export function PlayersClient({
   const [playerDir, setPlayerDir] = useState<Dir>("desc");
   const [familySort, setFamilySort] = useState<FamilySort>("members");
   const [familyDir, setFamilyDir] = useState<Dir>("desc");
+  const [rankFilter, setRankFilter] = useState<string>("all");
 
   const query = useQuery({
     queryKey: ["players", submitted],
@@ -96,11 +98,11 @@ export function PlayersClient({
     enabled: submitted.length > 0,
   });
 
-  const rawRows = submitted ? (query.data ?? []) : initial;
-  const rows = useMemo(
-    () => sortPlayers(rawRows, playerSort, playerDir),
-    [rawRows, playerSort, playerDir],
-  );
+  const rows = useMemo(() => {
+    const rawRows = submitted ? (query.data ?? []) : initial;
+    const filtered = rankFilter === "all" ? rawRows : rawRows.filter((row) => row.rankName === rankFilter);
+    return sortPlayers(filtered, playerSort, playerDir);
+  }, [submitted, query.data, initial, rankFilter, playerSort, playerDir]);
   const familyRows = useMemo(
     () => sortFamilies(families, familySort, familyDir),
     [families, familySort, familyDir],
@@ -125,16 +127,52 @@ export function PlayersClient({
   return (
     <div className="space-y-4">
       <div>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-[#d4a359]">Sociaal</p>
         <h1 className="font-heading text-3xl">Klassement</h1>
         <p className="text-sm text-muted-foreground">
-          Sorteer op rang, kills of geld. Families hebben een eigen bord. Locatie blijft privé.
+          Leaderboards: sorteer op rang, exp, cash, kills of HP. Twaalf straat-rangen, van Scum tot Legendary Don.
+          Locatie blijft privé.
         </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-[#d4a359]/25 bg-[#1a1510] p-3">
+        <p className="text-[11px] uppercase tracking-wider text-[#d4a359]">Rangladder</p>
+        <div className="mt-2 flex min-w-max gap-1.5">
+          <button
+            type="button"
+            onClick={() => setRankFilter("all")}
+            className={cn(
+              "rounded-full border px-2 py-0.5 text-[11px]",
+              rankFilter === "all"
+                ? "border-[#d4a359] bg-[#d4a359]/15 text-[#d4a359]"
+                : "border-border/50 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Alle rangen
+          </button>
+          {PLAYER_RANKS.map((rank) => (
+            <button
+              key={rank.slug}
+              type="button"
+              onClick={() => setRankFilter(rank.name)}
+              className={cn(
+                "rounded-full border px-2 py-0.5 text-[11px]",
+                rankFilter === rank.name
+                  ? "border-[#d4a359] bg-[#d4a359]/15 text-[#d4a359]"
+                  : "border-border/50 text-muted-foreground hover:text-foreground",
+              )}
+              title={`${formatNumber(rank.minExp)} exp`}
+            >
+              {rank.order}. {rank.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as "players" | "families")}>
         <TabsList>
-          <TabsTrigger value="players">Spelers</TabsTrigger>
-          <TabsTrigger value="families">Families</TabsTrigger>
+          <TabsTrigger value="players">Spelers-borden</TabsTrigger>
+          <TabsTrigger value="families">Familie-borden</TabsTrigger>
         </TabsList>
 
         <TabsContent value="players" className="mt-4 space-y-3">
@@ -174,7 +212,7 @@ export function PlayersClient({
                   variant={active ? "default" : "outline"}
                   onClick={() => togglePlayerSort(board.id)}
                 >
-                  {board.label}
+                  Bord: {board.label}
                   <SortMark active={active} dir={playerDir} />
                 </Button>
               );
