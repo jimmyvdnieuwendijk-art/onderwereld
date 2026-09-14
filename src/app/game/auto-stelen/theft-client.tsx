@@ -2,6 +2,7 @@
 
 import { stealCarForm } from "@/lib/actions/garage";
 import { formatMoney } from "@/lib/format";
+import { theftEnergyCost } from "@/lib/vehicle-catalog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +38,7 @@ export function TheftClient({
       <div>
         <h1 className="font-heading text-3xl">Auto stelen</h1>
         <p className="text-sm text-muted-foreground">
-          Kost 10 energie. Moeilijkere auto&apos;s vragen een hogere rang.
+          Energie schaalt met de auto (vanaf 10). Chop-shop betaalt de helft van de cataloguswaarde.
         </p>
         <Countdown until={p.carTheftCooldownUntil} label="Wachten:" />
         <div className="mt-2">
@@ -47,21 +48,28 @@ export function TheftClient({
       <div className="grid gap-3 md:grid-cols-2">
         {types.map((type) => {
           const locked = p.rank.order < type.minRankOrder;
+          const energyCost = theftEnergyCost(type.minRankOrder);
           return (
             <Card key={type.id} className="overflow-hidden">
               <CardHeader className="space-y-3">
                 <CardArt src={vehicleArt(type.slug)} alt="" />
                 <CardTitle className="font-heading">{type.name}</CardTitle>
                 <CardDescription>
-                  Waarde {formatMoney(type.baseValue)} · moeilijkheid {type.stealDifficulty}
+                  Waarde {formatMoney(type.baseValue)} · moeilijkheid {type.stealDifficulty} · {energyCost} energie
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Badge variant="secondary">{type.rarity}</Badge>
                 <form action={action}>
                   <input type="hidden" name="vehicleTypeId" value={type.id} />
-                  <Button type="submit" disabled={pending || locked || p.isTraveling}>
-                    {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : "Stelen"}
+                  <Button type="submit" disabled={pending || locked || p.isTraveling || p.energy < energyCost}>
+                    {p.isTraveling
+                      ? "In de lucht"
+                      : locked
+                        ? "Rang te laag"
+                        : p.energy < energyCost
+                          ? "Te weinig energie"
+                          : "Stelen"}
                   </Button>
                 </form>
               </CardContent>

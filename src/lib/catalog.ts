@@ -8,7 +8,7 @@ export const getRanksCached = unstable_cache(
     await ensureRankLadder();
     return prisma.rank.findMany({ orderBy: { order: "asc" } });
   },
-  ["ranks-v2"],
+  ["ranks-v3"],
   { revalidate: 60 },
 );
 
@@ -17,7 +17,7 @@ export const getCrimeCatalog = unstable_cache(
     await ensureGameCatalog();
     return prisma.crime.findMany({ orderBy: { minRankOrder: "asc" } });
   },
-  ["crime-catalog-v1"],
+  ["crime-catalog-v2"],
   { revalidate: 600 },
 );
 
@@ -26,7 +26,7 @@ export const getVehicleCatalog = unstable_cache(
     await ensureGameCatalog();
     return prisma.vehicleType.findMany({ orderBy: { stealDifficulty: "asc" } });
   },
-  ["vehicle-catalog-v1"],
+  ["vehicle-catalog-v2"],
   { revalidate: 600 },
 );
 
@@ -35,6 +35,6 @@ export const getShopCatalog = unstable_cache(
     await ensureGameCatalog();
     return prisma.shopItem.findMany({ orderBy: { price: "asc" } });
   },
-  ["shop-catalog-v3"],
+  ["shop-catalog-v4"],
   { revalidate: 600 },
 );

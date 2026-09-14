@@ -245,7 +245,7 @@ export const SHOP_ITEMS: ShopItemSeed[] = [
     energyAmount: 40,
     bulletsAmount: 0,
     ammoKind: null,
-    price: 220,
+    price: 280,
     minRankOrder: 1,
   },
   {
@@ -273,7 +273,7 @@ export const SHOP_ITEMS: ShopItemSeed[] = [
     energyAmount: 70,
     bulletsAmount: 0,
     ammoKind: null,
-    price: 480,
+    price: 650,
     minRankOrder: 3,
   },
   {
@@ -329,7 +329,7 @@ export const SHOP_ITEMS: ShopItemSeed[] = [
     energyAmount: 0,
     bulletsAmount: 10,
     ammoKind: "barrett",
-    price: 1800,
+    price: 2400,
     minRankOrder: 8,
   },
 ];

@@ -263,9 +263,9 @@ export const HEIST_TIER_META: {
   crew: string;
   blurb: string;
 }[] = [
-  { id: "klein", label: "Klein", crew: "1–2 spelers", blurb: "Snel, vies, weinig ogen. Lage buit, lage celkans." },
-  { id: "middel", label: "Middel", crew: "2–4 spelers", blurb: "Een plan, een wagen, iemand op de hoek. Meer cash, meer hitte." },
-  { id: "groot", label: "Groot", crew: "4–10 spelers", blurb: "Een avond die de familie maakt of breekt. Grote kluis, zware cel." },
+  { id: "klein", label: "Klein", crew: "1–2 spelers", blurb: "Snel, vies, weinig ogen. Lage buit, 4 min cooldown na afloop." },
+  { id: "middel", label: "Middel", crew: "2–4 spelers", blurb: "Een plan, een wagen, iemand op de hoek. Meer cash, 8 min cooldown." },
+  { id: "groot", label: "Groot", crew: "4–10 spelers", blurb: "Een avond die de familie maakt of breekt. 12 min cooldown na afloop." },
 ];
 
 export const FAMILY_HEISTS: FamilyHeistDef[] = [
@@ -277,8 +277,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
     minLevel: 1,
     energy: 8,
     seats: [{ key: "solo", label: "Uitvoerder" }],
-    cashMin: 900,
-    cashMax: 2_100,
+    cashMin: 450,
+    cashMax: 1_050,
     bullets: 0,
     familyExp: 18,
     chance: 80,
@@ -294,8 +294,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
     minLevel: 1,
     energy: 10,
     seats: [{ key: "koerier", label: "Koerier" }],
-    cashMin: 1_200,
-    cashMax: 2_800,
+    cashMin: 600,
+    cashMax: 1_400,
     bullets: 0,
     familyExp: 22,
     chance: 76,
@@ -314,8 +314,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "chauffeur", label: "Chauffeur" },
       { key: "hacker", label: "Hacker" },
     ],
-    cashMin: 2_400,
-    cashMax: 5_200,
+    cashMin: 1_200,
+    cashMax: 2_600,
     bullets: 0,
     familyExp: 40,
     chance: 72,
@@ -334,8 +334,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "brute", label: "Brute" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 3_100,
-    cashMax: 6_400,
+    cashMin: 1_550,
+    cashMax: 3_200,
     bullets: 4,
     familyExp: 48,
     chance: 68,
@@ -354,8 +354,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "insider", label: "Insider" },
       { key: "schutter", label: "Schutter" },
     ],
-    cashMin: 5_400,
-    cashMax: 11_000,
+    cashMin: 4_300,
+    cashMax: 8_800,
     bullets: 6,
     familyExp: 70,
     chance: 64,
@@ -375,8 +375,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "schutter", label: "Schutter" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 7_500,
-    cashMax: 16_000,
+    cashMin: 6_000,
+    cashMax: 12_800,
     bullets: 8,
     familyExp: 90,
     chance: 58,
@@ -396,8 +396,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "schutter", label: "Schutter" },
       { key: "koerier", label: "Koerier" },
     ],
-    cashMin: 8_800,
-    cashMax: 18_500,
+    cashMin: 7_000,
+    cashMax: 14_800,
     bullets: 14,
     familyExp: 105,
     chance: 54,
@@ -418,8 +418,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "brute", label: "Brute" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 11_000,
-    cashMax: 22_000,
+    cashMin: 8_800,
+    cashMax: 17_600,
     bullets: 12,
     familyExp: 120,
     chance: 52,
@@ -440,8 +440,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "spreng", label: "Spreng" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 13_500,
-    cashMax: 26_000,
+    cashMin: 10_800,
+    cashMax: 20_800,
     bullets: 18,
     familyExp: 135,
     chance: 48,
@@ -462,8 +462,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "brute", label: "Brute" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 14_000,
-    cashMax: 28_000,
+    cashMin: 12_600,
+    cashMax: 25_200,
     bullets: 16,
     familyExp: 140,
     chance: 50,
@@ -485,8 +485,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "brute", label: "Brute" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 26_000,
-    cashMax: 52_000,
+    cashMin: 23_400,
+    cashMax: 46_800,
     bullets: 24,
     familyExp: 220,
     chance: 42,
@@ -509,8 +509,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "koerier", label: "Koerier" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 34_000,
-    cashMax: 68_000,
+    cashMin: 30_600,
+    cashMax: 61_200,
     bullets: 28,
     familyExp: 260,
     chance: 38,
@@ -534,8 +534,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "gijzel", label: "Gijzelnemer" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 48_000,
-    cashMax: 92_000,
+    cashMin: 43_200,
+    cashMax: 82_800,
     bullets: 32,
     familyExp: 320,
     chance: 34,
@@ -560,8 +560,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "afdekking", label: "Afdekking" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 62_000,
-    cashMax: 118_000,
+    cashMin: 55_800,
+    cashMax: 106_200,
     bullets: 36,
     familyExp: 380,
     chance: 30,
@@ -588,8 +588,8 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
       { key: "afdekking", label: "Afdekking" },
       { key: "uitkijk", label: "Uitkijk" },
     ],
-    cashMin: 88_000,
-    cashMax: 165_000,
+    cashMin: 79_200,
+    cashMax: 148_500,
     bullets: 44,
     familyExp: 480,
     chance: 26,
@@ -601,6 +601,21 @@ export const FAMILY_HEISTS: FamilyHeistDef[] = [
 
 export function familyHeistDef(slug: string) {
   return FAMILY_HEISTS.find((row) => row.slug === slug) ?? null;
+}
+
+export function familyHeistCooldownMs(tier: FamilyHeistTier) {
+  if (tier === "klein") return 4 * 60_000;
+  if (tier === "middel") return 8 * 60_000;
+  return 12 * 60_000;
+}
+
+export function familyHeistCooldownUntil(slug: string, resolvedAt: Date | string | null | undefined) {
+  if (!resolvedAt) return null;
+  const def = familyHeistDef(slug);
+  if (!def) return null;
+  const at = typeof resolvedAt === "string" ? new Date(resolvedAt) : resolvedAt;
+  if (Number.isNaN(at.getTime())) return null;
+  return new Date(at.getTime() + familyHeistCooldownMs(def.tier));
 }
 
 export type FamilyPerks = {

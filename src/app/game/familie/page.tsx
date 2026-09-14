@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
-import { isJunkFamilyAnnouncement, migrateFamilyRoles } from "@/lib/family";
+import { familyHeistCooldownUntil, isJunkFamilyAnnouncement, migrateFamilyRoles } from "@/lib/family";
 import { familyPageImagePath } from "@/lib/avatar";
 import { ONLINE_WINDOW_MS } from "@/lib/constants";
 import { publicDisplayName } from "@/lib/game/public-player";
@@ -49,7 +49,7 @@ export default async function FamilyPage() {
     await migrateFamilyRoles(familyId);
   }
 
-  const [family, rivalRows] = await Promise.all([
+  const [family, rivalRows, lastHeist] = await Promise.all([
     prisma.family.findUnique({
       where: { id: familyId },
       include: {
@@ -97,6 +97,11 @@ export default async function FamilyPage() {
       },
       orderBy: { createdAt: "desc" },
       take: 12,
+    }),
+    prisma.familyHeist.findFirst({
+      where: { familyId, status: { in: ["DONE", "FAILED"] }, resolvedAt: { not: null } },
+      orderBy: { resolvedAt: "desc" },
+      select: { slug: true, resolvedAt: true },
     }),
   ]);
 
@@ -170,6 +175,10 @@ export default async function FamilyPage() {
           })),
         }
       : null,
+    heistCooldownUntil:
+      lastHeist?.resolvedAt
+        ? (familyHeistCooldownUntil(lastHeist.slug, lastHeist.resolvedAt)?.toISOString() ?? null)
+        : null,
     bannerUrl: family.bannerUrl,
     pageText: family.pageText,
     pageImages: family.pageImages.map((image) => ({

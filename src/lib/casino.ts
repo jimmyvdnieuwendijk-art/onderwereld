@@ -1,6 +1,6 @@
 export const CASINO_MIN_BET = 10;
 export const CASINO_MAX_BET = 600;
-export const CASINO_COOLDOWN_MS = 8_000;
+export const CASINO_COOLDOWN_MS = 12_000;
 export const PEEK_COST = 80;
 export const PEEK_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 export const KNIFE_ANTE = 15;

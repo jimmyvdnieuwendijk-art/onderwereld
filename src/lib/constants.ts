@@ -5,13 +5,13 @@ export const MAX_ENERGY = 100;
 export const MAX_HEALTH = 100;
 export const BASE_ATTACK = 5;
 
-/** Energy points regained per tick interval. */
-export const ENERGY_PER_TICK = 2;
+/** 1 energy / 12s → full bar (~100) in ~20 min. Was 2/10s ≈ 8 min. */
+export const ENERGY_PER_TICK = 1;
 /** Milliseconds between energy ticks. */
-export const ENERGY_TICK_MS = 10_000;
+export const ENERGY_TICK_MS = 12_000;
 
-/** Bank interest applied on player tick. */
-export const BANK_INTEREST_RATE = 0.01;
+/** Hourly bank interest. 0.1%/uur ≈ 2,4%/dag. Was 1%/uur. */
+export const BANK_INTEREST_RATE = 0.001;
 export const BANK_INTEREST_INTERVAL_MS = 60 * 60 * 1000;
 /** One-time fee taken from a bank withdrawal. Player receives 99%. */
 export const BANK_WITHDRAW_KEEP = 0.99;

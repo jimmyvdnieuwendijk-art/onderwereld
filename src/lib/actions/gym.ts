@@ -74,7 +74,7 @@ export async function trainGym(level: number): Promise<ActionResult> {
   const strengthGain = Math.min(session.strength, MAX_STRENGTH - user.strength);
   const conditionGain = Math.min(session.condition, MAX_CONDITION - user.condition);
   const fightGain = Math.min(session.fightSkill, MAX_FIGHT_SKILL - user.fightSkill);
-  const refund = energyRefundAmount(session.energyRefundPct);
+  const refund = energyRefundAmount(session.energyRefundPct, session.energyCost);
   const energyAfterCost = user.energy - session.energyCost;
   const energyNext = Math.min(MAX_ENERGY, energyAfterCost + refund);
 
