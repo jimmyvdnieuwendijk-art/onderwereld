@@ -4,7 +4,7 @@ import { hash } from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
+import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN, PASSWORD_MIN } from "@/lib/constants";
 import { fail, ok } from "@/lib/actions/helpers";
 import { DEMO_EMAIL, ensureLiveBootstrap } from "@/lib/ensure-catalog";
 import type { ActionResult } from "@/types/game";
@@ -61,7 +61,7 @@ export async function registerAction(
   const city = "ams";
 
   if (!email.includes("@")) return fail("Vul een geldig e-mailadres in.");
-  if (password.length < 6) return fail("Wachtwoord moet minstens 6 tekens zijn.");
+  if (password.length < PASSWORD_MIN) return fail(`Wachtwoord moet minstens ${PASSWORD_MIN} tekens zijn.`);
   if (password !== confirm) return fail("Wachtwoorden komen niet overeen.");
   if (username.length < USERNAME_MIN || username.length > USERNAME_MAX) {
     return fail(`Gebruikersnaam moet ${USERNAME_MIN}-${USERNAME_MAX} tekens zijn.`);

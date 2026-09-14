@@ -11,7 +11,7 @@ export function DetentionBanner({ player }: { player: PlayerSnapshot }) {
   const pathname = usePathname();
   const jailMs = remainingMs(player.inJailUntil);
   const hospitalMs = remainingMs(player.inHospitalUntil);
-  const hospital = hospitalMs > 0 || player.isDead;
+  const hospital = hospitalMs > 0;
   const jail = jailMs > 0;
 
   if (!jail && !hospital) return null;

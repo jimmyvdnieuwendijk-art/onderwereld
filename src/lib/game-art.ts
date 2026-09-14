@@ -1,17 +1,7 @@
 /** Illustration paths for game cards. Missing files fall back to a CSS plate. */
 
-/** Extra catalog slugs that reuse an existing JPEG. */
-const CRIME_ART_FILE: Record<string, string> = {
-  pinautomaat: "winkel",
-  container: "transport",
-  afpersing: "koerier",
-  museum: "juwelier",
-  arsenaal: "bankauto",
-};
-
 export function crimeArt(slug: string) {
-  const file = CRIME_ART_FILE[slug] ?? slug;
-  return `/game/crimes/${file}.jpg`;
+  return `/game/crimes/${slug}.jpg`;
 }
 
 const SHOP_ART_FILE: Record<string, string> = {
@@ -34,16 +24,12 @@ export function airportArt(id: string) {
 }
 
 /**
- * Vespa is stored as scooter.jpg. Extra vehicles reuse a close existing plate —
- * do not alias the originals onto missing extra files (that blanked Golf/BMW).
+ * Vespa's catalog slug is `scooter` (file: scooter.jpg).
+ * Extra cars (corsa, rs6, …) have their own decoded plates — do not alias
+ * them onto Golf/BMW or those unique files never show.
  */
 const VEHICLE_ART_FILE: Record<string, string> = {
   vespa: "scooter",
-  corsa: "golf",
-  rs6: "bmw",
-  rover: "mercedes",
-  roma: "porsche",
-  chiron: "lambo",
 };
 
 export function vehicleArt(slug: string) {

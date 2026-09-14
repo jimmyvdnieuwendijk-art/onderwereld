@@ -146,15 +146,17 @@ export async function consumeItem(itemId: string): Promise<ActionResult> {
   const health = Math.min(MAX_HEALTH, user.health + owned.item.healAmount);
   const energy = Math.min(MAX_ENERGY, user.energy + owned.item.energyAmount);
 
-  if (owned.quantity <= 1) {
-    await prisma.inventoryItem.delete({ where: { id: owned.id } });
-  } else {
-    await prisma.inventoryItem.update({
-      where: { id: owned.id },
-      data: { quantity: { decrement: 1 } },
-    });
-  }
-  await prisma.user.update({ where: { id: userId }, data: { health, energy } });
+  await prisma.$transaction(async (tx) => {
+    if (owned.quantity <= 1) {
+      await tx.inventoryItem.delete({ where: { id: owned.id } });
+    } else {
+      await tx.inventoryItem.update({
+        where: { id: owned.id },
+        data: { quantity: { decrement: 1 } },
+      });
+    }
+    await tx.user.update({ where: { id: userId }, data: { health, energy } });
+  });
   return ok(`Je gebruikt ${owned.item.name}.`);
 }
 
@@ -299,41 +301,51 @@ export async function buyListing(listingId: string): Promise<ActionResult> {
   const buyer = await prisma.user.findUnique({ where: { id: userId } });
   if (!buyer || buyer.cash < listing.price) return fail("Niet genoeg contant geld.");
 
-  await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: userId },
-      data: { cash: { decrement: listing.price } },
-    });
-    await tx.user.update({
-      where: { id: listing.sellerId },
-      data: { cash: { increment: listing.price } },
-    });
-    await tx.marketListing.update({
-      where: { id: listing.id },
-      data: { active: false, buyerId: userId, completedAt: new Date() },
-    });
-
-    const stockField = stockFieldForType(listing.type);
-    if (stockField) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const claimed = await tx.marketListing.updateMany({
+        where: { id: listing.id, active: true },
+        data: { active: false, buyerId: userId, completedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        throw new Error("LISTING_TAKEN");
+      }
       await tx.user.update({
         where: { id: userId },
-        data: { [stockField]: { increment: listing.quantity } },
+        data: { cash: { decrement: listing.price } },
       });
-    }
-    if (listing.type === LISTING_VEHICLE && listing.vehicleId) {
-      await tx.vehicle.update({
-        where: { id: listing.vehicleId },
-        data: { userId },
+      await tx.user.update({
+        where: { id: listing.sellerId },
+        data: { cash: { increment: listing.price } },
       });
+
+      const stockField = stockFieldForType(listing.type);
+      if (stockField) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { [stockField]: { increment: listing.quantity } },
+        });
+      }
+      if (listing.type === LISTING_VEHICLE && listing.vehicleId) {
+        await tx.vehicle.update({
+          where: { id: listing.vehicleId },
+          data: { userId },
+        });
+      }
+      if (listing.type === LISTING_ITEM && listing.itemId) {
+        await tx.inventoryItem.upsert({
+          where: { userId_itemId: { userId, itemId: listing.itemId } },
+          update: { quantity: { increment: listing.quantity } },
+          create: { userId, itemId: listing.itemId, quantity: listing.quantity },
+        });
+      }
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "LISTING_TAKEN") {
+      return fail("Advertentie is niet meer actief.");
     }
-    if (listing.type === LISTING_ITEM && listing.itemId) {
-      await tx.inventoryItem.upsert({
-        where: { userId_itemId: { userId, itemId: listing.itemId } },
-        update: { quantity: { increment: listing.quantity } },
-        create: { userId, itemId: listing.itemId, quantity: listing.quantity },
-      });
-    }
-  });
+    throw error;
+  }
 
   const label = listingLabel(
     listing.type,

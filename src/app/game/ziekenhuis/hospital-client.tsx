@@ -19,7 +19,7 @@ export function HospitalClient({
   const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
   const ms = remainingMs(p.inHospitalUntil);
-  const hospitalized = ms > 0 || p.isDead;
+  const hospitalized = ms > 0;
   const cost = Math.max(1, Math.ceil(Math.max(ms, 1) / 60_000)) * HOSPITAL_PER_MINUTE;
 
   return (
