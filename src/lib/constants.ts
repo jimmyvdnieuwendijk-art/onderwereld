@@ -49,8 +49,11 @@ export const LISTING_ITEM = "ITEM";
 
 export const ROLE_DON = "DON";
 export const ROLE_UNDERBOSS = "UNDERBOSS";
+export const ROLE_CONSIGLIERE = "CONSIGLIERE";
 export const ROLE_CAPO = "CAPO";
+export const ROLE_LIEUTENANT = "LIEUTENANT";
 export const ROLE_SOLDIER = "SOLDIER";
+export const ROLE_ASSOCIATE = "ASSOCIATE";
 /** @deprecated Use ROLE_DON */
 export const ROLE_LEADER = ROLE_DON;
 /** @deprecated Use ROLE_UNDERBOSS */
@@ -59,6 +62,9 @@ export const ROLE_OFFICER = ROLE_UNDERBOSS;
 export const ROLE_MEMBER = ROLE_SOLDIER;
 
 export const FAMILY_MEMBER_LIMIT_START = 8;
-export const FAMILY_MEMBER_LIMIT_MAX = 15;
+export const FAMILY_MEMBER_LIMIT_MAX = 40;
+export const FAMILY_MEMBER_LIMIT_STEPS = [8, 12, 16, 20, 24, 28, 32, 36, 40] as const;
 export const FAMILY_ANNOUNCE_MAX = 400;
+export const FAMILY_PAGE_TEXT_MAX = 8000;
+export const FAMILY_PAGE_IMAGES_MAX = 8;
 export const FAMILY_HOUR_MS = 60 * 60 * 1000;

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
-import { migrateFamilyRoles } from "@/lib/family";
+import { isJunkFamilyAnnouncement, migrateFamilyRoles } from "@/lib/family";
+import { familyPageImagePath } from "@/lib/avatar";
 import { ONLINE_WINDOW_MS } from "@/lib/constants";
 import { publicDisplayName } from "@/lib/game/public-player";
 import { redirect } from "next/navigation";
@@ -70,6 +71,7 @@ export default async function FamilyPage() {
           orderBy: { joinedAt: "asc" },
         },
         buildings: true,
+        pageImages: { orderBy: { sortOrder: "asc" } },
         ledger: {
           orderBy: { createdAt: "desc" },
           take: 30,
@@ -100,6 +102,15 @@ export default async function FamilyPage() {
 
   if (!family) {
     return <FamilyClient selfId={userId} selfRole={null} hq={null} invites={invites} rivals={[]} />;
+  }
+
+  if (isJunkFamilyAnnouncement(family.announcement)) {
+    await prisma.family.update({
+      where: { id: family.id },
+      data: { announcement: "", announcementAt: null },
+    });
+    family.announcement = "";
+    family.announcementAt = null;
   }
 
   const rivals: FamilyRival[] = rivalRows.map((row) => ({
@@ -159,6 +170,13 @@ export default async function FamilyPage() {
           })),
         }
       : null,
+    bannerUrl: family.bannerUrl,
+    pageText: family.pageText,
+    pageImages: family.pageImages.map((image) => ({
+      id: image.id,
+      caption: image.caption,
+      url: familyPageImagePath(image.id, image.updatedAt),
+    })),
   };
 
   return (

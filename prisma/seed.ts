@@ -1,20 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { hashSync } from "bcryptjs";
 
+import { PLAYER_RANKS } from "../src/lib/ranks";
+
 const prisma = new PrismaClient();
 
-const ranks = [
-  { slug: "schooier", name: "Schooier", minExp: 0, order: 1 },
-  { slug: "zakkenroller", name: "Zakkenroller", minExp: 250, order: 2 },
-  { slug: "inbreker", name: "Inbreker", minExp: 800, order: 3 },
-  { slug: "overvaller", name: "Overvaller", minExp: 2000, order: 4 },
-  { slug: "schutter", name: "Schutter", minExp: 5000, order: 5 },
-  { slug: "huurmoordenaar", name: "Huurmoordenaar", minExp: 12000, order: 6 },
-  { slug: "capo", name: "Capo", minExp: 25000, order: 7 },
-  { slug: "consigliere", name: "Consigliere", minExp: 50000, order: 8 },
-  { slug: "onderbaas", name: "Onderbaas", minExp: 100000, order: 9 },
-  { slug: "peetvader", name: "Peetvader", minExp: 200000, order: 10 },
-];
+const ranks = PLAYER_RANKS.map((rank) => ({ ...rank }));
 
 const crimes = [
   {

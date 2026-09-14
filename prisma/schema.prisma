@@ -214,6 +214,8 @@ model Family {
   doctorLevel    Int               @default(0)
   defenseLevel   Int               @default(0)
   description    String            @default("")
+  bannerUrl      String?
+  pageText       String            @default("")
   createdAt      DateTime          @default(now())
   members        User[]            @relation("FamilyRoster")
   memberships    FamilyMember[]
@@ -221,6 +223,8 @@ model Family {
   ledger         FamilyLedger[]
   buildings      FamilyBuilding[]
   heists         FamilyHeist[]
+  bannerFile     FamilyBanner?
+  pageImages     FamilyPageImage[]
 }
 
 model FamilyMember {
@@ -229,13 +233,35 @@ model FamilyMember {
   family          Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role            String   @default("SOLDIER")
+  role            String   @default("ASSOCIATE")
   donatedCash     Int      @default(0)
   donatedLegal    Int      @default(0)
   donatedBullets  Int      @default(0)
   joinedAt        DateTime @default(now())
 
   @@index([familyId])
+}
+
+model FamilyBanner {
+  familyId  String   @id
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  mimeType  String
+  bytes     Bytes
+  updatedAt DateTime @updatedAt
+}
+
+model FamilyPageImage {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  mimeType  String
+  bytes     Bytes
+  caption   String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([familyId, sortOrder])
 }
 
 model FamilyInvite {

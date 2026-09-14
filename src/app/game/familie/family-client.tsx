@@ -30,19 +30,23 @@ import {
   payoutFromFamily,
   raidRivalFamily,
   runFamilyHeist,
+  cancelFamilyHeist,
   setFamilyMemberRole,
   transferDon,
   updateFamilyMotto,
 } from "@/lib/actions/family";
-import { FAMILY_ANNOUNCE_MAX, FAMILY_CREATE_COST } from "@/lib/constants";
+import { FAMILY_ANNOUNCE_MAX, FAMILY_CREATE_COST, FAMILY_MEMBER_LIMIT_MAX } from "@/lib/constants";
 import {
   canInviteKick,
   canLeadJobs,
   canManageFamily,
+  canPromoteFamily,
   FAMILY_BUILDINGS,
   FAMILY_HEISTS,
+  FAMILY_ROLE_LADDER,
   FAMILY_ROLE_RIGHTS,
   FAMILY_UPGRADES,
+  HEIST_TIER_META,
   familyExpToNext,
   familyHeistDef,
   familyLevel,
@@ -62,6 +66,7 @@ import { PlayerAvatar } from "@/components/game/player-avatar";
 import { useGameAction } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import type { FamilyHq, FamilyInviteRow, FamilyRival } from "./hq-types";
+import { FamilyLayoutEditor, FamilyPresentation } from "./family-presentation";
 
 const TABS: { id: FamilyTab; label: string; icon: typeof Users; manage?: boolean }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
@@ -77,8 +82,11 @@ function roleBadgeClass(role: string) {
   const r = normalizeFamilyRole(role);
   if (r === "DON") return "border-[#d4a359] bg-[#d4a359]/15 text-[#d4a359]";
   if (r === "UNDERBOSS") return "border-[#d4a359]/50 bg-[#d4a359]/10 text-[#d4a359]";
+  if (r === "CONSIGLIERE") return "border-violet-500/50 bg-violet-950/40 text-violet-200";
   if (r === "CAPO") return "border-amber-700/60 bg-amber-950/40 text-amber-200";
-  return "border-border/60 bg-muted/30 text-muted-foreground";
+  if (r === "LIEUTENANT") return "border-stone-500/60 bg-stone-900/60 text-stone-200";
+  if (r === "SOLDIER") return "border-border/60 bg-muted/30 text-muted-foreground";
+  return "border-zinc-700/60 bg-zinc-950/50 text-zinc-400";
 }
 
 export function FamilyClient({
@@ -180,7 +188,12 @@ function FamilyHqView({
   return (
     <div className="space-y-4">
       <header className="overflow-hidden rounded-xl border border-[#d4a359]/30 bg-[#1a1510]">
-        <div className="h-16 bg-gradient-to-r from-[#8b2626]/50 via-[#1a1510] to-[#d4a359]/20" />
+        {hq.bannerUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- family banner blob
+          <img src={hq.bannerUrl} alt="" className="h-28 w-full object-cover" />
+        ) : (
+          <div className="h-16 bg-gradient-to-r from-[#8b2626]/50 via-[#1a1510] to-[#d4a359]/20" />
+        )}
         <div className="-mt-6 flex flex-wrap items-end justify-between gap-3 px-4 pb-4">
           <div className="flex items-end gap-3">
             <div className="flex size-14 items-center justify-center rounded-lg border border-[#d4a359]/50 bg-[#1a1510] font-heading text-2xl text-[#d4a359]">
@@ -281,6 +294,7 @@ function OverzichtTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
           </div>
         ) : null}
       </div>
+      <FamilyPresentation hq={hq} />
     </div>
   );
 }
@@ -305,8 +319,8 @@ function LedenTab({ hq, selfId, role }: { hq: FamilyHq; selfId: string; role: Fa
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 text-xs">
-        {(Object.keys(FAMILY_ROLE_RIGHTS) as FamilyRole[]).map((key) => (
-          <span key={key} className={cn("rounded-full border px-2 py-0.5", roleBadgeClass(key))}>
+        {[...FAMILY_ROLE_LADDER].reverse().map((key) => (
+          <span key={key} className={cn("rounded-full border px-2 py-0.5", roleBadgeClass(key))} title={FAMILY_ROLE_RIGHTS[key].join(" · ")}>
             {familyRoleLabel(key)}
           </span>
         ))}
@@ -363,9 +377,14 @@ function LedenTab({ hq, selfId, role }: { hq: FamilyHq; selfId: string; role: Fa
                 </td>
                 <td className="px-3 py-2">{m.rankName}</td>
                 <td className="px-3 py-2">
+                  {m.userId === selfId && role !== "DON" ? (
+                    <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => leaveFamily(), refresh)}>
+                      Verlaten
+                    </Button>
+                  ) : null}
                   {m.userId !== selfId && familyRoleRank(role) > familyRoleRank(m.role) ? (
                     <div className="flex flex-wrap gap-1">
-                      {canManageFamily(role) ? (
+                      {canPromoteFamily(role) ? (
                         <>
                           <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => setFamilyMemberRole(m.userId, "up"), refresh)}>
                             +
@@ -425,7 +444,7 @@ function BankTab({ hq, selfId, role }: { hq: FamilyHq; selfId: string; role: Fam
           Storten
         </Button>
       </div>
-      {canManageFamily(role) ? (
+      {canPromoteFamily(role) ? (
         <div className="flex flex-wrap gap-2">
           <select value={payUser} onChange={(e) => setPayUser(e.target.value)} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
             {hq.members.map((m) => (
@@ -553,8 +572,8 @@ function BenefitsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
           <div key={up.key} className="rounded-lg border border-[#d4a359]/20 bg-[#1a1510] p-3">
             <p className="font-heading text-[#d4a359]">{up.name}</p>
             <p className="text-xs text-muted-foreground">{up.blurb}</p>
-            <p className="mt-1 text-xs">{up.key === "slots" ? `${hq.memberLimit} leden max` : up.effect(current)}</p>
-            {canManageFamily(role) ? (
+            <p className="mt-1 text-xs">{up.key === "slots" ? `${hq.memberLimit}/${FAMILY_MEMBER_LIMIT_MAX} leden max` : up.effect(current)}</p>
+            {canPromoteFamily(role) ? (
               <Button size="sm" className="mt-2" disabled={pending || maxed} onClick={() => run(() => buyFamilyUpgrade(up.key), refresh)}>
                 {maxed ? "Max" : `Koop ${formatMoney(cost)}`}
               </Button>
@@ -580,8 +599,16 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
     <div className="space-y-4">
       {open && openDef ? (
         <div className="rounded-lg border border-[#d4a359]/30 bg-[#1a1510] p-3">
+          <p className="text-[11px] uppercase tracking-wider text-[#d4a359]">
+            {HEIST_TIER_META.find((t) => t.id === openDef.tier)?.label} · {openDef.seats.length} spelers
+          </p>
           <p className="font-heading text-[#d4a359]">{openDef.name}</p>
           <p className="text-xs text-muted-foreground">{openDef.blurb}</p>
+          <p className="mt-2 text-xs">
+            Kans {openDef.chance}% · buit {formatMoney(openDef.cashMin)}–{formatMoney(openDef.cashMax)}
+            {openDef.bullets ? ` · ${openDef.bullets} kogels` : ""} · {openDef.energy} energie
+            {" · "}cel {openDef.jailChance}% / {openDef.jailMinutes} min
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {openDef.seats.map((seat) => {
               const taken = open.seats.find((s) => s.roleKey === seat.key)?.username;
@@ -600,34 +627,62 @@ function HeistsTab({ hq, role }: { hq: FamilyHq; role: FamilyRole }) {
             })}
           </div>
           {canLeadJobs(role) ? (
-            <Button className="mt-3" disabled={pending} onClick={() => run(() => runFamilyHeist(open.id), refresh)}>
-              Uitvoeren
-            </Button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button disabled={pending} onClick={() => run(() => runFamilyHeist(open.id), refresh)}>
+                Uitvoeren
+              </Button>
+              <Button variant="outline" disabled={pending} onClick={() => run(() => cancelFamilyHeist(open.id), refresh)}>
+                Intrekken
+              </Button>
+            </div>
           ) : null}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {FAMILY_HEISTS.map((def) => (
-            <div key={def.slug} className="rounded-lg border border-border/50 p-3">
-              <p className="font-heading">{def.name}</p>
-              <p className="text-xs text-muted-foreground">{def.blurb}</p>
-              <p className="mt-1 text-xs">
-                Level {def.minLevel} · {def.seats.length} rollen · {def.energy} energie · {formatMoney(def.cashMin)}–{formatMoney(def.cashMax)}
-              </p>
-              {canLeadJobs(role) ? (
-                <Button
-                  size="sm"
-                  className="mt-2"
-                  disabled={pending || level < def.minLevel}
-                  onClick={() => run(() => openFamilyHeist(def.slug), refresh)}
-                >
-                  Openen
-                </Button>
-              ) : (
-                <p className="mt-2 text-xs text-muted-foreground">Wacht tot een Capo de klus opent.</p>
-              )}
-            </div>
-          ))}
+        <div className="space-y-5">
+          {HEIST_TIER_META.map((tier) => {
+            const rows = FAMILY_HEISTS.filter((def) => def.tier === tier.id);
+            return (
+              <section key={tier.id} className="space-y-2">
+                <div>
+                  <h3 className="font-heading text-lg text-[#d4a359]">
+                    {tier.label} · {tier.crew}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{tier.blurb}</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {rows.map((def) => (
+                    <div key={def.slug} className="rounded-lg border border-border/50 p-3">
+                      <p className="font-heading">{def.name}</p>
+                      <p className="text-xs text-muted-foreground">{def.blurb}</p>
+                      <p className="mt-1 text-xs">
+                        {def.seats.length === 1 ? "1 speler" : `${def.seats.length} spelers`} · lv {def.minLevel} · {def.energy} energie
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Buit {formatMoney(def.cashMin)}–{formatMoney(def.cashMax)}
+                        {def.bullets ? ` · ${def.bullets} kogels` : ""} · kans {def.chance}%
+                      </p>
+                      <p className="text-xs text-[#8b2626]">
+                        Risico: cel {def.jailChance}% · {def.jailMinutes} min
+                        {def.hospitalMinutes ? ` · ziekenhuis ${def.hospitalMinutes} min` : ""}
+                      </p>
+                      {canLeadJobs(role) ? (
+                        <Button
+                          size="sm"
+                          className="mt-2"
+                          disabled={pending || level < def.minLevel}
+                          onClick={() => run(() => openFamilyHeist(def.slug), refresh)}
+                        >
+                          {level < def.minLevel ? `Level ${def.minLevel}` : "Openen"}
+                        </Button>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">Wacht tot een Capo de klus opent.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       )}
     </div>
@@ -645,8 +700,12 @@ function BeheerTab({ hq, selfId, role }: { hq: FamilyHq; selfId: string; role: F
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Alleen Don en Underboss. Ontbinden en titel: Don.</p>
+      <p className="text-sm text-muted-foreground">
+        Consigliere en hoger: foto, layout, motto. Ontbinden en titel: Don. Ledenplafond {FAMILY_MEMBER_LIMIT_MAX}.
+      </p>
+      <FamilyLayoutEditor hq={hq} />
       <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-wider text-[#d4a359]">Motto</p>
         <Textarea value={motto} rows={3} onChange={(e) => setMotto(e.target.value)} />
         <Button disabled={pending} onClick={() => run(() => updateFamilyMotto(motto), refresh)}>
           Motto opslaan

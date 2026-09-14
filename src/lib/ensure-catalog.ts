@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { ensureRankLadder } from "@/lib/ensure-ranks";
 
 /** Exact cash for the shared DonDemo test account. */
 export const DEMO_TEST_CASH = 500_000;
@@ -125,19 +126,6 @@ const EXTRA_VEHICLES = [
   { slug: "chiron", name: "Bugatti Chiron", baseValue: 185000, stealDifficulty: 96, rarity: "legendary", minRankOrder: 9 },
 ] as const;
 
-const BOOTSTRAP_RANKS = [
-  { slug: "schooier", name: "Schooier", minExp: 0, order: 1 },
-  { slug: "zakkenroller", name: "Zakkenroller", minExp: 250, order: 2 },
-  { slug: "inbreker", name: "Inbreker", minExp: 800, order: 3 },
-  { slug: "overvaller", name: "Overvaller", minExp: 2000, order: 4 },
-  { slug: "schutter", name: "Schutter", minExp: 5000, order: 5 },
-  { slug: "huurmoordenaar", name: "Huurmoordenaar", minExp: 12000, order: 6 },
-  { slug: "capo", name: "Capo", minExp: 25000, order: 7 },
-  { slug: "consigliere", name: "Consigliere", minExp: 50000, order: 8 },
-  { slug: "onderbaas", name: "Onderbaas", minExp: 100000, order: 9 },
-  { slug: "peetvader", name: "Peetvader", minExp: 200000, order: 10 },
-] as const;
-
 let catalogSync: Promise<void> | null = null;
 let liveBoot: Promise<void> | null = null;
 
@@ -182,10 +170,7 @@ export async function ensureGameCatalog() {
 export async function ensureLiveBootstrap() {
   if (!liveBoot) {
     liveBoot = (async () => {
-      const rankCount = await prisma.rank.count();
-      if (rankCount === 0) {
-        await prisma.rank.createMany({ data: [...BOOTSTRAP_RANKS], skipDuplicates: true });
-      }
+      await ensureRankLadder();
       await ensureGameCatalog();
       if (process.env.SKIP_DEMO_USERS === "1") return;
 
