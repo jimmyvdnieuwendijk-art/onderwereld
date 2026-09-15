@@ -2,6 +2,11 @@ import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { prisma } from "@/lib/prisma";
 import { PlayersClient } from "./players-client";
 import { toPublicPlayer, publicDisplayName } from "@/lib/game/public-player";
+import {
+  LEADERBOARD_TAKE,
+  playerLeaderboardOrder,
+  PUBLIC_PLAYER_SELECT,
+} from "@/lib/game/leaderboard";
 
 export const metadata = {
   title: "Klassement",
@@ -17,28 +22,9 @@ export default async function PlayersPage({
 
   const [users, families] = await Promise.all([
     prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        health: true,
-        isDead: true,
-        killCount: true,
-        exp: true,
-        cash: true,
-        inJailUntil: true,
-        inHospitalUntil: true,
-        travelEndAt: true,
-        bio: true,
-        bioHidden: true,
-        hideOnline: true,
-        lastSeenAt: true,
-        displayName: true,
-        avatarUrl: true,
-        rank: { select: { name: true, order: true } },
-        family: { select: { name: true } },
-      },
-      orderBy: [{ exp: "desc" }, { killCount: "desc" }, { cash: "desc" }],
-      take: 120,
+      select: PUBLIC_PLAYER_SELECT,
+      orderBy: playerLeaderboardOrder("rank", "desc"),
+      take: LEADERBOARD_TAKE,
     }),
     prisma.family.findMany({
       include: {

@@ -1,51 +1,32 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import Link from "next/link";
-import { postShout } from "@/lib/actions/social";
-import { formatDateTime } from "@/lib/format";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { remainingMs } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
-import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { DASHBOARD_LINKS } from "@/components/game/nav-config";
 import { InventoryPanel } from "@/components/game/inventory-panel";
+import { WaitQueuePanel } from "@/components/game/wait-queue-panel";
+import { useLivePlayer } from "@/hooks/use-player";
+import type { WaitQueueExtras } from "@/lib/game/wait-queue";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
-type LogRow = { id: string; type: string; message: string; createdAt: string };
-type Shout = { id: string; body: string; createdAt: string; username: string };
-
 export function DashboardClient({
   initialPlayer,
-  logs,
+  extras = {},
 }: {
   initialPlayer?: PlayerSnapshot;
-  logs: LogRow[];
+  extras?: WaitQueueExtras;
 }) {
   const p = useLivePlayer(initialPlayer)!;
-  const { run, pending } = useGameAction();
-  const queryClient = useQueryClient();
-  const [text, setText] = useState("");
-
-  const shouts = useQuery({
-    queryKey: ["shoutbox"],
-    queryFn: async () => {
-      const res = await fetch("/api/shoutbox");
-      if (!res.ok) throw new Error("shoutbox");
-      return res.json() as Promise<Shout[]>;
-    },
-    staleTime: 15_000,
-    refetchInterval: 20_000,
-  });
 
   const statusChips = [
-    p.inJailUntil ? { key: "jail", label: "Cel", until: p.inJailUntil } : null,
-    p.inHospitalUntil ? { key: "hospital", label: "Ziekenhuis", until: p.inHospitalUntil } : null,
-    p.travelEndAt
+    remainingMs(p.inJailUntil) > 0 ? { key: "jail", label: "Cel", until: p.inJailUntil } : null,
+    remainingMs(p.inHospitalUntil) > 0
+      ? { key: "hospital", label: "Ziekenhuis", until: p.inHospitalUntil }
+      : null,
+    remainingMs(p.travelEndAt) > 0
       ? { key: "travel", label: `Vlucht ${p.travelDestinationName ?? ""}`.trim(), until: p.travelEndAt }
       : null,
   ].filter(Boolean) as { key: string; label: string; until: string }[];
@@ -83,6 +64,8 @@ export function DashboardClient({
         </div>
       </header>
 
+      <WaitQueuePanel player={p} extras={extras} />
+
       <section>
         <h2 className="mb-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Snel naar</h2>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -119,85 +102,6 @@ export function DashboardClient({
       </section>
 
       <InventoryPanel player={p} />
-
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <Card size="sm" className="border-border/50">
-          <CardHeader className="border-b border-border/40">
-            <CardTitle>Laatste gebeurtenissen</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-3">
-            {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nog geen geschiedenis.{" "}
-                <Link href="/game/misdaden" className="text-primary hover:underline">
-                  Pleeg een misdaad
-                </Link>
-                .
-              </p>
-            ) : (
-              <ul className="space-y-2.5 text-sm">
-                {logs.map((log) => (
-                  <li key={log.id} className="border-b border-border/40 pb-2 last:border-0 last:pb-0">
-                    <p className="leading-snug">{log.message}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {log.type} · {formatDateTime(log.createdAt)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card size="sm" className="h-fit border-border/50">
-          <CardHeader className="border-b border-border/40">
-            <CardTitle>Shoutbox</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-3">
-            <div className="max-h-72 space-y-2 overflow-y-auto text-sm">
-              {shouts.isLoading && !shouts.data && (
-                <p className="text-muted-foreground">Straatgeluid laden…</p>
-              )}
-              {shouts.isError && (
-                <p className="text-destructive">Shoutbox is even stil. Probeer opnieuw.</p>
-              )}
-              {(shouts.data ?? []).length === 0 && !shouts.isLoading && !shouts.isError && (
-                <p className="text-muted-foreground">Stilte op straat.</p>
-              )}
-              {(shouts.data ?? []).map((row) => (
-                <p key={row.id} className="leading-snug">
-                  <span className="text-primary">{row.username}:</span> {row.body}
-                </p>
-              ))}
-            </div>
-            <form
-              className="flex gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                run(
-                  () => postShout(text),
-                  (result) => {
-                    if (result.ok) {
-                      setText("");
-                      queryClient.invalidateQueries({ queryKey: ["shoutbox"] });
-                    }
-                  },
-                );
-              }}
-            >
-              <Input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                maxLength={180}
-                placeholder="Roep iets de straat in…"
-              />
-              <Button type="submit" disabled={pending || text.trim().length < 2}>
-                Shout
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

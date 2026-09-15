@@ -87,4 +87,5 @@ export const DASHBOARD_LINKS = [
   { href: "/game/auto-stelen", label: "Auto stelen", hint: "Van Corsa tot Chiron", icon: Car },
   { href: "/game/bank", label: "Bank", hint: "Rente en een kluis", icon: Banknote },
   { href: "/game/winkel", label: "Winkel", hint: "Staal en kogels", icon: ShoppingBag },
+  { href: "/game/chat", label: "Chat", hint: "Wereld en familie", icon: MessageCircle },
 ] as const;
