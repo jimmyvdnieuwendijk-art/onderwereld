@@ -149,24 +149,6 @@
   filter: brightness(1.06);
 }
 
-.bronze {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.55rem;
-  padding: 0.55rem 1.1rem;
-  border: 1px solid #8a6d3f;
-  background: linear-gradient(180deg, #3a2d1f 0%, #1c150f 100%);
-  color: #d4b278;
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-}
-
-.bronze:hover {
-  border-color: #d4a359;
-  color: #e8d5a3;
-}
-
 .features {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -212,8 +194,7 @@
   color: rgb(196 176 137 / 78%);
 }
 
-.about,
-.faq {
+.about {
   padding: 0.4rem 1.15rem 1.4rem;
   max-width: 46rem;
   margin: 0 auto;
@@ -228,35 +209,11 @@
   margin: 0 0 0.7rem;
 }
 
-.about p,
-.faqItem p {
+.about p {
   margin: 0;
   font-size: 0.92rem;
   line-height: 1.55;
   color: rgb(232 213 163 / 82%);
-}
-
-.faqList {
-  display: grid;
-  gap: 0.55rem;
-}
-
-.faqItem {
-  border: 1px solid rgb(212 163 89 / 22%);
-  background: rgb(16 12 8 / 62%);
-  padding: 0.7rem 0.85rem;
-}
-
-.faqItem summary {
-  cursor: pointer;
-  font-family: var(--font-heading), ui-serif, Georgia, serif;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  color: #e8d5a3;
-}
-
-.faqItem p {
-  margin-top: 0.45rem;
 }
 
 .foot {
@@ -277,11 +234,6 @@
     letter-spacing: 0.34em;
   }
 
-  .cta {
-    flex-direction: row;
-    gap: 0.85rem;
-  }
-
   .features {
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
@@ -300,8 +252,7 @@
     font-size: 0.78rem;
   }
 
-  .about,
-  .faq {
+  .about {
     padding-left: 2.4rem;
     padding-right: 2.4rem;
   }

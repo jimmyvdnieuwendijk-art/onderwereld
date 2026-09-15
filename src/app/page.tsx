@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import styles from "./landing.module.css";
-import { LANDING_FAQ } from "@/lib/seo";
 import { SITE_DESCRIPTION, SITE_NAME, siteOrigin } from "@/lib/site";
 
 const FEATURES = [
@@ -42,36 +41,21 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "VideoGame",
-      name: SITE_NAME,
-      url: siteOrigin(),
-      inLanguage: "nl-NL",
-      genre: ["MMORPG", "Crime", "Browser game"],
-      playMode: "MultiPlayer",
-      applicationCategory: "GameApplication",
-      operatingSystem: "Web browser",
-      description: SITE_DESCRIPTION,
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "EUR",
-        availability: "https://schema.org/InStock",
-      },
-    },
-    {
-      "@type": "FAQPage",
-      mainEntity: LANDING_FAQ.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: item.answer,
-        },
-      })),
-    },
-  ],
+  "@type": "VideoGame",
+  name: SITE_NAME,
+  url: siteOrigin(),
+  inLanguage: "nl-NL",
+  genre: ["MMORPG", "Crime", "Browser game"],
+  playMode: "MultiPlayer",
+  applicationCategory: "GameApplication",
+  operatingSystem: "Web browser",
+  description: SITE_DESCRIPTION,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "EUR",
+    availability: "https://schema.org/InStock",
+  },
 };
 
 export default function LandingPage() {
@@ -118,9 +102,6 @@ export default function LandingPage() {
             <Link href="/registreren" className={styles.gold}>
               START HET CRIMINEEL LEVEN
             </Link>
-            <Link href="/inloggen" className={styles.bronze}>
-              Ik heb al een naam
-            </Link>
           </div>
         </main>
 
@@ -151,20 +132,6 @@ export default function LandingPage() {
             tussen steden, een familie opzetten en andere spelers raken in PvP. Geen launcher, geen
             client — een crime game NL die blijft staan als je het tabblad sluit.
           </p>
-        </section>
-
-        <section className={styles.faq} aria-labelledby="faq-heading">
-          <h2 id="faq-heading" className={styles.sectionTitle}>
-            Veelgestelde vragen
-          </h2>
-          <div className={styles.faqList}>
-            {LANDING_FAQ.map((item) => (
-              <details key={item.question} className={styles.faqItem}>
-                <summary>{item.question}</summary>
-                <p>{item.answer}</p>
-              </details>
-            ))}
-          </div>
         </section>
 
         <p className={styles.foot}>
