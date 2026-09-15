@@ -26,8 +26,8 @@ export const VEHICLES: VehicleSeed[] = [
 export const VEHICLE_SELL_MULT = 0.5;
 /** Repair bill vs missing condition × catalog. */
 export const VEHICLE_REPAIR_MULT = 0.32;
-export const THEFT_COOLDOWN_MS = 50_000;
-export const THEFT_JAIL_MINUTES = 10;
+export const THEFT_COOLDOWN_MS = 40_000;
+export const THEFT_JAIL_MINUTES = 12;
 
 export function theftEnergyCost(minRankOrder: number) {
   return 8 + minRankOrder * 2;

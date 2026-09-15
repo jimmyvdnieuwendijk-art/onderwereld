@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { clamp, randomInt } from "@/lib/format";
+import { clamp, randomInt, remainingMs } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import {
   THEFT_COOLDOWN_MS,
@@ -24,7 +24,7 @@ export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
   const blocked = blockedReason(player);
   if (blocked) return fail(blocked, "warning");
 
-  if (player.carTheftCooldownUntil && new Date(player.carTheftCooldownUntil).getTime() > Date.now()) {
+  if (remainingMs(player.carTheftCooldownUntil) > 0) {
     return fail("Je kunt nog geen nieuwe auto stelen.", "warning");
   }
 
@@ -58,7 +58,6 @@ export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
     ]);
     const message = `Je steelt een ${type.name} (${condition}% staat).`;
     await logEvent(userId, "THEFT", message);
-    await tickPlayer(userId);
     queueAchievementSync(userId);
     return ok(message);
   }

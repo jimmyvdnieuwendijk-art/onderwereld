@@ -12,7 +12,7 @@ import {
   gymDefenseBonus,
 } from "@/lib/gym";
 import { MAX_ENERGY } from "@/lib/constants";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, isActiveUntil } from "@/lib/format";
 import { gymArt } from "@/lib/game-art";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +23,6 @@ import { ActionFeedback, useFormAction } from "@/components/game/action-feedback
 import { useLivePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import type { PlayerSnapshot } from "@/types/game";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 function Meter({ label, value, max, barClass }: { label: string; value: number; max: number; barClass: string }) {
   const pct = Math.max(0, Math.min(100, Math.round((value / Math.max(1, max)) * 100)));
@@ -45,28 +43,12 @@ function Meter({ label, value, max, barClass }: { label: string; value: number; 
 
 export function GymClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
   const p = useLivePlayer(initialPlayer)!;
-  const router = useRouter();
   const [trainState, trainAction, training] = useFormAction(trainGymForm);
   const [unlockState, unlockAction, unlocking] = useFormAction(unlockGymFloorForm);
   const busy = training || unlocking;
-  const cooling = !!(p.gymCooldownUntil && new Date(p.gymCooldownUntil).getTime() > Date.now());
+  const cooling = isActiveUntil(p.gymCooldownUntil);
   const atk = gymAttackBonus(p.strength, p.fightSkill);
   const def = gymDefenseBonus(p.condition, p.fightSkill);
-
-  useEffect(() => {
-    if (trainState?.ok || unlockState?.ok) router.refresh();
-  }, [trainState, unlockState, router]);
-
-  useEffect(() => {
-    if (!p.gymCooldownUntil) return;
-    const ms = new Date(p.gymCooldownUntil).getTime() - Date.now() + 400;
-    if (ms <= 0) {
-      router.refresh();
-      return;
-    }
-    const timer = setTimeout(() => router.refresh(), ms);
-    return () => clearTimeout(timer);
-  }, [p.gymCooldownUntil, router]);
 
   return (
     <div className="space-y-5">
@@ -121,7 +103,7 @@ export function GymClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot })
             <Meter label="Vechtkunst" value={p.fightSkill} max={MAX_FIGHT_SKILL} barClass="bg-gradient-to-r from-fuchsia-500 to-cyan-300" />
             <Meter label="Energie" value={p.energy} max={MAX_ENERGY} barClass="bg-gradient-to-r from-cyan-600 to-fuchsia-500" />
             <p className="text-xs text-muted-foreground">
-              Buiten de gym: +1 energie per 12 seconden, max {MAX_ENERGY}. Energiedrank in de winkel +40. Training
+              Buiten de gym: +1 energie per 15 seconden, max {MAX_ENERGY}. Energiedrank in de winkel +40. Training
               kost eerst energie, daarna een recovery-procent van het maximum — nooit meer dan de set kost.
             </p>
           </CardContent>

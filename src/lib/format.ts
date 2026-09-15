@@ -76,10 +76,14 @@ export function formatDuration(ms: number) {
   return `${seconds}s`;
 }
 
-/** MM:SS countdown for vluchten. */
+/** MM:SS, or H:MM:SS when a wait crosses an hour (long jail). */
 export function formatClock(ms: number) {
   const total = Math.max(0, Math.ceil(ms / 1000));
-  const minutes = Math.floor(total / 60);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
   const seconds = total % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }

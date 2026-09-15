@@ -9,6 +9,8 @@ export const RECRUIT_COST = 250;
 export const RECRUIT_PIMP_EXP = 8;
 export const HIRE_PIMP_EXP = 2;
 export const RAID_WANTED_BUMP = 10;
+/** Street lock after a razzia. Same window as `windowStatus`. */
+export const RAID_LOCK_MS = 30 * 60 * 1000;
 export const MIN_LIST_PRICE = 500;
 export const WINDOW_HIRE_HOURS = 24;
 
@@ -131,7 +133,7 @@ export function windowStatus(args: {
   const recentRaid =
     !!args.lastRaidAt &&
     now - (typeof args.lastRaidAt === "string" ? new Date(args.lastRaidAt).getTime() : args.lastRaidAt.getTime()) <
-      30 * 60 * 1000;
+      RAID_LOCK_MS;
   if (args.wantedLevel >= 40 || recentRaid) return "razzia";
   if (args.hired && args.occupied) return "actief";
   return "leeg";

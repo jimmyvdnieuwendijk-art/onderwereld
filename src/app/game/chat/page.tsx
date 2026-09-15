@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
+import { redirect } from "next/navigation";
+import { requirePlayer } from "@/lib/actions/helpers";
 import { CHAT_CHANNEL_FAMILY, CHAT_CHANNEL_WORLD } from "@/lib/constants";
 import { listChatMessages } from "@/lib/game/chat";
 import { ChatClient } from "./chat-client";
@@ -9,12 +9,9 @@ export const metadata = {
 };
 
 export default async function ChatPage() {
-  const userId = await requireUserIdOrRedirect();
-  const me = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { familyId: true, family: { select: { name: true } } },
-  });
-  const familyId = me?.familyId ?? null;
+  const player = await requirePlayer();
+  if (!player) redirect("/inloggen");
+  const familyId = player.family?.id ?? null;
 
   const [initialWorld, initialFamily] = await Promise.all([
     listChatMessages(CHAT_CHANNEL_WORLD, null),
@@ -23,8 +20,9 @@ export default async function ChatPage() {
 
   return (
     <ChatClient
+      initialPlayer={player}
       hasFamily={Boolean(familyId)}
-      familyName={me?.family?.name ?? null}
+      familyName={player.family?.name ?? null}
       initialWorld={initialWorld}
       initialFamily={initialFamily}
     />

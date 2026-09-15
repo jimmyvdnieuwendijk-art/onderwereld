@@ -363,8 +363,7 @@ export function isPlayerTraveling(player: {
   travelEndAt?: Date | string | null;
   isTraveling?: boolean;
 }) {
-  if (isActiveUntil(player.travelEndAt)) return true;
-  return !!player.isTraveling && !player.travelEndAt;
+  return isActiveUntil(player.travelEndAt);
 }
 
 export function isJailed(player: { inJailUntil?: Date | string | null }, now = Date.now()) {

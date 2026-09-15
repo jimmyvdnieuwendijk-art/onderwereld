@@ -1,7 +1,7 @@
 "use client";
 
 import { bookFlightForm } from "@/lib/actions/travel";
-import { AIRPORTS, CUSTOMS_WANTED_THRESHOLD, flightQuote } from "@/lib/airports";
+import { AIRPORTS, CUSTOMS_JAIL_MINUTES, CUSTOMS_WANTED_THRESHOLD, flightQuote } from "@/lib/airports";
 import { formatClock, formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,8 @@ export function AirportClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
         </div>
         {p.wantedLevel > CUSTOMS_WANTED_THRESHOLD && (
           <p className="mt-2 text-sm text-destructive">
-            Je staat op de douanelijst. 35% kans op arrestatie bij vertrek — ticketgeld kwijt, 3 minuten cel.
+            Je staat op de douanelijst. 35% kans op arrestatie bij vertrek — ticketgeld kwijt, {CUSTOMS_JAIL_MINUTES}{" "}
+            minuten cel.
           </p>
         )}
         {inAir && p.travelEndAt && (

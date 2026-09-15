@@ -263,9 +263,9 @@ export const HEIST_TIER_META: {
   crew: string;
   blurb: string;
 }[] = [
-  { id: "klein", label: "Klein", crew: "1–2 spelers", blurb: "Snel, vies, weinig ogen. Lage buit, 4 min cooldown na afloop." },
-  { id: "middel", label: "Middel", crew: "2–4 spelers", blurb: "Een plan, een wagen, iemand op de hoek. Meer cash, 8 min cooldown." },
-  { id: "groot", label: "Groot", crew: "4–10 spelers", blurb: "Een avond die de familie maakt of breekt. 12 min cooldown na afloop." },
+  { id: "klein", label: "Klein", crew: "1–2 spelers", blurb: "Snel, vies, weinig ogen. Lage buit, 8 min cooldown na afloop." },
+  { id: "middel", label: "Middel", crew: "2–4 spelers", blurb: "Een plan, een wagen, iemand op de hoek. Meer cash, 15 min cooldown." },
+  { id: "groot", label: "Groot", crew: "4–10 spelers", blurb: "Een avond die de familie maakt of breekt. 25 min cooldown na afloop." },
 ];
 
 export const FAMILY_HEISTS: FamilyHeistDef[] = [
@@ -604,9 +604,9 @@ export function familyHeistDef(slug: string) {
 }
 
 export function familyHeistCooldownMs(tier: FamilyHeistTier) {
-  if (tier === "klein") return 4 * 60_000;
-  if (tier === "middel") return 8 * 60_000;
-  return 12 * 60_000;
+  if (tier === "klein") return 8 * 60_000;
+  if (tier === "middel") return 15 * 60_000;
+  return 25 * 60_000;
 }
 
 export function familyHeistCooldownUntil(slug: string, resolvedAt: Date | string | null | undefined) {

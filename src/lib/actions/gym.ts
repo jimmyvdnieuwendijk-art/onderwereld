@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { MAX_ENERGY } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { clamp } from "@/lib/format";
+import { clamp, remainingMs } from "@/lib/format";
 import {
   MAX_CONDITION,
   MAX_FIGHT_SKILL,
@@ -64,7 +64,7 @@ export async function trainGym(level: number): Promise<ActionResult> {
   if (g.player.energy < session.energyCost) {
     return fail(`Deze set kost ${session.energyCost} energie.`);
   }
-  if (g.player.gymCooldownUntil && new Date(g.player.gymCooldownUntil).getTime() > Date.now()) {
+  if (g.player.gymCooldownUntil && remainingMs(g.player.gymCooldownUntil) > 0) {
     return fail("Je spieren zijn nog warm. Wacht de cooldown af.", "warning");
   }
 

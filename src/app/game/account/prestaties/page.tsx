@@ -1,4 +1,5 @@
-import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
+import { redirect } from "next/navigation";
+import { requirePlayer } from "@/lib/actions/helpers";
 import { listAchievementBoard } from "@/lib/achievements";
 import { AchievementsClient } from "./achievements-client";
 
@@ -7,8 +8,9 @@ export const metadata = {
 };
 
 export default async function AchievementsPage() {
-  const userId = await requireUserIdOrRedirect();
-  const board = await listAchievementBoard(userId);
+  const player = await requirePlayer();
+  if (!player) redirect("/inloggen");
+  const board = await listAchievementBoard(player.id);
   if (!board) return null;
-  return <AchievementsClient initialBoard={board} />;
+  return <AchievementsClient initialPlayer={player} initialBoard={board} />;
 }

@@ -18,7 +18,7 @@ import {
   pitOdds,
 } from "@/lib/casino";
 import { casinoArt } from "@/lib/game-art";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, isActiveUntil } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,15 +28,13 @@ import { Countdown } from "@/components/game/countdown";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { useLivePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const RACE_BOARD = pitOdds();
 const FIGHT_BOARD = fightOdds();
 
 export function CasinoClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot }) {
   const p = useLivePlayer(initialPlayer)!;
-  const router = useRouter();
   const [rouletteState, rouletteAction, spinning] = useFormAction(playRouletteForm);
   const [streetState, streetAction, rolling] = useFormAction(playStreetForm);
   const [pitState, pitAction, racing] = useFormAction(playPitForm);
@@ -46,29 +44,12 @@ export function CasinoClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot
   const [foldState, foldAction, folding] = useFormAction(foldPokerForm);
 
   const busy = spinning || rolling || racing || dealing || drawing || peeking || folding;
-  const cooling = !!(p.casinoCooldownUntil && new Date(p.casinoCooldownUntil).getTime() > Date.now());
-  const peekReady = !(p.casinoPeekUntil && new Date(p.casinoPeekUntil).getTime() > Date.now());
+  const cooling = isActiveUntil(p.casinoCooldownUntil);
+  const peekReady = !isActiveUntil(p.casinoPeekUntil);
   const cap = maxBetFor(p.cash);
   const tableOpen = !p.casinoPoker;
   const [pitKind, setPitKind] = useState<"race" | "fight">("race");
   const pitBoardRows = pitKind === "fight" ? FIGHT_BOARD : RACE_BOARD;
-
-  useEffect(() => {
-    if ([rouletteState, streetState, pitState, dealState, drawState, peekState, foldState].some((row) => row)) {
-      router.refresh();
-    }
-  }, [rouletteState, streetState, pitState, dealState, drawState, peekState, foldState, router]);
-
-  useEffect(() => {
-    if (!p.casinoCooldownUntil) return;
-    const ms = new Date(p.casinoCooldownUntil).getTime() - Date.now() + 400;
-    if (ms <= 0) {
-      router.refresh();
-      return;
-    }
-    const timer = setTimeout(() => router.refresh(), ms);
-    return () => clearTimeout(timer);
-  }, [p.casinoCooldownUntil, router]);
 
   return (
     <div className="space-y-5">
@@ -83,7 +64,8 @@ export function CasinoClient({ initialPlayer }: { initialPlayer?: PlayerSnapshot
           <h1 className="font-heading text-3xl text-white md:text-4xl">Casino</h1>
           <p className="max-w-xl text-sm text-zinc-200">
             Fluweel boven, mes onder het vilt. Vier tafels, allemaal tegen het huis of de kooi. Inzet{" "}
-            {formatMoney(CASINO_MIN_BET)}–{formatMoney(cap)}. Acht seconden tussen spins zodat de kluis het houdt.
+            {formatMoney(CASINO_MIN_BET)}–{formatMoney(cap)}. Ruim twintig seconden tussen spins zodat de kluis het
+            houdt.
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge className="bg-emerald-800 text-white">Cash {formatMoney(p.cash)}</Badge>

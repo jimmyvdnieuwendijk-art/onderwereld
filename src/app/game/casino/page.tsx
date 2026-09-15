@@ -1,9 +1,13 @@
+import { redirect } from "next/navigation";
+import { requirePlayer } from "@/lib/actions/helpers";
 import { CasinoClient } from "./casino-client";
 
 export const metadata = {
   title: "Casino",
 };
 
-export default function CasinoPage() {
-  return <CasinoClient />;
+export default async function CasinoPage() {
+  const player = await requirePlayer();
+  if (!player) redirect("/inloggen");
+  return <CasinoClient initialPlayer={player} />;
 }
