@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { LoginForm } from "./login-form";
-import { isFacebookConfigured } from "@/lib/auth/facebook";
+import { isFacebookConfigured } from "@/lib/auth/facebook-config";
 
 export const metadata = {
   title: "Inloggen",

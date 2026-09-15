@@ -5,11 +5,8 @@ import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyTotp } from "@/lib/totp";
 import { DEMO_EMAIL, grantDemoTestCash } from "@/lib/ensure-catalog";
-import {
-  facebookCredentials,
-  FacebookAuthError,
-  upsertFacebookUser,
-} from "@/lib/auth/facebook";
+import { facebookCredentials } from "@/lib/auth/facebook-config";
+import { FacebookAuthError, upsertFacebookUser } from "@/lib/auth/facebook";
 
 const facebook = facebookCredentials();
 

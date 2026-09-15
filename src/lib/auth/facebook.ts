@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN } from "@/lib/constants";
 import { ensureLiveBootstrap } from "@/lib/ensure-catalog";
 
+export { facebookCredentials, isFacebookConfigured } from "@/lib/auth/facebook-config";
+
 export class FacebookAuthError extends Error {
   constructor(
     message: string,
@@ -10,23 +12,6 @@ export class FacebookAuthError extends Error {
     super(message);
     this.name = "FacebookAuthError";
   }
-}
-
-export function facebookCredentials() {
-  const id =
-    process.env.AUTH_FACEBOOK_ID?.trim() ||
-    process.env.AUTH_FACEBOOK_CLIENT_ID?.trim() ||
-    process.env.FACEBOOK_CLIENT_ID?.trim();
-  const secret =
-    process.env.AUTH_FACEBOOK_SECRET?.trim() ||
-    process.env.AUTH_FACEBOOK_CLIENT_SECRET?.trim() ||
-    process.env.FACEBOOK_CLIENT_SECRET?.trim();
-  if (!id || !secret) return null;
-  return { id, secret };
-}
-
-export function isFacebookConfigured() {
-  return facebookCredentials() !== null;
 }
 
 export function usernameFromDisplayName(name: string) {

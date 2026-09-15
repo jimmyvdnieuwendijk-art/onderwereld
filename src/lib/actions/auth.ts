@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN, PASSWORD_MIN } from "@/lib/constants";
 import { fail, ok, requireUserId } from "@/lib/actions/helpers";
 import { DEMO_EMAIL, ensureLiveBootstrap } from "@/lib/ensure-catalog";
-import { facebookCredentials } from "@/lib/auth/facebook";
+import { facebookCredentials } from "@/lib/auth/facebook-config";
 import type { ActionResult } from "@/types/game";
 
 function safeCallback(raw: string) {
