@@ -126,28 +126,40 @@ async function loadMetricSource(userId: string): Promise<MetricSource | null> {
   };
 }
 
+let achievementSync: Promise<void> | null = null;
+
 export async function ensureAchievements() {
-  for (const row of ACHIEVEMENTS) {
-    await prisma.achievement.upsert({
-      where: { slug: row.slug },
-      create: row,
-      update: {
-        title: row.title,
-        description: row.description,
-        difficulty: row.difficulty,
-        metric: row.metric,
-        target: row.target,
-        rewardExp: row.rewardExp,
-        rewardPimpExp: row.rewardPimpExp,
-        rewardGymExp: row.rewardGymExp,
-        rewardCash: row.rewardCash,
-        rewardBullets: row.rewardBullets,
-        rewardTitle: row.rewardTitle,
-        rewardNameColor: row.rewardNameColor,
-        sortOrder: row.sortOrder,
-      },
+  if (!achievementSync) {
+    achievementSync = (async () => {
+      await Promise.all(
+        ACHIEVEMENTS.map((row) =>
+          prisma.achievement.upsert({
+            where: { slug: row.slug },
+            create: row,
+            update: {
+              title: row.title,
+              description: row.description,
+              difficulty: row.difficulty,
+              metric: row.metric,
+              target: row.target,
+              rewardExp: row.rewardExp,
+              rewardPimpExp: row.rewardPimpExp,
+              rewardGymExp: row.rewardGymExp,
+              rewardCash: row.rewardCash,
+              rewardBullets: row.rewardBullets,
+              rewardTitle: row.rewardTitle,
+              rewardNameColor: row.rewardNameColor,
+              sortOrder: row.sortOrder,
+            },
+          }),
+        ),
+      );
+    })().catch((error) => {
+      achievementSync = null;
+      throw error;
     });
   }
+  await achievementSync;
 }
 
 export async function syncAchievementProgress(userId: string) {
