@@ -6,6 +6,7 @@ import { GameShell } from "@/components/game/game-shell";
 export default async function GameLayout({ children }: { children: ReactNode }) {
   const player = await requirePlayer();
   if (!player) redirect("/inloggen");
+  if (!player.usernameChosen) redirect("/registreren/gebruikersnaam");
 
   return <GameShell initialPlayer={player}>{children}</GameShell>;
 }

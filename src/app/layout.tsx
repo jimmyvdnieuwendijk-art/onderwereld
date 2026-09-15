@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Cinzel, Source_Sans_3, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { rootMetadata } from "@/lib/seo";
 import "./globals.css";
 
 const heading = Cinzel({
@@ -24,14 +26,27 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Onderwereld",
-    template: "%s · Onderwereld",
-  },
-  description:
-    "Tekst-MMORPG in de Nederlandse onderwereld. Misdaden, auto's, families en kogels.",
-};
+export const metadata: Metadata = rootMetadata();
+
+function Analytics() {
+  // Optional GA4. Set NEXT_PUBLIC_GA_MEASUREMENT_ID (G-XXXXXXXX) — do not invent a property.
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
+  if (!gaId || !/^G-[A-Z0-9]+$/i.test(gaId)) return null;
+  return (
+    <>
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+        strategy="afterInteractive"
+      />
+      <Script id="ga4-init" strategy="afterInteractive">
+        {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${gaId}');`}
+      </Script>
+    </>
+  );
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -42,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col font-sans">
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );

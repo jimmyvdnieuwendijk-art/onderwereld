@@ -2,11 +2,13 @@
 
 import { hash } from "bcryptjs";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN, PASSWORD_MIN } from "@/lib/constants";
-import { fail, ok } from "@/lib/actions/helpers";
+import { fail, ok, requireUserId } from "@/lib/actions/helpers";
 import { DEMO_EMAIL, ensureLiveBootstrap } from "@/lib/ensure-catalog";
+import { facebookCredentials } from "@/lib/auth/facebook";
 import type { ActionResult } from "@/types/game";
 
 function safeCallback(raw: string) {
@@ -92,6 +94,7 @@ export async function registerAction(
       email,
       hashedPassword,
       username,
+      usernameChosen: true,
       currentCity: city,
       cash: STARTER_CASH,
       rankId: starterRank.id,
@@ -115,4 +118,57 @@ export async function registerAction(
     }
     throw error;
   }
+}
+
+export async function facebookSignInAction() {
+  if (!facebookCredentials()) {
+    redirect("/registreren?error=FacebookSetup");
+  }
+  await signIn("facebook", { redirectTo: "/registreren/gebruikersnaam" });
+}
+
+export async function chooseUsernameAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+
+  const username = String(formData.get("username") ?? "").trim();
+  if (username.length < USERNAME_MIN || username.length > USERNAME_MAX) {
+    return fail(`Gebruikersnaam moet ${USERNAME_MIN}-${USERNAME_MAX} tekens zijn.`);
+  }
+  if (!USERNAME_PATTERN.test(username)) {
+    return fail("Alleen letters, cijfers en underscore zijn toegestaan.");
+  }
+
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, username: true, usernameChosen: true },
+  });
+  if (!me) return fail("Speler niet gevonden.");
+  if (me.usernameChosen) redirect("/game");
+
+  const taken = await prisma.user.findFirst({
+    where: {
+      username: { equals: username, mode: "insensitive" },
+      NOT: { id: userId },
+    },
+    select: { id: true },
+  });
+  if (taken) return fail("Deze gebruikersnaam is al bezet.");
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { username, usernameChosen: true },
+  });
+  await prisma.gameLog.create({
+    data: {
+      userId,
+      type: "SYSTEM",
+      message: `Je loopt nu onder de naam ${username}.`,
+    },
+  });
+
+  redirect("/game");
 }

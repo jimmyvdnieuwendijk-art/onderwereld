@@ -128,7 +128,13 @@ export async function changePassword(
   if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
 
   if (!current || !next || !confirm) {
-    return fail("Vul huidig wachtwoord, nieuw wachtwoord en bevestiging in.");
+    if (auth.user.hashedPassword || !next || !confirm) {
+      return fail(
+        auth.user.hashedPassword
+          ? "Vul huidig wachtwoord, nieuw wachtwoord en bevestiging in."
+          : "Vul een nieuw wachtwoord en bevestiging in.",
+      );
+    }
   }
   if (next.length < PASSWORD_MIN) {
     return fail(`Wachtwoord moet minstens ${PASSWORD_MIN} tekens zijn.`);
@@ -136,12 +142,14 @@ export async function changePassword(
   if (next !== confirm) {
     return fail("Nieuwe wachtwoorden komen niet overeen.");
   }
-  if (current === next) {
-    return fail("Het nieuwe wachtwoord mag niet hetzelfde zijn als het huidige.");
+  if (auth.user.hashedPassword) {
+    if (!current) return fail("Vul je huidige wachtwoord in.");
+    if (current === next) {
+      return fail("Het nieuwe wachtwoord mag niet hetzelfde zijn als het huidige.");
+    }
+    const valid = await compare(current, auth.user.hashedPassword);
+    if (!valid) return fail("Huidig wachtwoord is onjuist.");
   }
-
-  const valid = await compare(current, auth.user.hashedPassword);
-  if (!valid) return fail("Huidig wachtwoord is onjuist.");
 
   const hashedPassword = await hash(next, 10);
   await prisma.user.update({
@@ -194,8 +202,12 @@ export async function disableTotp(password: string, code: string): Promise<Actio
   if (!auth.user.totpEnabled || !auth.user.totpSecret) {
     return fail("Authenticator staat niet aan.");
   }
-  const validPass = await compare(password, auth.user.hashedPassword);
-  if (!validPass) return fail("Wachtwoord is onjuist.");
+  if (auth.user.hashedPassword) {
+    const validPass = await compare(password, auth.user.hashedPassword);
+    if (!validPass) return fail("Wachtwoord is onjuist.");
+  } else if (!password && !code) {
+    return fail("Voer je authenticatorcode in.");
+  }
   if (!verifyTotp(auth.user.totpSecret, code)) return fail("Ongeldige authenticatorcode.");
 
   await prisma.user.update({
