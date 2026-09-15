@@ -1,7 +1,7 @@
 "use client";
 
-import { payBail } from "@/lib/actions/combat";
-import { BAIL_PER_MINUTE } from "@/lib/constants";
+import { negotiateJail, payBail } from "@/lib/actions/combat";
+import { BAIL_PER_MINUTE, JAIL_NEGOTIATE_CHANCE, JAIL_NEGOTIATE_FAIL_MINUTES } from "@/lib/constants";
 import { detentionBuyoutCost, formatMoney, remainingMs } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,9 +80,18 @@ export function JailClient({
                   {!canPay ? " — te weinig om jezelf vrij te kopen." : ""}
                 </p>
               </div>
-              <Button disabled={pending || !canPay} onClick={() => run(() => payBail())}>
-                Jezelf uitkopen · {formatMoney(cost)}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button disabled={pending || !canPay} onClick={() => run(() => payBail())}>
+                  Jezelf uitkopen · {formatMoney(cost)}
+                </Button>
+                <Button variant="outline" disabled={pending} onClick={() => run(() => negotiateJail())}>
+                  Onderhandelen met de cipier
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Onderhandelen: {JAIL_NEGOTIATE_CHANCE}% kans op directe vrijlating. Mislukt: +
+                {JAIL_NEGOTIATE_FAIL_MINUTES} minuten cel.
+              </p>
             </>
           ) : (
             <p className="text-muted-foreground">De cellen zijn leeg — voor jou althans.</p>

@@ -7,14 +7,15 @@ import { Menu, LogOut, Crosshair, Heart, Zap, Coins, Landmark, Skull, ChevronDow
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { formatMoney, formatNumber } from "@/lib/format";
+import { formatMoney, formatNumber, formatClock } from "@/lib/format";
 import { logoutAction } from "@/lib/actions/session";
 import { usePlayer } from "@/hooks/use-player";
-import { Countdown } from "@/components/game/countdown";
+import { Countdown, useNow } from "@/components/game/countdown";
 import { TravelBanner } from "@/components/game/travel-banner";
 import { DetentionBanner } from "@/components/game/detention-banner";
 import { StyledPlayerName } from "@/components/game/styled-name";
 import { isMarktChildActive, isNavActive, MARKT_NAV_CHILDREN, MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
+import { energyUntilNextMs } from "@/lib/game/wait-queue";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -183,6 +184,17 @@ function NavLinks({
   );
 }
 
+function EnergyReadout({ energy, lastEnergyAt }: { energy: number; lastEnergyAt: string | null }) {
+  const now = useNow();
+  const nextMs = energyUntilNextMs({ energy, lastEnergyAt }, now);
+  return (
+    <span className="tabular-nums">
+      {energy}/100
+      {nextMs > 0 ? <span className="ml-1 font-normal normal-case tracking-normal text-primary/80">{formatClock(nextMs)}</span> : null}
+    </span>
+  );
+}
+
 export function GameShell({
   children,
   initialPlayer,
@@ -286,7 +298,7 @@ export function GameShell({
                     <span className="inline-flex items-center gap-1">
                       <Zap className="size-3" /> Energie
                     </span>
-                    <span className="tabular-nums">{p.energy}/100</span>
+                    <EnergyReadout energy={p.energy} lastEnergyAt={p.lastEnergyAt} />
                   </div>
                   <Meter value={p.energy} max={100} barClass="bg-primary" />
                 </div>

@@ -210,7 +210,7 @@ export const FAMILY_UPGRADES: FamilyUpgradeDef[] = [
     name: "Ledenaantal",
     blurb: "Meer stoelen aan tafel. Meer handen op straat.",
     max: FAMILY_MEMBER_LIMIT_MAX,
-    costFor: (level) => 12_000 + level * 8_000,
+    costFor: (level) => 4 * (12_000 + level * 8_000),
     effect: (level) => `${level} leden max`,
   },
   {
@@ -218,7 +218,7 @@ export const FAMILY_UPGRADES: FamilyUpgradeDef[] = [
     name: "Witwas / misdaadbonus",
     blurb: "Een deel van de buit wordt schoon, de rest gaat soepeler.",
     max: 3,
-    costFor: (level) => 14_000 + level * 10_000,
+    costFor: (level) => 4 * (14_000 + level * 10_000),
     effect: (level) => `+${level * 6}% misdaadcash · ${level * 10}% witwas naar bank`,
   },
   {
@@ -226,7 +226,7 @@ export const FAMILY_UPGRADES: FamilyUpgradeDef[] = [
     name: "Familiedokter",
     blurb: "Korter in het ziekenhuis. De naald is van ons.",
     max: 3,
-    costFor: (level) => 11_000 + level * 9_000,
+    costFor: (level) => 4 * (11_000 + level * 9_000),
     effect: (level) => `−${level * 18}% ziekenhuistijd`,
   },
   {
@@ -234,7 +234,7 @@ export const FAMILY_UPGRADES: FamilyUpgradeDef[] = [
     name: "Straatverdediging",
     blurb: "Leden houden beter stand bij een aanslag.",
     max: 3,
-    costFor: (level) => 13_000 + level * 11_000,
+    costFor: (level) => 4 * (13_000 + level * 11_000),
     effect: (level) => `+${level * 8}% verdediging in gevecht`,
   },
 ];
@@ -727,5 +727,5 @@ export function nextMemberLimit(current: number) {
 }
 
 export function slotsUpgradeCost(currentLimit: number) {
-  return 10_000 + Math.max(0, currentLimit - FAMILY_MEMBER_LIMIT_START) * 5_000;
+  return 4 * (10_000 + Math.max(0, currentLimit - FAMILY_MEMBER_LIMIT_START) * 5_000);
 }

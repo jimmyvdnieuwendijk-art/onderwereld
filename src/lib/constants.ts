@@ -25,6 +25,10 @@ export function bankWithdrawPayout(amount: number) {
 export const FAMILY_CREATE_COST = 25_000;
 export const BAIL_PER_MINUTE = 80;
 export const HOSPITAL_PER_MINUTE = 60;
+/** Kans (%) dat onderhandelen met de cipier je direct vrijlaat. */
+export const JAIL_NEGOTIATE_CHANCE = 22;
+/** Extra celminuten bij een mislukte onderhandeling. */
+export const JAIL_NEGOTIATE_FAIL_MINUTES = 4;
 
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 16;
