@@ -2,10 +2,10 @@
 
 import { payHospital } from "@/lib/actions/combat";
 import { HOSPITAL_PER_MINUTE } from "@/lib/constants";
-import { formatMoney, remainingMs } from "@/lib/format";
+import { detentionBuyoutCost, formatMoney, remainingMs } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Countdown } from "@/components/game/countdown";
+import { Countdown, useNow } from "@/components/game/countdown";
 import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -18,9 +18,12 @@ export function HospitalClient({
 }) {
   const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
-  const ms = remainingMs(p.inHospitalUntil);
+  const now = useNow();
+  const ms = remainingMs(p.inHospitalUntil, now);
   const hospitalized = ms > 0;
-  const cost = Math.max(1, Math.ceil(Math.max(ms, 1) / 60_000)) * HOSPITAL_PER_MINUTE;
+  const minutes = hospitalized ? Math.max(1, Math.ceil(ms / 60_000)) : 0;
+  const cost = detentionBuyoutCost(ms, HOSPITAL_PER_MINUTE);
+  const canPay = hospitalized && p.cash >= cost;
 
   return (
     <div className="space-y-4">
@@ -38,14 +41,16 @@ export function HospitalClient({
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Jouw status</p>
             {hospitalized ? (
               <>
-                <p className="mt-1 font-heading text-2xl text-destructive">Opgenomen</p>
+                <p className="mt-1 font-heading text-2xl text-destructive">
+                  {p.isDead ? "Dood — opgenomen" : "Opgenomen"}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  Resterend: {ms > 0 ? <Countdown until={p.inHospitalUntil} /> : "wachten op ontslag"}
+                  Resterend: <Countdown until={p.inHospitalUntil} />
                 </p>
               </>
             ) : (
               <>
-                <p className="mt-1 font-heading text-2xl text-emerald-400">Vrij</p>
+                <p className="mt-1 font-heading text-2xl text-emerald-400">Niet opgenomen</p>
                 <p className="text-xs text-muted-foreground">HP {p.health}/100</p>
               </>
             )}
@@ -61,13 +66,15 @@ export function HospitalClient({
           {hospitalized ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Andere acties zijn geblokkeerd tot je vrijkomt of de privékliniek betaalt.
+                Andere acties zijn geblokkeerd tot je ontslagen wordt of de privékliniek betaalt.
               </p>
               <p className="text-sm text-muted-foreground">
-                Privékliniek: {formatMoney(cost)}. Daarna 55 HP.
+                Privékliniek: {minutes} min × {formatMoney(HOSPITAL_PER_MINUTE)} = {formatMoney(cost)}.
+                Daarna 55 HP. Cash: {formatMoney(p.cash)}
+                {!canPay ? " — te weinig." : ""}
               </p>
-              <Button disabled={pending} onClick={() => run(() => payHospital())}>
-                Privékliniek betalen
+              <Button disabled={pending || !canPay} onClick={() => run(() => payHospital())}>
+                Privékliniek betalen · {formatMoney(cost)}
               </Button>
             </>
           ) : (

@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Ambulance, Lock } from "lucide-react";
-import { Countdown } from "@/components/game/countdown";
+import { Countdown, useNow } from "@/components/game/countdown";
 import { remainingMs } from "@/lib/format";
 import type { PlayerSnapshot } from "@/types/game";
 
 export function DetentionBanner({ player }: { player: PlayerSnapshot }) {
   const pathname = usePathname();
-  const jailMs = remainingMs(player.inJailUntil);
-  const hospitalMs = remainingMs(player.inHospitalUntil);
+  const now = useNow();
+  const jailMs = remainingMs(player.inJailUntil, now);
+  const hospitalMs = remainingMs(player.inHospitalUntil, now);
   const hospital = hospitalMs > 0;
   const jail = jailMs > 0;
 

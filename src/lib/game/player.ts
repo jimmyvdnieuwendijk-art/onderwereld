@@ -17,6 +17,7 @@ import { tickPimpEconomy } from "@/lib/game/pimp-tick";
 import { tickFamilyEconomy } from "@/lib/family";
 import { firePriceAlerts } from "@/lib/game/price-alerts";
 import { getRanksCached } from "@/lib/catalog";
+import { isActiveUntil, remainingMs } from "@/lib/format";
 import type { PlayerSnapshot } from "@/types/game";
 
 /** Persist energy at most every 30s so nav does not write on every request. */
@@ -143,12 +144,15 @@ export async function tickPlayer(
     );
   }
 
-  if (user.inJailUntil && user.inJailUntil.getTime() <= now.getTime()) {
+  if (user.inJailUntil && remainingMs(user.inJailUntil, now.getTime()) <= 0) {
     patch.inJailUntil = null;
   }
 
-  if (user.inHospitalUntil && user.inHospitalUntil.getTime() <= now.getTime()) {
+  const hospitalActive = isActiveUntil(user.inHospitalUntil, now.getTime());
+  if (user.inHospitalUntil && !hospitalActive) {
     patch.inHospitalUntil = null;
+  }
+  if (!hospitalActive && user.isDead) {
     patch.isDead = false;
     if (user.health < 25) patch.health = 25;
   }
@@ -268,13 +272,13 @@ function toSnapshot(
     currentCity: normalizeCityId(user.currentCity),
     currentCityName: cityDisplayName(user.currentCity),
     currentAirport: getAirport(user.currentCity).airport,
-    isTraveling: !!(user.travelEndAt && user.travelEndAt.getTime() > Date.now()),
+    isTraveling: isActiveUntil(user.travelEndAt),
     travelEndAt: toIso(user.travelEndAt),
     travelDestinationId: user.travelDestinationId,
     travelDestinationName: user.travelDestinationId ? cityDisplayName(user.travelDestinationId) : null,
     drugs: user.drugs,
     weaponCrates: user.weaponCrates,
-    isDead: user.isDead,
+    isDead: !!user.isDead && isActiveUntil(user.inHospitalUntil),
     inJailUntil: toIso(user.inJailUntil),
     inHospitalUntil: toIso(user.inHospitalUntil),
     crimeCooldownUntil: toIso(user.crimeCooldownUntil),
@@ -354,16 +358,19 @@ export function isPlayerTraveling(player: {
   travelEndAt?: Date | string | null;
   isTraveling?: boolean;
 }) {
-  const now = Date.now();
-  if (player.travelEndAt) {
-    const ts =
-      typeof player.travelEndAt === "string"
-        ? new Date(player.travelEndAt).getTime()
-        : player.travelEndAt.getTime();
-    if (ts > now) return true;
-    return false;
-  }
-  return !!player.isTraveling;
+  if (isActiveUntil(player.travelEndAt)) return true;
+  return !!player.isTraveling && !player.travelEndAt;
+}
+
+export function isJailed(player: { inJailUntil?: Date | string | null }, now = Date.now()) {
+  return isActiveUntil(player.inJailUntil, now);
+}
+
+export function isHospitalized(
+  player: { inHospitalUntil?: Date | string | null },
+  now = Date.now(),
+) {
+  return isActiveUntil(player.inHospitalUntil, now);
 }
 
 export function blockedReason(
@@ -377,19 +384,10 @@ export function blockedReason(
   opts?: { travel?: boolean },
 ) {
   const now = Date.now();
-  const jail =
-    player.inJailUntil &&
-    (typeof player.inJailUntil === "string"
-      ? new Date(player.inJailUntil).getTime()
-      : player.inJailUntil.getTime()) > now;
-  const hospital =
-    player.inHospitalUntil &&
-    (typeof player.inHospitalUntil === "string"
-      ? new Date(player.inHospitalUntil).getTime()
-      : player.inHospitalUntil.getTime()) > now;
-
-  if (jail) return "Je zit in de gevangenis. Wacht of betaal borg.";
-  if (hospital) return "Je ligt in het ziekenhuis en kunt nu niets ondernemen.";
+  if (isJailed(player, now)) return "Je zit in de gevangenis. Wacht of koop jezelf vrij.";
+  if (isHospitalized(player, now) || player.isDead) {
+    return "Je ligt in het ziekenhuis en kunt nu niets ondernemen.";
+  }
   if (opts?.travel !== false && isPlayerTraveling(player)) {
     return "Je zit in het vliegtuig. Misdaden, handel en gevechten moeten wachten tot je landt.";
   }

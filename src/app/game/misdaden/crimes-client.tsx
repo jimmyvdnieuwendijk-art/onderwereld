@@ -1,7 +1,7 @@
 "use client";
 
 import { attemptCrimeForm } from "@/lib/actions/crime";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, isActiveUntil } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,9 @@ export function CrimesClient({
         {crimes.map((crime) => {
           const locked = p.rank.order < crime.minRankOrder;
           const tired = p.energy < crime.energyCost;
+          const jailed = isActiveUntil(p.inJailUntil);
+          const hospital = isActiveUntil(p.inHospitalUntil);
+          const blocked = jailed || hospital || p.isTraveling;
           return (
             <Card key={crime.id} className={locked ? "opacity-60" : "overflow-hidden"}>
               <CardHeader className="space-y-3">
@@ -75,8 +78,18 @@ export function CrimesClient({
                 </div>
                 <form action={action}>
                   <input type="hidden" name="crimeId" value={crime.id} />
-                  <Button type="submit" disabled={pending || locked || p.isTraveling}>
-                    {p.isTraveling ? "In de lucht" : locked ? "Rang te laag" : tired ? "Te weinig energie" : "Uitvoeren"}
+                  <Button type="submit" disabled={pending || locked || blocked}>
+                    {jailed
+                      ? "In de cel"
+                      : hospital
+                        ? "In het ziekenhuis"
+                        : p.isTraveling
+                          ? "In de lucht"
+                          : locked
+                            ? "Rang te laag"
+                            : tired
+                              ? "Te weinig energie"
+                              : "Uitvoeren"}
                   </Button>
                 </form>
               </CardContent>

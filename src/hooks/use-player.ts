@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { remainingMs } from "@/lib/format";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
 
 async function fetchPlayer(): Promise<PlayerSnapshot> {
@@ -11,16 +12,44 @@ async function fetchPlayer(): Promise<PlayerSnapshot> {
   return res.json();
 }
 
+function detentionMs(player: PlayerSnapshot | undefined) {
+  if (!player) return 0;
+  return Math.max(
+    remainingMs(player.inJailUntil),
+    remainingMs(player.inHospitalUntil),
+    remainingMs(player.travelEndAt),
+  );
+}
+
+/** Prefer the snapshot that still has an active lock (jail/hospital/flight). */
+function mergePlayerSnapshot(current: PlayerSnapshot | undefined, incoming: PlayerSnapshot) {
+  if (!current) return incoming;
+  const curLock = detentionMs(current);
+  const inLock = detentionMs(incoming);
+  if (inLock > curLock + 400) return incoming;
+  if (curLock > inLock + 400) return current;
+  return incoming;
+}
+
 export function usePlayer(initial?: PlayerSnapshot) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!initial) return;
+    queryClient.setQueryData(["player"], (current: PlayerSnapshot | undefined) =>
+      mergePlayerSnapshot(current, initial),
+    );
+  }, [initial, queryClient]);
+
   return useQuery({
     queryKey: ["player"],
     queryFn: fetchPlayer,
     initialData: initial,
     placeholderData: (previous) => previous ?? initial,
-    staleTime: 30_000,
-    refetchInterval: 45_000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    staleTime: 8_000,
+    refetchInterval: (query) => (detentionMs(query.state.data) > 0 ? 8_000 : 45_000),
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 }
 

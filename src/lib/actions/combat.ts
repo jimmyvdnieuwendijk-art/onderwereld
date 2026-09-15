@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE, ITEM_AMMO } from "@/lib/constants";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { remainingMs } from "@/lib/format";
+import { detentionBuyoutCost, formatMoney, remainingMs } from "@/lib/format";
 import { hospitalMsForHealth } from "@/lib/hospital";
 import { getFamilyPerks } from "@/lib/family";
 import { ammoKindForWeapon, ammoKindMeta } from "@/lib/shop-catalog";
@@ -73,10 +73,10 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
 
   const defenderLive = await tickPlayer(defenderId);
   if (!defenderLive) return fail("Doelwit niet gevonden.");
-  if (defenderLive.isDead || (defenderLive.inHospitalUntil && new Date(defenderLive.inHospitalUntil).getTime() > Date.now())) {
+  if (defenderLive.isDead || remainingMs(defenderLive.inHospitalUntil) > 0) {
     return fail("Dit slachtoffer ligt al in het ziekenhuis.");
   }
-  if (defenderLive.inJailUntil && new Date(defenderLive.inJailUntil).getTime() > Date.now()) {
+  if (remainingMs(defenderLive.inJailUntil) > 0) {
     return fail("Dit slachtoffer zit achter de tralies.");
   }
   if (defenderLive.isTraveling) {
@@ -183,16 +183,20 @@ export async function payBail(): Promise<ActionResult> {
   if (ms <= 0) return fail("Je zit niet in de gevangenis.");
 
   const minutes = Math.max(1, Math.ceil(ms / 60_000));
-  const cost = minutes * BAIL_PER_MINUTE;
+  const cost = detentionBuyoutCost(ms, BAIL_PER_MINUTE);
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.cash < cost) return fail(`Borg kost ${cost} euro. Je hebt te weinig cash.`);
+  if (!user || user.cash < cost) {
+    return fail(`Borg kost ${formatMoney(cost)}. Je hebt te weinig cash.`);
+  }
 
   await prisma.user.update({
     where: { id: userId },
     data: { cash: { decrement: cost }, inJailUntil: null },
   });
-  const message = `Je koopt je vrij voor ${cost} euro.`;
+  const message = `Je koopt jezelf vrij voor ${formatMoney(cost)} (${minutes} min × ${formatMoney(BAIL_PER_MINUTE)}).`;
   await logEvent(userId, "JAIL", message);
+  await tickPlayer(userId);
+  revalidateGame();
   return ok(message);
 }
 
@@ -204,10 +208,11 @@ export async function payHospital(): Promise<ActionResult> {
   const ms = remainingMs(player.inHospitalUntil);
   if (ms <= 0) return fail("Je ligt niet in het ziekenhuis.");
 
-  const minutes = Math.max(1, Math.ceil(ms / 60_000));
-  const cost = minutes * HOSPITAL_PER_MINUTE;
+  const cost = detentionBuyoutCost(ms, HOSPITAL_PER_MINUTE);
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.cash < cost) return fail(`Privékliniek kost ${cost} euro.`);
+  if (!user || user.cash < cost) {
+    return fail(`Privékliniek kost ${formatMoney(cost)}. Je hebt te weinig cash.`);
+  }
 
   await prisma.user.update({
     where: { id: userId },
@@ -218,8 +223,10 @@ export async function payHospital(): Promise<ActionResult> {
       health: 55,
     },
   });
-  const message = `Je betaalt ${cost} euro aan de privékliniek en staat weer op straat.`;
+  const message = `Je betaalt ${formatMoney(cost)} aan de privékliniek en staat weer op straat.`;
   await logEvent(userId, "HOSPITAL", message);
+  await tickPlayer(userId);
+  revalidateGame();
   return ok(message);
 }
 

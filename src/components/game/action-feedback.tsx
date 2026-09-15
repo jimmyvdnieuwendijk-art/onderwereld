@@ -25,9 +25,10 @@ export function useFormAction(action: (prev: ActionResult | null, formData: Form
   const [state] = triple;
 
   useEffect(() => {
-    if (state?.ok) {
-      void queryClient.invalidateQueries({ queryKey: ["player"] });
-    }
+    // Jail/hospital/travel warnings are `ok: false`. Still refresh the snapshot
+    // so Overzicht/Gevangenis don't keep showing "je bent vrij".
+    if (!state) return;
+    void queryClient.invalidateQueries({ queryKey: ["player"] });
   }, [state, queryClient]);
 
   return triple;

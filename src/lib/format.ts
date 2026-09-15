@@ -30,10 +30,39 @@ export function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function remainingMs(until: Date | string | null | undefined, now = Date.now()) {
-  if (!until) return 0;
-  const ts = typeof until === "string" ? new Date(until).getTime() : until.getTime();
+/** Epoch ms for a detention/cooldown deadline. Invalid or missing → null. */
+export function untilEpoch(until: Date | string | number | null | undefined): number | null {
+  if (until == null || until === "") return null;
+  if (until instanceof Date) {
+    const ts = until.getTime();
+    return Number.isFinite(ts) ? ts : null;
+  }
+  if (typeof until === "number") {
+    if (!Number.isFinite(until) || until <= 0) return null;
+    return until < 1e12 ? until * 1000 : until;
+  }
+  const ts = new Date(until).getTime();
+  return Number.isFinite(ts) ? ts : null;
+}
+
+/**
+ * Remaining time until `until`. Always a finite >= 0 number.
+ * Never use `if (player.inJailUntil)` — expired ISO strings are truthy.
+ */
+export function remainingMs(until: Date | string | number | null | undefined, now = Date.now()) {
+  const ts = untilEpoch(until);
+  if (ts == null) return 0;
   return Math.max(0, ts - now);
+}
+
+export function isActiveUntil(until: Date | string | number | null | undefined, now = Date.now()) {
+  return remainingMs(until, now) > 0;
+}
+
+/** Borg / privékliniek: remaining minutes (ceil, min 1) × rate. */
+export function detentionBuyoutCost(remaining: number, perMinute: number) {
+  if (remaining <= 0) return 0;
+  return Math.max(1, Math.ceil(remaining / 60_000)) * perMinute;
 }
 
 export function formatDuration(ms: number) {
