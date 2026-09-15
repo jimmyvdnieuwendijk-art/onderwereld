@@ -19,21 +19,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { PLAYER_RANKS } from "@/lib/ranks";
+import {
+  PLAYER_SORT_LABELS,
+  type PlayerSort,
+  type SortDir,
+} from "@/lib/game/leaderboard";
 import type { FamilyBoardRow, PublicPlayer } from "@/types/game";
 
-type PlayerSort = "rank" | "kills" | "cash" | "exp" | "health";
 type FamilySort = "members" | "bank" | "name";
-type Dir = "asc" | "desc";
 
 const PLAYER_BOARDS: { id: PlayerSort; label: string }[] = [
   { id: "rank", label: "Rang" },
   { id: "kills", label: "Kills" },
   { id: "cash", label: "Geld" },
-  { id: "exp", label: "Exp" },
+  { id: "exp", label: "EXP" },
   { id: "health", label: "HP" },
 ];
 
-function cmp(a: number | string, b: number | string, dir: Dir) {
+const FAMILY_BOARDS: { id: FamilySort; label: string }[] = [
+  { id: "members", label: "Leden" },
+  { id: "bank", label: "Kas" },
+  { id: "name", label: "Naam" },
+];
+
+function cmp(a: number | string, b: number | string, dir: SortDir) {
   const av = typeof a === "string" ? a.toLocaleLowerCase("nl") : a;
   const bv = typeof b === "string" ? b.toLocaleLowerCase("nl") : b;
   if (av < bv) return dir === "asc" ? -1 : 1;
@@ -41,19 +50,7 @@ function cmp(a: number | string, b: number | string, dir: Dir) {
   return 0;
 }
 
-function sortPlayers(rows: PublicPlayer[], key: PlayerSort, dir: Dir) {
-  return [...rows].sort((a, b) => {
-    if (key === "rank") {
-      return cmp(a.rankOrder, b.rankOrder, dir) || cmp(a.exp, b.exp, dir);
-    }
-    if (key === "kills") return cmp(a.killCount, b.killCount, dir) || cmp(a.exp, b.exp, dir);
-    if (key === "cash") return cmp(a.cash, b.cash, dir);
-    if (key === "health") return cmp(a.health, b.health, dir);
-    return cmp(a.exp, b.exp, dir);
-  });
-}
-
-function sortFamilies(rows: FamilyBoardRow[], key: FamilySort, dir: Dir) {
+function sortFamilies(rows: FamilyBoardRow[], key: FamilySort, dir: SortDir) {
   return [...rows].sort((a, b) => {
     if (key === "members") return cmp(a.members, b.members, dir) || cmp(a.bank, b.bank, dir);
     if (key === "bank") return cmp(a.bank, b.bank, dir) || cmp(a.members, b.members, dir);
@@ -61,10 +58,52 @@ function sortFamilies(rows: FamilyBoardRow[], key: FamilySort, dir: Dir) {
   });
 }
 
-function SortMark({ active, dir }: { active: boolean; dir: Dir }) {
-  if (!active) return null;
+function dirLabel(dir: SortDir, key: string) {
+  if (key === "name") return dir === "asc" ? "A–Z" : "Z–A";
+  return dir === "desc" ? "hoogste eerst" : "laagste eerst";
+}
+
+function SortMark({ active, dir }: { active: boolean; dir: SortDir }) {
   const Icon = dir === "asc" ? ArrowUp : ArrowDown;
-  return <Icon className="ml-0.5 inline size-3.5" />;
+  return (
+    <Icon
+      className={cn("size-3.5 shrink-0", active ? "text-[#d4a359]" : "text-muted-foreground/40")}
+    />
+  );
+}
+
+function SortHead({
+  label,
+  active,
+  dir,
+  align = "left",
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: SortDir;
+  align?: "left" | "right";
+  onClick: () => void;
+}) {
+  return (
+    <TableHead
+      aria-sort={active ? (dir === "desc" ? "descending" : "ascending") : "none"}
+      className={cn("p-0", active && "text-[#d4a359]")}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "flex w-full items-center gap-1 px-2 py-2.5 text-xs font-medium uppercase tracking-wide",
+          align === "right" ? "justify-end" : "justify-start",
+          active ? "text-[#d4a359]" : "text-muted-foreground hover:text-foreground",
+        )}
+      >
+        {label}
+        <SortMark active={active} dir={dir} />
+      </button>
+    </TableHead>
+  );
 }
 
 export function PlayersClient({
@@ -82,27 +121,32 @@ export function PlayersClient({
   const [submitted, setSubmitted] = useState("");
   const [tab, setTab] = useState(initialTab);
   const [playerSort, setPlayerSort] = useState<PlayerSort>("rank");
-  const [playerDir, setPlayerDir] = useState<Dir>("desc");
+  const [playerDir, setPlayerDir] = useState<SortDir>("desc");
   const [familySort, setFamilySort] = useState<FamilySort>("members");
-  const [familyDir, setFamilyDir] = useState<Dir>("desc");
+  const [familyDir, setFamilyDir] = useState<SortDir>("desc");
   const [rankFilter, setRankFilter] = useState<string>("all");
 
+  const isDefaultBoard =
+    submitted.length === 0 && playerSort === "rank" && playerDir === "desc" && rankFilter === "all";
+
   const query = useQuery({
-    queryKey: ["players", submitted],
+    queryKey: ["players", submitted, playerSort, playerDir, rankFilter],
     queryFn: async () => {
-      const res = await fetch(`/api/players?q=${encodeURIComponent(submitted)}`);
+      const params = new URLSearchParams();
+      if (submitted) params.set("q", submitted);
+      params.set("sort", playerSort);
+      params.set("dir", playerDir);
+      if (rankFilter !== "all") params.set("rank", rankFilter);
+      const res = await fetch(`/api/players?${params}`);
       if (!res.ok) throw new Error("Laden mislukt");
       return res.json() as Promise<PublicPlayer[]>;
     },
-    initialData: submitted ? undefined : initial,
-    enabled: submitted.length > 0,
+    initialData: isDefaultBoard ? initial : undefined,
+    placeholderData: (previous) => previous,
+    staleTime: isDefaultBoard ? 30_000 : 15_000,
   });
 
-  const rows = useMemo(() => {
-    const rawRows = submitted ? (query.data ?? []) : initial;
-    const filtered = rankFilter === "all" ? rawRows : rawRows.filter((row) => row.rankName === rankFilter);
-    return sortPlayers(filtered, playerSort, playerDir);
-  }, [submitted, query.data, initial, rankFilter, playerSort, playerDir]);
+  const rows = query.data ?? (isDefaultBoard ? initial : []);
   const familyRows = useMemo(
     () => sortFamilies(families, familySort, familyDir),
     [families, familySort, familyDir],
@@ -124,19 +168,22 @@ export function PlayersClient({
     }
   }
 
+  const sortCaption = `Gesorteerd op ${PLAYER_SORT_LABELS[playerSort]} · ${dirLabel(playerDir, playerSort)}`;
+  const familyCaption = `Gesorteerd op ${FAMILY_BOARDS.find((b) => b.id === familySort)?.label.toLowerCase() ?? familySort} · ${dirLabel(familyDir, familySort)}`;
+
   return (
     <div className="space-y-4">
       <div>
         <p className="text-[11px] uppercase tracking-[0.28em] text-[#d4a359]">Sociaal</p>
         <h1 className="font-heading text-3xl">Klassement</h1>
         <p className="text-sm text-muted-foreground">
-          Leaderboards: sorteer op rang, exp, cash, kills of HP. Twaalf straat-rangen, van Scum tot Legendary Don.
+          Sorteer het bord op rang, kills, geld, exp of HP. Twaalf straat-rangen, van Scum tot Legendary Don.
           Locatie blijft privé.
         </p>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[#d4a359]/25 bg-[#1a1510] p-3">
-        <p className="text-[11px] uppercase tracking-wider text-[#d4a359]">Rangladder</p>
+        <p className="text-[11px] uppercase tracking-wider text-[#d4a359]">Filter op rang</p>
         <div className="mt-2 flex min-w-max gap-1.5">
           <button
             type="button"
@@ -171,8 +218,8 @@ export function PlayersClient({
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as "players" | "families")}>
         <TabsList>
-          <TabsTrigger value="players">Spelers-borden</TabsTrigger>
-          <TabsTrigger value="families">Familie-borden</TabsTrigger>
+          <TabsTrigger value="players">Spelers</TabsTrigger>
+          <TabsTrigger value="families">Families</TabsTrigger>
         </TabsList>
 
         <TabsContent value="players" className="mt-4 space-y-3">
@@ -201,7 +248,7 @@ export function PlayersClient({
             </div>
           </form>
 
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {PLAYER_BOARDS.map((board) => {
               const active = playerSort === board.id;
               return (
@@ -210,16 +257,19 @@ export function PlayersClient({
                   type="button"
                   size="sm"
                   variant={active ? "default" : "outline"}
+                  className={cn(active && "border-[#d4a359] bg-[#d4a359] text-[#1a1510] hover:bg-[#d4a359]/90")}
                   onClick={() => togglePlayerSort(board.id)}
+                  aria-pressed={active}
                 >
-                  Bord: {board.label}
-                  <SortMark active={active} dir={playerDir} />
+                  {board.label}
+                  {active ? <SortMark active dir={playerDir} /> : null}
                 </Button>
               );
             })}
           </div>
+          <p className="text-sm text-[#d4a359]">{sortCaption}</p>
 
-          {submitted && query.isPending && <p className="text-muted-foreground">Laden…</p>}
+          {submitted && query.isPending && !query.data && <p className="text-muted-foreground">Laden…</p>}
           {query.isError && <p className="text-destructive">Kon spelers niet laden.</p>}
           {rows.length === 0 && !query.isPending && (
             <p className="rounded-lg border border-dashed border-border/60 px-4 py-10 text-center text-sm text-muted-foreground">
@@ -233,36 +283,40 @@ export function PlayersClient({
                   <TableRow>
                     <TableHead className="w-14">#</TableHead>
                     <TableHead>Speler</TableHead>
-                    <TableHead>
-                      <button type="button" className="inline-flex items-center" onClick={() => togglePlayerSort("rank")}>
-                        Rang
-                        <SortMark active={playerSort === "rank"} dir={playerDir} />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="ml-auto inline-flex items-center" onClick={() => togglePlayerSort("exp")}>
-                        Exp
-                        <SortMark active={playerSort === "exp"} dir={playerDir} />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="ml-auto inline-flex items-center" onClick={() => togglePlayerSort("cash")}>
-                        Geld
-                        <SortMark active={playerSort === "cash"} dir={playerDir} />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="ml-auto inline-flex items-center" onClick={() => togglePlayerSort("kills")}>
-                        Kills
-                        <SortMark active={playerSort === "kills"} dir={playerDir} />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="ml-auto inline-flex items-center" onClick={() => togglePlayerSort("health")}>
-                        HP
-                        <SortMark active={playerSort === "health"} dir={playerDir} />
-                      </button>
-                    </TableHead>
+                    <SortHead
+                      label="Rang"
+                      active={playerSort === "rank"}
+                      dir={playerDir}
+                      onClick={() => togglePlayerSort("rank")}
+                    />
+                    <SortHead
+                      label="EXP"
+                      active={playerSort === "exp"}
+                      dir={playerDir}
+                      align="right"
+                      onClick={() => togglePlayerSort("exp")}
+                    />
+                    <SortHead
+                      label="Geld"
+                      active={playerSort === "cash"}
+                      dir={playerDir}
+                      align="right"
+                      onClick={() => togglePlayerSort("cash")}
+                    />
+                    <SortHead
+                      label="Kills"
+                      active={playerSort === "kills"}
+                      dir={playerDir}
+                      align="right"
+                      onClick={() => togglePlayerSort("kills")}
+                    />
+                    <SortHead
+                      label="HP"
+                      active={playerSort === "health"}
+                      dir={playerDir}
+                      align="right"
+                      onClick={() => togglePlayerSort("health")}
+                    />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -305,11 +359,39 @@ export function PlayersClient({
                             {row.inHospital && <Badge variant="destructive">Ziekenhuis</Badge>}
                           </div>
                         </TableCell>
-                        <TableCell>{row.rankName}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(row.exp)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatMoney(row.cash)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{row.killCount}</TableCell>
-                        <TableCell className="text-right tabular-nums">{row.health}</TableCell>
+                        <TableCell className={cn(playerSort === "rank" && "text-[#d4a359]")}>{row.rankName}</TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right tabular-nums",
+                            playerSort === "exp" && "text-[#d4a359]",
+                          )}
+                        >
+                          {formatNumber(row.exp)}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right tabular-nums",
+                            playerSort === "cash" && "text-[#d4a359]",
+                          )}
+                        >
+                          {formatMoney(row.cash)}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right tabular-nums",
+                            playerSort === "kills" && "text-[#d4a359]",
+                          )}
+                        >
+                          {row.killCount}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right tabular-nums",
+                            playerSort === "health" && "text-[#d4a359]",
+                          )}
+                        >
+                          {row.health}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -326,6 +408,26 @@ export function PlayersClient({
               Naar familie
             </Link>
           </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {FAMILY_BOARDS.map((board) => {
+              const active = familySort === board.id;
+              return (
+                <Button
+                  key={board.id}
+                  type="button"
+                  size="sm"
+                  variant={active ? "default" : "outline"}
+                  className={cn(active && "border-[#d4a359] bg-[#d4a359] text-[#1a1510] hover:bg-[#d4a359]/90")}
+                  onClick={() => toggleFamilySort(board.id)}
+                  aria-pressed={active}
+                >
+                  {board.label}
+                  {active ? <SortMark active dir={familyDir} /> : null}
+                </Button>
+              );
+            })}
+          </div>
+          <p className="text-sm text-[#d4a359]">{familyCaption}</p>
           {familyRows.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border/60 px-4 py-10 text-center text-sm text-muted-foreground">
               Nog geen families.
@@ -336,25 +438,27 @@ export function PlayersClient({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-14">#</TableHead>
-                    <TableHead>
-                      <button type="button" className="inline-flex items-center" onClick={() => toggleFamilySort("name")}>
-                        Familie
-                        <SortMark active={familySort === "name"} dir={familyDir} />
-                      </button>
-                    </TableHead>
+                    <SortHead
+                      label="Familie"
+                      active={familySort === "name"}
+                      dir={familyDir}
+                      onClick={() => toggleFamilySort("name")}
+                    />
                     <TableHead>Leider</TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="ml-auto inline-flex items-center" onClick={() => toggleFamilySort("members")}>
-                        Leden
-                        <SortMark active={familySort === "members"} dir={familyDir} />
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="ml-auto inline-flex items-center" onClick={() => toggleFamilySort("bank")}>
-                        Kas
-                        <SortMark active={familySort === "bank"} dir={familyDir} />
-                      </button>
-                    </TableHead>
+                    <SortHead
+                      label="Leden"
+                      active={familySort === "members"}
+                      dir={familyDir}
+                      align="right"
+                      onClick={() => toggleFamilySort("members")}
+                    />
+                    <SortHead
+                      label="Kas"
+                      active={familySort === "bank"}
+                      dir={familyDir}
+                      align="right"
+                      onClick={() => toggleFamilySort("bank")}
+                    />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -377,14 +481,30 @@ export function PlayersClient({
                             place
                           )}
                         </TableCell>
-                        <TableCell className="font-heading">{row.name}</TableCell>
+                        <TableCell className={cn("font-heading", familySort === "name" && "text-[#d4a359]")}>
+                          {row.name}
+                        </TableCell>
                         <TableCell>
                           <Link href={`/game/spelers/${row.leader}`} className="text-primary hover:underline">
                             {row.leaderName}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{row.members}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatMoney(row.bank)}</TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right tabular-nums",
+                            familySort === "members" && "text-[#d4a359]",
+                          )}
+                        >
+                          {row.members}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right tabular-nums",
+                            familySort === "bank" && "text-[#d4a359]",
+                          )}
+                        >
+                          {formatMoney(row.bank)}
+                        </TableCell>
                       </TableRow>
                     );
                   })}

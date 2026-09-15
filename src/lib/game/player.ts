@@ -258,6 +258,7 @@ function toSnapshot(
     bankBalance: user.bankBalance,
     health: user.health,
     energy: user.energy,
+    lastEnergyAt: user.lastEnergyAt.toISOString(),
     exp: user.exp,
     bullets: user.bullets,
     defense: user.defense + gymDefenseBonus(user.condition, user.fightSkill),

@@ -61,6 +61,7 @@ export type PlayerSnapshot = {
   bankBalance: number;
   health: number;
   energy: number;
+  lastEnergyAt: string;
   exp: number;
   bullets: number;
   defense: number;
