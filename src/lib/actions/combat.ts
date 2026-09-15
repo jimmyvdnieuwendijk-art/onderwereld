@@ -1,9 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE, ITEM_AMMO } from "@/lib/constants";
+import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE, ITEM_AMMO, JAIL_NEGOTIATE_CHANCE, JAIL_NEGOTIATE_FAIL_MINUTES } from "@/lib/constants";
 import { blockedReason, isPlayerTraveling, tickPlayer } from "@/lib/game/player";
-import { detentionBuyoutCost, formatMoney, remainingMs } from "@/lib/format";
+import { detentionBuyoutCost, formatMoney, remainingMs, randomInt } from "@/lib/format";
 import { hospitalMsForHealth } from "@/lib/hospital";
 import { getFamilyPerks } from "@/lib/family";
 import { ammoKindForWeapon, ammoKindMeta } from "@/lib/shop-catalog";
@@ -201,6 +201,40 @@ export async function payBail(): Promise<ActionResult> {
   await tickPlayer(userId);
   revalidateGame();
   return ok(message);
+}
+
+export async function negotiateJail(): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!userId) return fail("Je bent niet ingelogd.");
+  const player = await tickPlayer(userId);
+  if (!player) return fail("Speler niet gevonden.");
+  const ms = remainingMs(player.inJailUntil);
+  if (ms <= 0) return fail("Je zit niet in de gevangenis.");
+
+  const roll = randomInt(1, 100);
+  if (roll <= JAIL_NEGOTIATE_CHANCE) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { inJailUntil: null },
+    });
+    const message = "De cipier laat je gaan. Je bent vrij.";
+    await logEvent(userId, "JAIL", message);
+    await tickPlayer(userId);
+    revalidateGame();
+    return ok(message);
+  }
+
+  const extraMs = JAIL_NEGOTIATE_FAIL_MINUTES * 60_000;
+  const until = new Date(Date.now() + ms + extraMs);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { inJailUntil: until },
+  });
+  const message = `De cipier lacht je uit. +${JAIL_NEGOTIATE_FAIL_MINUTES} minuten cel.`;
+  await logEvent(userId, "JAIL", message);
+  await tickPlayer(userId);
+  revalidateGame();
+  return fail(message, "warning");
 }
 
 export async function payHospital(): Promise<ActionResult> {

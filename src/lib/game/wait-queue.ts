@@ -68,6 +68,17 @@ export function energyUntilFullMs(
   return Math.max(0, missing * ENERGY_TICK_MS - (elapsed % ENERGY_TICK_MS));
 }
 
+/** Milliseconds until the next energy point restores. */
+export function energyUntilNextMs(
+  player: Pick<PlayerSnapshot, "energy"> & { lastEnergyAt?: string | null },
+  now = Date.now(),
+) {
+  if (player.energy >= MAX_ENERGY) return 0;
+  if (!player.lastEnergyAt) return ENERGY_TICK_MS;
+  const elapsed = Math.max(0, now - new Date(player.lastEnergyAt).getTime());
+  return ENERGY_TICK_MS - (elapsed % ENERGY_TICK_MS);
+}
+
 function readyOrWait(remaining: number, ready: string, busy: string) {
   return remaining > 0 ? busy : ready;
 }

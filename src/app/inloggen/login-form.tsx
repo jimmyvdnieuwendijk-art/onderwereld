@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buttonVariants } from "@/components/ui/button";
 import { AuthError, AuthShell } from "@/components/auth/auth-shell";
-import { AuthMethodDivider, FacebookAuthButton } from "@/components/auth/facebook-button";
 import { cn } from "@/lib/utils";
 
 function oauthErrorMessage(code: string | null) {
@@ -16,16 +15,10 @@ function oauthErrorMessage(code: string | null) {
   if (code === "CredentialsSignin") {
     return "Ongeldige inloggegevens. Controleer e-mail en wachtwoord.";
   }
-  if (code === "FacebookEmail" || code === "OAuthAccountNotLinked") {
-    return "Dit Facebook-e-mailadres hoort al bij een ander account. Log eerst in met e-mail.";
-  }
-  if (code === "Facebook" || code === "OAuthCallbackError" || code === "AccessDenied" || code === "FacebookSetup") {
-    return "Facebook-login lukte niet. Probeer het opnieuw of gebruik e-mail.";
-  }
   return undefined;
 }
 
-export function LoginForm({ facebookEnabled }: { facebookEnabled: boolean }) {
+export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, null);
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/game";
@@ -47,57 +40,53 @@ export function LoginForm({ facebookEnabled }: { facebookEnabled: boolean }) {
         </>
       }
     >
-      <div className="space-y-4">
-        <FacebookAuthButton enabled={facebookEnabled} label="Inloggen met Facebook" />
-        <AuthMethodDivider />
-        <form action={action} className="space-y-4">
-          <input type="hidden" name="callbackUrl" value={callbackUrl} />
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl} />
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="username"
+            required
+            placeholder="jij@onderwereld.nl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Wachtwoord</Label>
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        {needsTotp ? (
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="totp">Authenticator-code</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="username"
-              required
-              placeholder="jij@onderwereld.nl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Wachtwoord</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
+              id="totp"
+              name="totp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              maxLength={8}
+              className="font-mono tracking-[0.28em]"
+              autoFocus
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Voer de 6-cijferige code uit je authenticator-app in.
+            </p>
           </div>
-          {needsTotp ? (
-            <div className="space-y-2">
-              <Label htmlFor="totp">Authenticator-code</Label>
-              <Input
-                id="totp"
-                name="totp"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                placeholder="000000"
-                maxLength={8}
-                className="font-mono tracking-[0.28em]"
-                autoFocus
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Voer de 6-cijferige code uit je authenticator-app in.
-              </p>
-            </div>
-          ) : null}
-          <AuthError message={(state && !state.ok ? state.message : undefined) ?? urlError} />
-          <button type="submit" className={cn(buttonVariants(), "w-full")} disabled={pending}>
-            {pending ? "Deur gaat open…" : needsTotp ? "Bevestigen" : "Naar binnen"}
-          </button>
-        </form>
-      </div>
+        ) : null}
+        <AuthError message={(state && !state.ok ? state.message : undefined) ?? urlError} />
+        <button type="submit" className={cn(buttonVariants(), "w-full")} disabled={pending}>
+          {pending ? "Deur gaat open…" : needsTotp ? "Bevestigen" : "Naar binnen"}
+        </button>
+      </form>
     </AuthShell>
   );
 }

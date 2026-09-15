@@ -67,8 +67,6 @@ export function DashboardClient({
         </div>
       </header>
 
-      <WaitQueuePanel player={p} extras={extras} />
-
       <section>
         <h2 className="mb-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Snel naar</h2>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -106,6 +104,8 @@ export function DashboardClient({
       </section>
 
       <InventoryPanel player={p} />
+
+      <WaitQueuePanel player={p} extras={extras} />
     </div>
   );
 }

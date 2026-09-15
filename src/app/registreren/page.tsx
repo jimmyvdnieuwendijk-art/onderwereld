@@ -1,5 +1,4 @@
 import { RegisterForm } from "./register-form";
-import { isFacebookConfigured } from "@/lib/auth/facebook-config";
 
 export const metadata = {
   title: "Registreren",
@@ -8,5 +7,5 @@ export const metadata = {
 };
 
 export default function RegisterPage() {
-  return <RegisterForm facebookEnabled={isFacebookConfigured()} />;
+  return <RegisterForm />;
 }

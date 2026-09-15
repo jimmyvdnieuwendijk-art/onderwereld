@@ -51,7 +51,13 @@ export const NAME_COLOR_SWATCHES: { hex: string; label: string }[] = [
   { hex: "#f8fafc", label: "Ivoorwit" },
 ];
 
-export const NAME_COLOR_SET = new Set(NAME_COLOR_SWATCHES.map((row) => row.hex));
+export const NAME_COLOR_SET = new Set(NAME_COLOR_SWATCHES.map((row) => row.hex.toLowerCase()));
+
+export function nameColorLabel(hex: string | null | undefined) {
+  if (!hex) return null;
+  const key = hex.toLowerCase();
+  return NAME_COLOR_SWATCHES.find((row) => row.hex.toLowerCase() === key)?.label ?? null;
+}
 
 function def(
   sortOrder: number,
@@ -126,6 +132,26 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     cash: 2_000,
     title: "Soldaat",
   }),
+  def(18, "workers-1", "Eerste meisje", "Neem je eerste hoer in dienst.", "EASY", "WORKERS", 1, {
+    pimp: 40,
+    cash: 600,
+  }),
+  def(19, "vehicles-1", "Eerste wielen", "Zet je eerste auto in de garage.", "EASY", "VEHICLES", 1, {
+    exp: 50,
+    cash: 800,
+  }),
+  def(20, "bullets-5", "Eerste patronen", "Heb 5 kogels op zak.", "EASY", "BULLETS", 5, {
+    bullets: 8,
+    cash: 400,
+  }),
+  def(21, "cash-earned-2k", "Eerste verdiensten", "Verdien in totaal €2.000.", "EASY", "CASH_EARNED", 2_000, {
+    exp: 60,
+    cash: 700,
+  }),
+  def(22, "gym-exp-50", "Zweet op de vloer", "Bereik 50 gym-exp.", "EASY", "GYM_EXP", 50, {
+    gym: 50,
+    cash: 350,
+  }),
 
   def(30, "crime-50", "Routineklus", "Slaag 50 keer bij een misdaad.", "MEDIUM", "CRIMES", 50, {
     exp: 400,
@@ -174,6 +200,31 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     exp: 800,
     cash: 10_000,
     color: "#e8c36a",
+  }),
+  def(40, "bullets-100", "Geladen magazijn", "Heb 100 kogels op zak.", "MEDIUM", "BULLETS", 100, {
+    bullets: 40,
+    cash: 4_000,
+  }),
+  def(41, "cash-25k", "Dikke envelop", "Heb €25.000 cash op zak.", "MEDIUM", "CASH", 25_000, {
+    exp: 300,
+    cash: 6_000,
+    color: "#d4a359",
+  }),
+  def(42, "gym-exp-5k", "IJzeren longen", "Bereik 5.000 gym-exp.", "MEDIUM", "GYM_EXP", 5_000, {
+    gym: 500,
+    exp: 180,
+    cash: 5_000,
+  }),
+  def(43, "crime-100", "Honderd klussen", "Slaag 100 keer bij een misdaad.", "MEDIUM", "CRIMES", 100, {
+    exp: 700,
+    cash: 18_000,
+    bullets: 60,
+    title: "Uitvoerder",
+  }),
+  def(44, "travel-40", "Weekendpendel", "Boek 40 vluchten.", "MEDIUM", "TRAVEL", 40, {
+    exp: 420,
+    cash: 12_000,
+    color: "#38bdf8",
   }),
 
   def(50, "crime-250", "Beroepsmisdadiger", "Slaag 250 keer bij een misdaad.", "HARD", "CRIMES", 250, {
@@ -227,6 +278,30 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     exp: 1_400,
     cash: 35_000,
   }),
+  def(60, "workers-12", "Nachtploeg van twaalf", "Heb 12 hoeren in dienst.", "HARD", "WORKERS", 12, {
+    pimp: 1_200,
+    cash: 40_000,
+    title: "Poortbaas",
+  }),
+  def(61, "cash-250k", "Kluis op zak", "Heb €250.000 cash op zak.", "HARD", "CASH", 250_000, {
+    exp: 1_600,
+    cash: 45_000,
+    color: "#facc15",
+  }),
+  def(62, "gym-80", "Gymrat", "Train 80 keer in de gym.", "HARD", "GYM", 80, {
+    gym: 1_800,
+    exp: 700,
+    cash: 18_000,
+  }),
+  def(63, "cash-earned-3m", "Drie miljoen", "Verdien in totaal €3.000.000.", "HARD", "CASH_EARNED", 3_000_000, {
+    exp: 2_200,
+    cash: 90_000,
+    title: "Bankier",
+  }),
+  def(64, "vehicles-12", "Garagebaas", "Heb 12 auto's in de garage.", "HARD", "VEHICLES", 12, {
+    exp: 900,
+    cash: 22_000,
+  }),
 
   def(70, "crime-1000", "Mythe van de straat", "Slaag 1.000 keer bij een misdaad.", "IMPOSSIBLE", "CRIMES", 1_000, {
     exp: 12_000,
@@ -272,6 +347,30 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     cash: 500_000,
     title: "Mythe",
     color: "#facc15",
+  }),
+  def(78, "workers-50", "Imperium", "Heb 50 hoeren in dienst.", "IMPOSSIBLE", "WORKERS", 50, {
+    pimp: 12_000,
+    cash: 280_000,
+    title: "Poortkeizer",
+  }),
+  def(79, "vehicles-80", "Automythe", "Heb 80 auto's in de garage.", "IMPOSSIBLE", "VEHICLES", 80, {
+    exp: 8_000,
+    cash: 180_000,
+    color: "#22c55e",
+  }),
+  def(80, "bullets-5000", "Kogelbunker", "Heb 5.000 kogels op zak.", "IMPOSSIBLE", "BULLETS", 5_000, {
+    bullets: 2_000,
+    cash: 150_000,
+  }),
+  def(81, "gym-500", "Tempel van ijzer", "Train 500 keer in de gym.", "IMPOSSIBLE", "GYM", 500, {
+    gym: 10_000,
+    exp: 6_000,
+    cash: 90_000,
+  }),
+  def(82, "cash-2m", "Twee miljoen op zak", "Heb €2.000.000 cash op zak.", "IMPOSSIBLE", "CASH", 2_000_000, {
+    exp: 12_000,
+    cash: 250_000,
+    color: "#f8fafc",
   }),
 ];
 
