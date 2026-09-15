@@ -49,6 +49,7 @@ async function main() {
 
   await prisma.attackLog.deleteMany();
   await prisma.gameLog.deleteMany();
+  await prisma.chatMessage.deleteMany();
   await prisma.shoutboxMessage.deleteMany();
   await prisma.message.deleteMany();
   await prisma.marketListing.deleteMany();

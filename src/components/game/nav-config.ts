@@ -8,6 +8,7 @@ import {
   Home,
   LayoutDashboard,
   Mail,
+  MessageCircle,
   MessageSquare,
   Plane,
   Scale,
@@ -33,6 +34,7 @@ const bank = { href: "/game/bank", label: "Bank", icon: Banknote };
 const winkel = { href: "/game/winkel", label: "Winkel", icon: ShoppingBag };
 const markt = { href: "/game/markt", label: "Markt", icon: Scale };
 const spelers = { href: "/game/spelers", label: "Spelers", icon: Search };
+const chat = { href: "/game/chat", label: "Chat", icon: MessageCircle };
 const familie = { href: "/game/familie", label: "Familie", icon: Users };
 const gevangenis = { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel };
 const ziekenhuis = { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross };
@@ -51,7 +53,7 @@ export const NAV_GROUPS = [
   { id: "actie", label: "Actie", items: [misdaden, vliegveld, hoeren, gym, casino] },
   { id: "voertuigen", label: "Voertuigen", items: [autoStelen, garage] },
   { id: "economie", label: "Economie", items: [bank, winkel, markt] },
-  { id: "sociaal", label: "Sociaal", items: [spelers, familie, gevangenis, ziekenhuis] },
+  { id: "sociaal", label: "Sociaal", items: [spelers, chat, familie, gevangenis, ziekenhuis] },
   { id: "account", label: "Account", items: [account, berichten, logboek] },
 ] as const;
 
