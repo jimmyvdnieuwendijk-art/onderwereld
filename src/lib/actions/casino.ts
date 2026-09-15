@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { blockedReason, tickPlayer } from "@/lib/game/player";
-import { randomInt } from "@/lib/format";
+import { randomInt, remainingMs } from "@/lib/format";
 import {
   CASINO_COOLDOWN_MS,
   CASINO_MIN_BET,
@@ -44,7 +44,7 @@ async function gate(): Promise<Gate> {
 }
 
 function cooling(until: string | null) {
-  return !!(until && new Date(until).getTime() > Date.now());
+  return remainingMs(until) > 0;
 }
 
 async function takeStake(userId: string, stake: number, extra: Record<string, unknown> = {}) {

@@ -17,7 +17,7 @@ export const getCrimeCatalog = unstable_cache(
     await ensureGameCatalog();
     return prisma.crime.findMany({ orderBy: { minRankOrder: "asc" } });
   },
-  ["crime-catalog-v2"],
+  ["crime-catalog-v3"],
   { revalidate: 600 },
 );
 

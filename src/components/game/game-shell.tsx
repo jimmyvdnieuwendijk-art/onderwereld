@@ -56,6 +56,7 @@ function NavItemLinks({
           <div key={item.href}>
           <Link
             href={item.href}
+            prefetch
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
@@ -81,6 +82,7 @@ function NavItemLinks({
                   <Link
                     key={child.href}
                     href={child.href}
+                    prefetch
                     onClick={onNavigate}
                     aria-current={childActive ? "page" : undefined}
                     className={cn(
@@ -327,6 +329,7 @@ export function GameShell({
             <Link
               key={item.href}
               href={item.href}
+              prefetch
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-2 text-[10px]",

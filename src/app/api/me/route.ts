@@ -7,7 +7,7 @@ export async function GET() {
   if (!userId) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }
-  const player = await tickPlayer(userId, { economy: true });
+  const player = await tickPlayer(userId, { persist: "after" });
   if (!player) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
   }

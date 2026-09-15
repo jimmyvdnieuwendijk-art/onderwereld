@@ -68,7 +68,6 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
     const message = `Gelukt: ${crime.name}. Je pakt ${street} euro${extra} en ${crime.expReward} ervaring.`;
     await logEvent(userId, "CRIME", message);
     await bumpWanted(userId, 2);
-    await tickPlayer(userId);
     queueAchievementSync(userId);
     return ok(message);
   }

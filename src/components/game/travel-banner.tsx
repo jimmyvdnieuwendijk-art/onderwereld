@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { Plane } from "lucide-react";
-import { Countdown } from "@/components/game/countdown";
+import { Countdown, useNow } from "@/components/game/countdown";
+import { remainingMs } from "@/lib/format";
 import type { PlayerSnapshot } from "@/types/game";
 
 export function TravelBanner({ player }: { player: PlayerSnapshot }) {
-  if (!player.isTraveling || !player.travelEndAt) return null;
+  const now = useNow();
+  if (remainingMs(player.travelEndAt, now) <= 0) return null;
   const dest = player.travelDestinationName ?? "een onbekende stad";
   return (
     <div className="mb-4 rounded-lg border border-primary/40 bg-primary/10 px-4 py-3 text-sm">

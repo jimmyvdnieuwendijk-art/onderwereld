@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { DASHBOARD_LINKS } from "@/components/game/nav-config";
 import { InventoryPanel } from "@/components/game/inventory-panel";
 import { WaitQueuePanel } from "@/components/game/wait-queue-panel";
-import { useLivePlayer } from "@/hooks/use-player";
+import { usePlayer } from "@/hooks/use-player";
 import type { WaitQueueExtras } from "@/lib/game/wait-queue";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,10 @@ export function DashboardClient({
   initialPlayer?: PlayerSnapshot;
   extras?: WaitQueueExtras;
 }) {
-  const p = useLivePlayer(initialPlayer)!;
+  const { data } = usePlayer(initialPlayer);
+  const p = data ?? initialPlayer;
   const now = useNow();
+  if (!p) return null;
 
   const statusChips = [
     remainingMs(p.inJailUntil, now) > 0 ? { key: "jail", label: "Cel", until: p.inJailUntil } : null,
@@ -76,6 +78,7 @@ export function DashboardClient({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className={cn(
                   "group rounded-xl border border-border/60 bg-card/70 p-3 transition-colors",
                   "hover:border-primary/40 hover:bg-card",

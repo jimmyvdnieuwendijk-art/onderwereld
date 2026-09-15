@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Car,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { formatClock } from "@/lib/format";
 import { listWaitQueue, type WaitQueueExtras, type WaitQueueItem } from "@/lib/game/wait-queue";
+import { useNow } from "@/components/game/countdown";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,8 @@ const ICONS: Record<string, typeof Skull> = {
   energy: Zap,
   outbreak: VenetianMask,
   "street-protect": Shield,
+  raid: VenetianMask,
+  "casino-peek": Dices,
 };
 
 export function WaitQueuePanel({
@@ -41,14 +43,8 @@ export function WaitQueuePanel({
   player: PlayerSnapshot;
   extras?: WaitQueueExtras;
 }) {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const items = listWaitQueue(player, extras);
+  const now = useNow();
+  const items = listWaitQueue(player, extras, now);
   const busy = items.filter((row) => row.status === "bezig");
   const ready = items.filter((row) => row.status === "klaar");
 

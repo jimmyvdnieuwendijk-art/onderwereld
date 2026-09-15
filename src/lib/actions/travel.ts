@@ -9,7 +9,7 @@ import {
   isAirportId,
   normalizeCityId,
 } from "@/lib/airports";
-import { blockedReason, tickPlayer } from "@/lib/game/player";
+import { blockedReason, isPlayerTraveling, tickPlayer } from "@/lib/game/player";
 import { randomInt } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { queueAchievementSync } from "@/lib/achievements";
@@ -23,7 +23,7 @@ export async function bookFlight(destinationId: string, privateJet = false): Pro
 
   const grounded = blockedReason(player, { travel: false });
   if (grounded) return fail(grounded, "warning");
-  if (player.isTraveling) return fail("Je zit al in een vliegtuig.", "warning");
+  if (isPlayerTraveling(player)) return fail("Je zit al in een vliegtuig.", "warning");
   if (!isAirportId(destinationId)) return fail("Onbekend vliegveld.");
 
   const fromId = normalizeCityId(player.currentCity);

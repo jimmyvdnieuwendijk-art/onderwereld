@@ -57,7 +57,8 @@ export async function bumpWanted(userId: string, amount: number) {
 
 export async function logEvent(userId: string, type: string, message: string) {
   await prisma.gameLog.create({ data: { userId, type, message } });
-  await pruneGameLogs(userId);
+  const extra = await prisma.gameLog.count({ where: { userId } });
+  if (extra > LOG_KEEP) await pruneGameLogs(userId);
 }
 
 /** Keep only the newest LOG_KEEP rows; older lines are deleted permanently. */

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { BAIL_PER_MINUTE, HOSPITAL_PER_MINUTE, ITEM_AMMO } from "@/lib/constants";
-import { blockedReason, tickPlayer } from "@/lib/game/player";
+import { blockedReason, isPlayerTraveling, tickPlayer } from "@/lib/game/player";
 import { detentionBuyoutCost, formatMoney, remainingMs } from "@/lib/format";
 import { hospitalMsForHealth } from "@/lib/hospital";
 import { getFamilyPerks } from "@/lib/family";
@@ -80,7 +80,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
   if (remainingMs(defenderLive.inJailUntil) > 0) {
     return fail("Dit slachtoffer zit achter de tralies.");
   }
-  if (defenderLive.isTraveling) {
+  if (isPlayerTraveling(defenderLive)) {
     return fail("Dit doelwit zit in de lucht. Wacht tot het vliegtuig landt.");
   }
 

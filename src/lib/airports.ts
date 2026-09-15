@@ -11,24 +11,24 @@
  */
 
 export const MIN_FLIGHT_COST = 50;
-export const MIN_FLIGHT_TIME_SEC = 20;
+export const MIN_FLIGHT_TIME_SEC = 45;
 export const PRIVATE_JET_COST_MULT = 3;
 export const PRIVATE_JET_TIME_MULT = 0.5;
 export const CUSTOMS_WANTED_THRESHOLD = 70;
 export const CUSTOMS_ARREST_CHANCE = 35;
-export const CUSTOMS_JAIL_MINUTES = 3;
+export const CUSTOMS_JAIL_MINUTES = 8;
 
 export const AIRPORTS = [
   { id: "ams", city: "Amsterdam", airport: "Schiphol Airport", country: "Nederland", base_cost: 0, flight_time_sec: 0 },
-  { id: "lon", city: "Londen", airport: "Heathrow Airport", country: "Engeland", base_cost: 250, flight_time_sec: 60 },
-  { id: "rom", city: "Rome", airport: "Leonardo da Vinci–Fiumicino", country: "Italië", base_cost: 600, flight_time_sec: 120 },
-  { id: "nyc", city: "New York", airport: "JFK International", country: "Verenigde Staten", base_cost: 2500, flight_time_sec: 300 },
-  { id: "mia", city: "Miami", airport: "Miami International", country: "Verenigde Staten", base_cost: 3200, flight_time_sec: 360 },
-  { id: "rio", city: "Rio de Janeiro", airport: "Galeão International", country: "Brazilië", base_cost: 4800, flight_time_sec: 480 },
-  { id: "med", city: "Medellín", airport: "José María Córdova", country: "Colombia", base_cost: 5500, flight_time_sec: 540 },
-  { id: "tok", city: "Tokyo", airport: "Haneda Airport", country: "Japan", base_cost: 7500, flight_time_sec: 720 },
-  { id: "dub", city: "Dubai", airport: "Dubai International", country: "Verenigde Arabische Emiraten", base_cost: 4200, flight_time_sec: 420 },
-  { id: "syd", city: "Sydney", airport: "Kingsford Smith Airport", country: "Australië", base_cost: 9500, flight_time_sec: 900 },
+  { id: "lon", city: "Londen", airport: "Heathrow Airport", country: "Engeland", base_cost: 250, flight_time_sec: 75 },
+  { id: "rom", city: "Rome", airport: "Leonardo da Vinci–Fiumicino", country: "Italië", base_cost: 600, flight_time_sec: 110 },
+  { id: "nyc", city: "New York", airport: "JFK International", country: "Verenigde Staten", base_cost: 2500, flight_time_sec: 210 },
+  { id: "mia", city: "Miami", airport: "Miami International", country: "Verenigde Staten", base_cost: 3200, flight_time_sec: 240 },
+  { id: "rio", city: "Rio de Janeiro", airport: "Galeão International", country: "Brazilië", base_cost: 4800, flight_time_sec: 300 },
+  { id: "med", city: "Medellín", airport: "José María Córdova", country: "Colombia", base_cost: 5500, flight_time_sec: 330 },
+  { id: "tok", city: "Tokyo", airport: "Haneda Airport", country: "Japan", base_cost: 7500, flight_time_sec: 420 },
+  { id: "dub", city: "Dubai", airport: "Dubai International", country: "Verenigde Arabische Emiraten", base_cost: 4200, flight_time_sec: 270 },
+  { id: "syd", city: "Sydney", airport: "Kingsford Smith Airport", country: "Australië", base_cost: 9500, flight_time_sec: 540 },
 ] as const;
 
 export type AirportId = (typeof AIRPORTS)[number]["id"];

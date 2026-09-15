@@ -5,10 +5,10 @@ export const MAX_ENERGY = 100;
 export const MAX_HEALTH = 100;
 export const BASE_ATTACK = 5;
 
-/** 1 energy / 12s → full bar (~100) in ~20 min. Was 2/10s ≈ 8 min. */
+/** 1 energy / 15s → full bar (~100) in ~25 min. */
 export const ENERGY_PER_TICK = 1;
 /** Milliseconds between energy ticks. */
-export const ENERGY_TICK_MS = 12_000;
+export const ENERGY_TICK_MS = 15_000;
 
 /** Hourly bank interest. 0.1%/uur ≈ 2,4%/dag. Was 1%/uur. */
 export const BANK_INTEREST_RATE = 0.001;

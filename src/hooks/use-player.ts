@@ -3,7 +3,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { remainingMs } from "@/lib/format";
+import { isActiveUntil, remainingMs } from "@/lib/format";
+import { useNow } from "@/components/game/countdown";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
 
 async function fetchPlayer(): Promise<PlayerSnapshot> {
@@ -45,9 +46,10 @@ export function usePlayer(initial?: PlayerSnapshot) {
     queryKey: ["player"],
     queryFn: fetchPlayer,
     initialData: initial,
+    initialDataUpdatedAt: initial ? Date.now() : undefined,
     placeholderData: (previous) => previous ?? initial,
-    staleTime: 8_000,
-    refetchInterval: (query) => (detentionMs(query.state.data) > 0 ? 8_000 : 45_000),
+    staleTime: 20_000,
+    refetchInterval: (query) => (detentionMs(query.state.data) > 0 ? 10_000 : 60_000),
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
@@ -55,7 +57,16 @@ export function usePlayer(initial?: PlayerSnapshot) {
 
 export function useLivePlayer(initial?: PlayerSnapshot) {
   const { data } = usePlayer(initial);
-  return data ?? initial ?? null;
+  const now = useNow(1000);
+  const player = data ?? initial ?? null;
+  if (!player) return null;
+  const traveling = isActiveUntil(player.travelEndAt, now);
+  const hospital = isActiveUntil(player.inHospitalUntil, now);
+  return {
+    ...player,
+    isTraveling: traveling,
+    isDead: player.isDead && hospital,
+  };
 }
 
 export function useGameAction() {
@@ -72,7 +83,7 @@ export function useGameAction() {
       if (result.ok) toast.success(result.message);
       else if (result.variant === "warning") toast.warning(result.message);
       else toast.error(result.message);
-      await queryClient.invalidateQueries({ queryKey: ["player"] });
+      void queryClient.invalidateQueries({ queryKey: ["player"] });
       onDone?.(result);
     } catch (error) {
       console.error(error);

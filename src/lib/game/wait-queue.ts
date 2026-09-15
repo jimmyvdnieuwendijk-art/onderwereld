@@ -1,5 +1,6 @@
 import { ENERGY_TICK_MS, MAX_ENERGY } from "@/lib/constants";
 import { remainingMs } from "@/lib/format";
+import { RAID_LOCK_MS } from "@/lib/pimp";
 import type { PlayerSnapshot } from "@/types/game";
 
 /**
@@ -154,7 +155,7 @@ const WAIT_QUEUE_DEFS: WaitQueueDef[] = [
   {
     id: "energy",
     label: "Energie",
-    href: "/game/gym",
+    href: "/game",
     kind: "resource",
     remaining: ({ player, now }) => energyUntilFullMs(player, now),
     detail: ({ player }, remaining) =>
@@ -177,6 +178,32 @@ const WAIT_QUEUE_DEFS: WaitQueueDef[] = [
     remaining: ({ player, now }) => untilMs(player.streetProtectUntil, now),
     detail: (_ctx, remaining) =>
       remaining > 0 ? "Beschermd tegen razzia" : "Geen dekking",
+  },
+  {
+    id: "raid",
+    label: "Razzia",
+    href: "/game/hoeren",
+    kind: "buff",
+    remaining: ({ player, now }) => {
+      if (!player.lastRaidAt) return 0;
+      const until = new Date(player.lastRaidAt).getTime() + RAID_LOCK_MS;
+      if (!Number.isFinite(until)) return 0;
+      return Math.max(0, until - now);
+    },
+    detail: (_ctx, remaining) =>
+      remaining > 0 ? "Politie op de Wallen" : "Geen razzia",
+  },
+  {
+    id: "casino-peek",
+    label: "Casino peek",
+    href: "/game/casino",
+    kind: "buff",
+    remaining: ({ player, now }) => {
+      const ms = untilMs(player.casinoPeekUntil, now);
+      return ms > 0 ? ms : null;
+    },
+    detail: (_ctx, remaining) =>
+      remaining > 0 ? "Dealer bekeken" : "Peek beschikbaar",
   },
 ];
 

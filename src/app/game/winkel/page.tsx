@@ -1,9 +1,10 @@
+import { redirect } from "next/navigation";
+import { requirePlayer } from "@/lib/actions/helpers";
 import { getShopCatalog } from "@/lib/catalog";
-import { requireUserIdOrRedirect } from "@/lib/actions/helpers";
 import { ShopClient } from "./shop-client";
 
 export default async function ShopPage() {
-  await requireUserIdOrRedirect();
-  const items = await getShopCatalog();
-  return <ShopClient items={items} />;
+  const [player, items] = await Promise.all([requirePlayer(), getShopCatalog()]);
+  if (!player) redirect("/inloggen");
+  return <ShopClient initialPlayer={player} items={items} />;
 }
