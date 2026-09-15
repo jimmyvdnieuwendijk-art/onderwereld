@@ -2,14 +2,26 @@
 
 import { useMemo, useState } from "react";
 import { claimAchievement, claimAllAchievements, selectIdentity } from "@/lib/actions/achievements";
-import { DIFFICULTY_UI, NAME_COLOR_SWATCHES, type AchievementDifficulty } from "@/lib/achievement-catalog";
+import {
+  DIFFICULTY_UI,
+  NAME_COLOR_SWATCHES,
+  nameColorLabel,
+  type AchievementDifficulty,
+} from "@/lib/achievement-catalog";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { AccountSubnav } from "@/components/game/account-subnav";
 import { StyledPlayerName } from "@/components/game/styled-name";
 import { useGameAction, useLivePlayer } from "@/hooks/use-player";
-import type { AchievementBoard, AchievementBoardItem } from "@/lib/achievements";
+import type { AchievementBoard, AchievementBoardItem, ClaimedAchievementItem } from "@/lib/achievements";
 import type { PlayerSnapshot } from "@/types/game";
 
 const FILTERS: { id: AchievementDifficulty | "ALL"; label: string }[] = [
@@ -20,7 +32,7 @@ const FILTERS: { id: AchievementDifficulty | "ALL"; label: string }[] = [
   { id: "IMPOSSIBLE", label: "Onmogelijk 🟣" },
 ];
 
-function rewardLines(item: AchievementBoardItem) {
+function rewardLines(item: Pick<AchievementBoardItem, "rewardExp" | "rewardPimpExp" | "rewardGymExp" | "rewardCash" | "rewardBullets" | "rewardTitle" | "rewardNameColor">) {
   const lines: string[] = [];
   if (item.rewardExp > 0) lines.push(`${formatNumber(item.rewardExp)} speler-exp`);
   if (item.rewardPimpExp > 0) lines.push(`${formatNumber(item.rewardPimpExp)} hoeren-exp`);
@@ -28,7 +40,8 @@ function rewardLines(item: AchievementBoardItem) {
   if (item.rewardCash > 0) lines.push(formatMoney(item.rewardCash));
   if (item.rewardBullets > 0) lines.push(`${formatNumber(item.rewardBullets)} kogels`);
   if (item.rewardTitle) lines.push(`titel [${item.rewardTitle}]`);
-  if (item.rewardNameColor) lines.push(`naamkleur ${item.rewardNameColor}`);
+  const colorName = nameColorLabel(item.rewardNameColor);
+  if (colorName) lines.push(`naamkleur ${colorName}`);
   return lines;
 }
 
@@ -55,6 +68,7 @@ export function AchievementsClient({
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("ALL");
   const [title, setTitle] = useState(initialBoard.selectedTitle ?? "");
   const [color, setColor] = useState(initialBoard.selectedNameColor ?? "");
+  const [unlocked, setUnlocked] = useState<ClaimedAchievementItem[] | null>(null);
 
   const shown = useMemo(
     () => (filter === "ALL" ? board.items : board.items.filter((row) => row.difficulty === filter)),
@@ -80,10 +94,6 @@ export function AchievementsClient({
           <h1 className="font-heading text-2xl leading-none md:text-3xl">Prestaties</h1>
           <AccountSubnav />
         </div>
-        <p className="max-w-xl text-sm text-muted-foreground">
-          Haal mijlpalen, claim exp, cash, kogels, titels en naamkleuren. Je titel staat als{" "}
-          <span className="text-[#d4a359]">[Street Boss]</span> voor je naam in chat, klassement en profielen.
-        </p>
       </header>
 
       <Card size="sm" className="border-[#d4a359]/20 bg-[#120e0a]">
@@ -92,7 +102,7 @@ export function AchievementsClient({
         </CardHeader>
         <CardContent className="space-y-3 pt-4">
           <p className="text-sm text-muted-foreground">
-            Voorbeeld:{" "}
+            Je naam:{" "}
             <StyledPlayerName
               displayName={displayName}
               title={title || null}
@@ -136,7 +146,7 @@ export function AchievementsClient({
                   const swatch = NAME_COLOR_SWATCHES.find((row) => row.hex === hex);
                   return (
                     <option key={hex} value={hex}>
-                      {swatch?.label ?? hex}
+                      {swatch?.label ?? nameColorLabel(hex) ?? "Kleur"}
                     </option>
                   );
                 })}
@@ -174,7 +184,10 @@ export function AchievementsClient({
           disabled={claimAct.pending || board.claimable < 1}
           onClick={() =>
             claimAct.run(() => claimAllAchievements(), (result) => {
-              if (result.ok) void refreshBoard();
+              if (!result.ok) return;
+              const data = result.data as { items?: ClaimedAchievementItem[] } | undefined;
+              setUnlocked(data?.items ?? []);
+              void refreshBoard();
             })
           }
         >
@@ -235,6 +248,35 @@ export function AchievementsClient({
           );
         })}
       </div>
+
+      <Dialog open={unlocked !== null} onOpenChange={(open) => !open && setUnlocked(null)}>
+        <DialogContent className="max-w-sm border-[#d4a359]/25 bg-[#120e0a]">
+          <DialogHeader>
+            <DialogTitle>Vrijgespeeld</DialogTitle>
+            <DialogDescription>
+              {unlocked && unlocked.length > 0
+                ? `${unlocked.length} prestatie${unlocked.length === 1 ? "" : "s"} geclaimd.`
+                : "Niets nieuws vrijgespeeld."}
+            </DialogDescription>
+          </DialogHeader>
+          {unlocked && unlocked.length > 0 ? (
+            <ul className="max-h-64 space-y-2 overflow-y-auto text-sm">
+              {unlocked.map((item) => {
+                const colorName = nameColorLabel(item.rewardNameColor);
+                const extras = [item.rewardTitle ? `titel ${item.rewardTitle}` : null, colorName ? `kleur ${colorName}` : null]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <li key={item.title} className="rounded-lg border border-[#d4a359]/15 bg-black/30 px-3 py-2">
+                    <p className="font-medium">{item.title}</p>
+                    {extras ? <p className="text-xs text-muted-foreground">{extras}</p> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -42,7 +42,6 @@ const playerInclude = {
 
 const playerOmit = {
   totpSecret: true,
-  totpPending: true,
 } as const;
 
 function toIso(value: Date | null | undefined) {
@@ -254,6 +253,7 @@ function toSnapshot(
     hideOnline: user.hideOnline,
     avatarUrl: user.avatarUrl ?? null,
     totpEnabled: !!user.totpEnabled,
+    totpPending: Boolean(user.totpPending),
     hasPassword: Boolean(user.hashedPassword),
     hasFacebook: Boolean(user.facebookId),
     usernameChosen: user.usernameChosen !== false,

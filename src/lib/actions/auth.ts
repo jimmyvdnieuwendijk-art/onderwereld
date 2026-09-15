@@ -1,6 +1,6 @@
 "use server";
 
-import { hash } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
@@ -9,6 +9,7 @@ import { STARTER_CASH, USERNAME_MAX, USERNAME_MIN, USERNAME_PATTERN, PASSWORD_MI
 import { fail, ok, requireUserId } from "@/lib/actions/helpers";
 import { DEMO_EMAIL, ensureLiveBootstrap } from "@/lib/ensure-catalog";
 import { facebookCredentials } from "@/lib/auth/facebook-config";
+import { verifyTotp } from "@/lib/totp";
 import type { ActionResult } from "@/types/game";
 
 function safeCallback(raw: string) {
@@ -28,14 +29,19 @@ export async function loginAction(
   if (!email || !password) return fail("Vul e-mail en wachtwoord in.");
   const callbackUrl = safeCallback(String(formData.get("callbackUrl") ?? "/game"));
 
-  if (!totp && email !== DEMO_EMAIL) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { totpEnabled: true },
-    });
-    if (!user) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
-    if (user.totpEnabled) {
-      return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { hashedPassword: true, totpEnabled: true, totpSecret: true },
+  });
+  if (!user?.hashedPassword) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
+  const passwordOk = await compare(password, user.hashedPassword);
+  if (!passwordOk) return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
+
+  const requireTotp = Boolean(user.totpEnabled) && email !== DEMO_EMAIL;
+  if (requireTotp) {
+    if (!totp) return fail("Voer je authenticatorcode in.", "info", { needsTotp: true });
+    if (!user.totpSecret || !verifyTotp(user.totpSecret, totp)) {
+      return fail("Ongeldige authenticatorcode.", "error", { needsTotp: true });
     }
   }
 
@@ -44,7 +50,11 @@ export async function loginAction(
     return ok("Welkom terug.");
   } catch (error) {
     if (error instanceof AuthError) {
-      return fail("Ongeldige inloggegevens. Controleer e-mail en wachtwoord.");
+      return fail(
+        requireTotp ? "Ongeldige authenticatorcode." : "Ongeldige inloggegevens. Controleer e-mail en wachtwoord.",
+        "error",
+        requireTotp ? { needsTotp: true } : undefined,
+      );
     }
     throw error;
   }

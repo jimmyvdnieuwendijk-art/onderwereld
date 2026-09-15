@@ -182,7 +182,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
                 name="displayName"
                 value={displayName}
                 maxLength={DISPLAY_NAME_MAX}
-                placeholder={p.username || "DonDemo"}
+                placeholder={p.username || "Weergavenaam"}
                 onChange={(event) => setDisplayName(event.target.value)}
               />
               <p className="text-right text-xs tabular-nums text-muted-foreground">
@@ -263,7 +263,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
                     const swatch = NAME_COLOR_SWATCHES.find((row) => row.hex === hex);
                     return (
                       <option key={hex} value={hex}>
-                        {swatch?.label ?? hex}
+                        {swatch?.label ?? "Kleur"}
                       </option>
                     );
                   })}
@@ -406,11 +406,6 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
               });
             }}
           >
-            {p.hasFacebook && !p.hasPassword ? (
-              <p className="text-sm text-muted-foreground">
-                Je account hangt aan Facebook. Optioneel kun je een wachtwoord zetten voor e-mail-login.
-              </p>
-            ) : null}
             {p.hasPassword ? (
               <div className="space-y-2">
                 <Label htmlFor="current">Huidig wachtwoord</Label>
@@ -459,7 +454,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
         </CardContent>
       </Card>
 
-      <TotpCard enabled={p.totpEnabled} hasPassword={p.hasPassword} />
+      <TotpCard enabled={p.totpEnabled} pendingSetup={p.totpPending} hasPassword={p.hasPassword} />
 
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
@@ -478,7 +473,15 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
   );
 }
 
-function TotpCard({ enabled, hasPassword }: { enabled: boolean; hasPassword: boolean }) {
+function TotpCard({
+  enabled,
+  pendingSetup,
+  hasPassword,
+}: {
+  enabled: boolean;
+  pendingSetup: boolean;
+  hasPassword: boolean;
+}) {
   const setupAct = useGameAction();
   const confirmAct = useGameAction();
   const disableAct = useGameAction();
@@ -534,6 +537,7 @@ function TotpCard({ enabled, hasPassword }: { enabled: boolean; hasPassword: boo
                 id="totp-off"
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                maxLength={8}
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
                 required
@@ -546,6 +550,9 @@ function TotpCard({ enabled, hasPassword }: { enabled: boolean; hasPassword: boo
           </form>
         ) : (
           <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Beveilig je inlog met een code uit een authenticator-app.
+            </p>
             {!qr ? (
               <Button
                 type="button"
@@ -557,7 +564,7 @@ function TotpCard({ enabled, hasPassword }: { enabled: boolean; hasPassword: boo
                   })
                 }
               >
-                {setupAct.pending ? "Bezig…" : "Authenticator instellen"}
+                {setupAct.pending ? "Bezig…" : pendingSetup ? "Setup hervatten" : "Authenticator instellen"}
               </Button>
             ) : (
               <>
@@ -582,6 +589,7 @@ function TotpCard({ enabled, hasPassword }: { enabled: boolean; hasPassword: boo
                     id="totp-on"
                     inputMode="numeric"
                     autoComplete="one-time-code"
+                    maxLength={8}
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
                     required

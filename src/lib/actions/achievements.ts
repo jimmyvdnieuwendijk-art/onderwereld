@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { claimAchievements, listAchievementBoard } from "@/lib/achievements";
-import { isCatalogNameColor, isCatalogTitle } from "@/lib/achievement-catalog";
+import { isCatalogNameColor, isCatalogTitle, nameColorLabel } from "@/lib/achievement-catalog";
 import { fail, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { prisma } from "@/lib/prisma";
 import { normalizeNameColor } from "@/lib/player-name";
@@ -76,7 +76,7 @@ export async function selectIdentity(
 function claimMessage(result: { claimed: number; titles: string[]; colors: string[] }) {
   const extras = [
     ...result.titles.map((title) => `titel ${title}`),
-    ...result.colors.map((color) => `kleur ${color}`),
+    ...result.colors.map((color) => `kleur ${nameColorLabel(color) ?? color}`),
   ];
   const extra = extras.length > 0 ? ` Vrijgespeeld: ${extras.join(", ")}.` : "";
   if (result.claimed === 1) return `Beloning geclaimd.${extra}`;

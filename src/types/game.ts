@@ -52,6 +52,7 @@ export type PlayerSnapshot = {
   hideOnline: boolean;
   avatarUrl: string | null;
   totpEnabled: boolean;
+  totpPending: boolean;
   hasPassword: boolean;
   hasFacebook: boolean;
   usernameChosen: boolean;

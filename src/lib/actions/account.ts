@@ -166,7 +166,7 @@ export async function beginTotpSetup(): Promise<ActionResult> {
   if (auth.error || !auth.user) return auth.error ?? fail("Je bent niet ingelogd.");
   if (auth.user.totpEnabled) return fail("Authenticator staat al aan.");
 
-  const secret = newTotpSecret();
+  const secret = auth.user.totpPending || newTotpSecret();
   const label = auth.user.username || auth.user.email;
   const qrDataUrl = await totpQrDataUrl(secret, label);
   await prisma.user.update({

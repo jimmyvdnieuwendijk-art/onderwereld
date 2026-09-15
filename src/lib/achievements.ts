@@ -29,6 +29,12 @@ export type AchievementBoardItem = {
   rewardNameColor: string | null;
 };
 
+export type ClaimedAchievementItem = {
+  title: string;
+  rewardTitle: string | null;
+  rewardNameColor: string | null;
+};
+
 export type AchievementBoard = {
   items: AchievementBoardItem[];
   claimable: number;
@@ -295,7 +301,7 @@ export async function claimAchievements(userId: string, ids: string[] | "all") {
       selectedNameColor: true,
     },
   });
-  if (!user) return { claimed: 0, titles: [] as string[], colors: [] as string[] };
+  if (!user) return { claimed: 0, titles: [] as string[], colors: [] as string[], items: [] as ClaimedAchievementItem[] };
 
   const rows = await prisma.playerAchievement.findMany({
     where: {
@@ -308,7 +314,9 @@ export async function claimAchievements(userId: string, ids: string[] | "all") {
   });
 
   const ready = rows.filter((row) => row.progress >= row.achievement.target);
-  if (ready.length === 0) return { claimed: 0, titles: [] as string[], colors: [] as string[] };
+  if (ready.length === 0) {
+    return { claimed: 0, titles: [] as string[], colors: [] as string[], items: [] as ClaimedAchievementItem[] };
+  }
 
   let rewardExp = 0;
   let rewardPimpExp = 0;
@@ -360,5 +368,14 @@ export async function claimAchievements(userId: string, ids: string[] | "all") {
     }),
   ]);
 
-  return { claimed: ready.length, titles: unlockedNowTitles, colors: unlockedNowColors };
+  return {
+    claimed: ready.length,
+    titles: unlockedNowTitles,
+    colors: unlockedNowColors,
+    items: ready.map((row) => ({
+      title: row.achievement.title,
+      rewardTitle: row.achievement.rewardTitle,
+      rewardNameColor: row.achievement.rewardNameColor,
+    })),
+  };
 }

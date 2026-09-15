@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { LoginForm } from "./login-form";
-import { isFacebookConfigured } from "@/lib/auth/facebook-config";
 
 export const metadata = {
   title: "Inloggen",
@@ -10,7 +9,7 @@ export const metadata = {
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-background" />}>
-      <LoginForm facebookEnabled={isFacebookConfigured()} />
+      <LoginForm />
     </Suspense>
   );
 }
