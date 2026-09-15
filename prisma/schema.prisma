@@ -101,6 +101,8 @@ model User {
   familyLedger     FamilyLedger[]
   familyHeists     FamilyHeist[]    @relation("FamilyHeistCreator")
   familyHeistSeats FamilyHeistSeat[]
+  chatMessages     ChatMessage[]
+  chatImages       ChatImage[]
 
   @@index([rankId])
   @@index([familyId])
@@ -228,6 +230,7 @@ model Family {
   heists         FamilyHeist[]
   bannerFile     FamilyBanner?
   pageImages     FamilyPageImage[]
+  chatMessages   ChatMessage[]
 }
 
 model FamilyMember {
@@ -397,6 +400,36 @@ model ShoutboxMessage {
   createdAt DateTime  @default(now())
 
   @@index([createdAt])
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  channel   String
+  familyId  String?
+  family    Family?    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String     @default("")
+  imageUrl  String?
+  image     ChatImage?
+  createdAt DateTime   @default(now())
+
+  @@index([channel, createdAt])
+  @@index([channel, familyId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ChatImage {
+  id        String      @id @default(cuid())
+  messageId String      @unique
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mimeType  String
+  bytes     Bytes
+  createdAt DateTime    @default(now())
+
+  @@index([userId])
 }
 
 model GameLog {

@@ -40,6 +40,16 @@ export const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
 export const ONLINE_WINDOW_MS = 3 * 60 * 1000;
 export const LAST_SEEN_WRITE_MS = 60 * 1000;
 
+export const CHAT_BODY_MAX = 280;
+export const CHAT_RATE_MS = 4_000;
+export const CHAT_BURST_MAX = 25;
+export const CHAT_BURST_WINDOW_MS = 10 * 60 * 1000;
+export const CHAT_KEEP = 250;
+export const CHAT_PAGE_SIZE = 80;
+export const CHAT_CHANNEL_WORLD = "WORLD";
+export const CHAT_CHANNEL_FAMILY = "FAMILY";
+export const CHAT_IMAGE_MAX_BYTES = AVATAR_MAX_BYTES;
+
 export const LOG_PAGE_SIZE = 20;
 export const LOG_MAX_PAGES = 5;
 export const LOG_KEEP = LOG_PAGE_SIZE * LOG_MAX_PAGES;

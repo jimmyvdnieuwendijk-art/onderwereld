@@ -17,6 +17,12 @@ export function familyPageImagePath(imageId: string, version: number | Date) {
   return `/api/family-images/${imageId}?v=${v}`;
 }
 
+export function chatImagePath(imageId: string, version?: number | Date) {
+  if (version === undefined) return `/api/chat-images/${imageId}`;
+  const v = typeof version === "number" ? version : version.getTime();
+  return `/api/chat-images/${imageId}?v=${v}`;
+}
+
 export function sniffImageMime(bytes: Uint8Array): ImageMime | null {
   if (bytes.length < 12) return null;
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
