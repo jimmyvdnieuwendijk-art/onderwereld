@@ -52,12 +52,3 @@ export function AuthError({ message }: { message?: string }) {
   );
 }
 
-export function DemoHint() {
-  return (
-    <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-      Demo: <span className="text-foreground">demo@onderwereld.nl</span>
-      {" / "}
-      <span className="text-foreground">demo1234</span>
-    </p>
-  );
-}

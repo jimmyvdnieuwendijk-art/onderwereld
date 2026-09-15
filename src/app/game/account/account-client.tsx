@@ -305,7 +305,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
 
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
-          <CardTitle>Wachtwoord wijzigen</CardTitle>
+          <CardTitle>{p.hasPassword ? "Wachtwoord wijzigen" : "Wachtwoord instellen"}</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <form
@@ -322,18 +322,25 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
               });
             }}
           >
-            <div className="space-y-2">
-              <Label htmlFor="current">Huidig wachtwoord</Label>
-              <Input
-                id="current"
-                name="current"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={current}
-                onChange={(event) => setCurrent(event.target.value)}
-              />
-            </div>
+            {p.hasFacebook && !p.hasPassword ? (
+              <p className="text-sm text-muted-foreground">
+                Je account hangt aan Facebook. Optioneel kun je een wachtwoord zetten voor e-mail-login.
+              </p>
+            ) : null}
+            {p.hasPassword ? (
+              <div className="space-y-2">
+                <Label htmlFor="current">Huidig wachtwoord</Label>
+                <Input
+                  id="current"
+                  name="current"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={current}
+                  onChange={(event) => setCurrent(event.target.value)}
+                />
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="next">Nieuw wachtwoord</Label>
               <Input
@@ -361,14 +368,14 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
               />
             </div>
             <Button type="submit" disabled={passwordAct.pending}>
-              {passwordAct.pending ? "Wijzigen…" : "Wachtwoord opslaan"}
+              {passwordAct.pending ? "Opslaan…" : p.hasPassword ? "Wachtwoord opslaan" : "Wachtwoord instellen"}
             </Button>
             <FormMessage state={passwordAct.feedback} />
           </form>
         </CardContent>
       </Card>
 
-      <TotpCard enabled={p.totpEnabled} />
+      <TotpCard enabled={p.totpEnabled} hasPassword={p.hasPassword} />
 
       <Card size="sm" className="border-border/50">
         <CardHeader className="border-b border-border/40">
@@ -387,7 +394,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
   );
 }
 
-function TotpCard({ enabled }: { enabled: boolean }) {
+function TotpCard({ enabled, hasPassword }: { enabled: boolean; hasPassword: boolean }) {
   const setupAct = useGameAction();
   const confirmAct = useGameAction();
   const disableAct = useGameAction();
@@ -420,17 +427,23 @@ function TotpCard({ enabled }: { enabled: boolean }) {
             }}
           >
             <p className="text-sm">Authenticator staat aan.</p>
-            <div className="space-y-2">
-              <Label htmlFor="totp-pass">Wachtwoord</Label>
-              <Input
-                id="totp-pass"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </div>
+            {hasPassword ? (
+              <div className="space-y-2">
+                <Label htmlFor="totp-pass">Wachtwoord</Label>
+                <Input
+                  id="totp-pass"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Dit account heeft geen wachtwoord. Bevestig met je authenticatorcode.
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="totp-off">Authenticatorcode</Label>
               <Input

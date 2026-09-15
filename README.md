@@ -5,7 +5,7 @@ Browser-based tekst/strategie-MMORPG in de geest van klassieke Nederlandse maffi
 ## Tech
 
 - Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui
-- Auth.js (NextAuth) credentials + JWT, wachtwoorden via bcryptjs
+- Auth.js (NextAuth) credentials + optional Facebook, JWT, wachtwoorden via bcryptjs
 - Prisma ORM + **PostgreSQL** (Neon / Supabase / Vercel Postgres). SQLite is a local-only alternative, not for Vercel.
 - TanStack React Query voor live stats / shoutbox
 
@@ -38,6 +38,9 @@ Andere gezaaide rivalen (zelfde wachtwoord): DeNachtjager, Bloedhond, SilentSjaa
 | `AUTH_SECRET` | long random string | **required**, `openssl rand -base64 32` | JWT signing secret |
 | `AUTH_TRUST_HOST` | `true` | `true` | Auth.js trusts the Host header |
 | `AUTH_URL` | omit | `https://<your-public-host>` (optional but recommended) | Canonical public origin |
+| `AUTH_FACEBOOK_ID` | Meta app ID | Meta app ID | Facebook Login client id (Auth.js). Button stays disabled if unset. |
+| `AUTH_FACEBOOK_SECRET` | Meta app secret | Meta app secret | Facebook Login client secret |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | omit | `G-XXXXXXXX` when you have a property | Optional GA4. Do not invent an ID. |
 | `FORCE_SEED` | unset | **do not set** on a live game | Seed wipes all tables when `1` |
 | `SKIP_DEMO_USERS` | unset | `1` if you do not want demo accounts | Skip DonDemo / rival seed users |
 
@@ -116,6 +119,13 @@ postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
 | `AUTH_SECRET` | output of `openssl rand -base64 32` |
 | `AUTH_TRUST_HOST` | `true` |
 | `AUTH_URL` | leave empty on the first deploy; set to `https://<project>.vercel.app` afterward if Auth.js CSRF complains |
+| `AUTH_FACEBOOK_ID` | Meta app ID (Facebook Login) |
+| `AUTH_FACEBOOK_SECRET` | Meta app secret |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | optional `G-XXXXXXXX` — only after you create a real GA4 property |
+
+Facebook callback URL in the Meta developer console:
+
+`https://onderwereld-nine.vercel.app/api/auth/callback/facebook`
 
 6. Deploy. Build does not need a reachable database; runtime and seed do.
 

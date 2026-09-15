@@ -1,9 +1,14 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Facebook from "next-auth/providers/facebook";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyTotp } from "@/lib/totp";
 import { DEMO_EMAIL, grantDemoTestCash } from "@/lib/ensure-catalog";
+import { facebookCredentials } from "@/lib/auth/facebook-config";
+import { FacebookAuthError, upsertFacebookUser } from "@/lib/auth/facebook";
+
+const facebook = facebookCredentials();
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -40,7 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             totpSecret: true,
           },
         });
-        if (!user) return null;
+        if (!user?.hashedPassword) return null;
 
         const valid = await compare(password, user.hashedPassword);
         if (!valid) return null;
@@ -63,9 +68,59 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return { id: user.id, email: user.email, name: user.username };
       },
     }),
+    ...(facebook
+      ? [
+          Facebook({
+            clientId: facebook.id,
+            clientSecret: facebook.secret,
+            profile(profile) {
+              const picture =
+                profile && typeof profile === "object" && "picture" in profile
+                  ? (
+                      profile as {
+                        picture?: { data?: { url?: string } };
+                      }
+                    ).picture?.data?.url
+                  : undefined;
+              return {
+                id: String(profile.id),
+                name: profile.name ?? "Speler",
+                email: profile.email,
+                image: picture,
+              };
+            },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ account, profile }) {
+      if (account?.provider !== "facebook") return true;
+      try {
+        await upsertFacebookUser({
+          facebookId: String(account.providerAccountId ?? profile?.id ?? ""),
+          email: profile?.email,
+          name: profile?.name,
+        });
+        return true;
+      } catch (error) {
+        if (error instanceof FacebookAuthError && error.code === "email_taken") {
+          return "/inloggen?error=FacebookEmail";
+        }
+        return "/inloggen?error=Facebook";
+      }
+    },
+    async jwt({ token, user, account, profile }) {
+      if (account?.provider === "facebook") {
+        const dbUser = await upsertFacebookUser({
+          facebookId: String(account.providerAccountId ?? profile?.id ?? ""),
+          email: profile?.email,
+          name: profile?.name,
+        });
+        token.id = dbUser.id;
+        token.name = dbUser.username;
+        return token;
+      }
       if (user) {
         token.id = user.id;
         token.name = user.name;

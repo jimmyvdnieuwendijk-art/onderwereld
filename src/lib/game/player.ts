@@ -39,7 +39,6 @@ const playerInclude = {
 } as const;
 
 const playerOmit = {
-  hashedPassword: true,
   totpSecret: true,
   totpPending: true,
 } as const;
@@ -250,6 +249,9 @@ function toSnapshot(
     hideOnline: user.hideOnline,
     avatarUrl: user.avatarUrl ?? null,
     totpEnabled: !!user.totpEnabled,
+    hasPassword: Boolean(user.hashedPassword),
+    hasFacebook: Boolean(user.facebookId),
+    usernameChosen: user.usernameChosen !== false,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: toIso(user.lastLoginAt),
     cash: user.cash,
