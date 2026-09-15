@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActionFeedback, useFormAction } from "@/components/game/action-feedback";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { PlayerAvatar } from "@/components/game/player-avatar";
+import { StyledPlayerName } from "@/components/game/styled-name";
 import { useLivePlayer } from "@/hooks/use-player";
 import { ammoKindForWeapon, ammoKindMeta, ammoQtyForKind } from "@/lib/shop-catalog";
 import type { PublicPlayer } from "@/types/game";
@@ -35,7 +36,13 @@ export function PlayerProfileClient({ target }: { target: PublicPlayer }) {
               className="size-16 shrink-0 text-xl md:size-20 md:text-2xl"
             />
             <div className="min-w-0">
-              <CardTitle className="font-heading text-3xl">{target.displayName}</CardTitle>
+              <CardTitle className="font-heading text-3xl">
+                <StyledPlayerName
+                  displayName={target.displayName}
+                  title={target.selectedTitle}
+                  color={target.selectedNameColor}
+                />
+              </CardTitle>
               {target.displayName !== target.username ? (
                 <p className="mt-1 text-sm text-muted-foreground">@{target.username}</p>
               ) : null}

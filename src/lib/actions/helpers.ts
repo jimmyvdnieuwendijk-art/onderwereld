@@ -27,15 +27,19 @@ export const requirePlayer = cache(async () => {
   return tickPlayer(id, { persist: "after" });
 });
 
-export function fail(
+export function fail<T = unknown>(
   message: string,
   variant: ActionResult["variant"] = "error",
-  data?: unknown,
-): ActionResult {
+  data?: T,
+): ActionResult<T> {
   return { ok: false, message, variant, data };
 }
 
-export function ok(message: string, variant: ActionResult["variant"] = "success", data?: unknown): ActionResult {
+export function ok<T = unknown>(
+  message: string,
+  variant: ActionResult["variant"] = "success",
+  data?: T,
+): ActionResult<T> {
   return { ok: true, message, variant, data };
 }
 

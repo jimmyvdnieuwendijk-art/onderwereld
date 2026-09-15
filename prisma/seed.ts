@@ -5,6 +5,7 @@ import { CRIMES } from "../src/lib/crime-catalog";
 import { PLAYER_RANKS } from "../src/lib/ranks";
 import { SHOP_ITEMS } from "../src/lib/shop-catalog";
 import { VEHICLES } from "../src/lib/vehicle-catalog";
+import { ACHIEVEMENTS } from "../src/lib/achievement-catalog";
 
 const prisma = new PrismaClient();
 
@@ -37,16 +38,39 @@ async function upsertCatalog() {
       update: item,
     });
   }
+  for (const row of ACHIEVEMENTS) {
+    await prisma.achievement.upsert({
+      where: { slug: row.slug },
+      create: row,
+      update: {
+        title: row.title,
+        description: row.description,
+        difficulty: row.difficulty,
+        metric: row.metric,
+        target: row.target,
+        rewardExp: row.rewardExp,
+        rewardPimpExp: row.rewardPimpExp,
+        rewardGymExp: row.rewardGymExp,
+        rewardCash: row.rewardCash,
+        rewardBullets: row.rewardBullets,
+        rewardTitle: row.rewardTitle,
+        rewardNameColor: row.rewardNameColor,
+        sortOrder: row.sortOrder,
+      },
+    });
+  }
 }
 
 async function main() {
   const existingRanks = await prisma.rank.count();
   if (existingRanks > 0 && process.env.FORCE_SEED !== "1") {
     await upsertCatalog();
-    console.log("Catalog upserted (non-destructive). New crimes and vehicle types are available.");
+    console.log("Catalog upserted (non-destructive). New crimes, vehicle types and achievements are available.");
     return;
   }
 
+  await prisma.playerAchievement.deleteMany();
+  await prisma.achievement.deleteMany();
   await prisma.attackLog.deleteMany();
   await prisma.gameLog.deleteMany();
   await prisma.chatMessage.deleteMany();
@@ -68,6 +92,7 @@ async function main() {
   await prisma.crime.createMany({ data: crimes });
   await prisma.vehicleType.createMany({ data: vehicleTypes });
   await prisma.shopItem.createMany({ data: shopItems });
+  await prisma.achievement.createMany({ data: ACHIEVEMENTS });
 
   if (process.env.SKIP_DEMO_USERS === "1") {
     console.log("Seed klaar (catalog only; SKIP_DEMO_USERS=1).");

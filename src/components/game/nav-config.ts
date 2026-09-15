@@ -17,6 +17,7 @@ import {
   ShoppingBag,
   Skull,
   Swords,
+  Trophy,
   UserCog,
   Users,
   VenetianMask,
@@ -39,6 +40,7 @@ const familie = { href: "/game/familie", label: "Familie", icon: Users };
 const gevangenis = { href: "/game/gevangenis", label: "Gevangenis", icon: Gavel };
 const ziekenhuis = { href: "/game/ziekenhuis", label: "Ziekenhuis", icon: Cross };
 const account = { href: "/game/account", label: "Account", icon: UserCog };
+const prestaties = { href: "/game/account/prestaties", label: "Prestaties", icon: Trophy };
 const berichten = { href: "/game/berichten", label: "Berichten", icon: Mail };
 const logboek = { href: "/game/logboek", label: "Logboek", icon: MessageSquare };
 
@@ -54,7 +56,7 @@ export const NAV_GROUPS = [
   { id: "voertuigen", label: "Voertuigen", items: [autoStelen, garage] },
   { id: "economie", label: "Economie", items: [bank, winkel, markt] },
   { id: "sociaal", label: "Sociaal", items: [spelers, chat, familie, gevangenis, ziekenhuis] },
-  { id: "account", label: "Account", items: [account, berichten, logboek] },
+  { id: "account", label: "Account", items: [account, prestaties, berichten, logboek] },
 ] as const;
 
 export const NAV_ITEMS = NAV_GROUPS.flatMap((group) => [...group.items]);
@@ -62,6 +64,7 @@ export const NAV_ITEMS = NAV_GROUPS.flatMap((group) => [...group.items]);
 /** Overzicht is exact `/game`; other items also match nested routes. */
 export function isNavActive(pathname: string, href: string) {
   if (href === "/game") return pathname === "/game";
+  if (href === "/game/account") return pathname === "/game/account";
   if (href === "/game/markt") return pathname === "/game/markt" || pathname.startsWith("/game/markt/");
   return pathname === href || pathname.startsWith(`${href}/`);
 }

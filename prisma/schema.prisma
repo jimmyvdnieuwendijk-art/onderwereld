@@ -76,6 +76,18 @@ model User {
   totpEnabled           Boolean   @default(false)
   totpSecret            String?
   totpPending           String?
+  loginCount            Int       @default(0)
+  crimeSuccessCount     Int       @default(0)
+  travelCount           Int       @default(0)
+  gymSessionCount       Int       @default(0)
+  cashEarned            Int       @default(0)
+  lastChatAt            DateTime?
+  chatBurstCount        Int       @default(0)
+  chatBurstAt           DateTime?
+  selectedTitle         String?
+  selectedNameColor     String?
+  unlockedTitles        String[]
+  unlockedNameColors    String[]
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -103,6 +115,7 @@ model User {
   familyHeistSeats FamilyHeistSeat[]
   chatMessages     ChatMessage[]
   chatImages       ChatImage[]
+  achievements     PlayerAchievement[]
 
   @@index([rankId])
   @@index([familyId])
@@ -430,6 +443,40 @@ model ChatImage {
   createdAt DateTime    @default(now())
 
   @@index([userId])
+}
+
+model Achievement {
+  id              String              @id @default(cuid())
+  slug            String              @unique
+  title           String
+  description     String
+  difficulty      String
+  metric          String
+  target          Int
+  rewardExp       Int                 @default(0)
+  rewardPimpExp   Int                 @default(0)
+  rewardGymExp    Int                 @default(0)
+  rewardCash      Int                 @default(0)
+  rewardBullets   Int                 @default(0)
+  rewardTitle     String?
+  rewardNameColor String?
+  sortOrder       Int                 @default(0)
+  progress        PlayerAchievement[]
+}
+
+model PlayerAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  progress      Int         @default(0)
+  claimedAt     DateTime?
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
 }
 
 model GameLog {

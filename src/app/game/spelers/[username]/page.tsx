@@ -30,6 +30,8 @@ export default async function PlayerProfilePage({
       lastSeenAt: true,
       displayName: true,
       avatarUrl: true,
+      selectedTitle: true,
+      selectedNameColor: true,
       rank: { select: { name: true, order: true } },
       family: { select: { name: true } },
     },

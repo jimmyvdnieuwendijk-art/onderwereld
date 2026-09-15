@@ -12,6 +12,7 @@ import {
   theftEnergyCost,
   theftJailChance,
 } from "@/lib/vehicle-catalog";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
@@ -58,6 +59,7 @@ export async function stealCar(vehicleTypeId: string): Promise<ActionResult> {
     const message = `Je steelt een ${type.name} (${condition}% staat).`;
     await logEvent(userId, "THEFT", message);
     await tickPlayer(userId);
+    queueAchievementSync(userId);
     return ok(message);
   }
 
@@ -104,10 +106,14 @@ export async function sellVehicle(vehicleId: string): Promise<ActionResult> {
   const payout = Math.max(10, Math.floor((vehicle.condition / 100) * vehicle.vehicleType.baseValue * VEHICLE_SELL_MULT));
   await prisma.$transaction([
     prisma.vehicle.delete({ where: { id: vehicle.id } }),
-    prisma.user.update({ where: { id: userId }, data: { cash: { increment: payout } } }),
+    prisma.user.update({
+      where: { id: userId },
+      data: { cash: { increment: payout }, cashEarned: { increment: payout } },
+    }),
   ]);
   const message = `Je verkoopt de ${vehicle.vehicleType.name} voor ${payout} euro.`;
   await logEvent(userId, "GARAGE", message);
+  queueAchievementSync(userId);
   return ok(message);
 }
 

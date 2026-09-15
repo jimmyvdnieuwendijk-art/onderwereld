@@ -6,6 +6,7 @@ import { clamp, randomInt, remainingMs } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { tickPlayer } from "@/lib/game/player";
 import { getFamilyPerks } from "@/lib/family";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 export async function attemptCrime(crimeId: string): Promise<ActionResult> {
@@ -53,6 +54,8 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
         energy: { decrement: crime.energyCost },
         lastCrimeAt: now,
         crimeCooldownUntil: cooldownUntil,
+        crimeSuccessCount: { increment: 1 },
+        cashEarned: { increment: boosted },
       },
     });
     if (perks) {
@@ -66,6 +69,7 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
     await logEvent(userId, "CRIME", message);
     await bumpWanted(userId, 2);
     await tickPlayer(userId);
+    queueAchievementSync(userId);
     return ok(message);
   }
 

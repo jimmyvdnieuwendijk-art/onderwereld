@@ -25,6 +25,7 @@ import {
   type SortDir,
 } from "@/lib/game/leaderboard";
 import type { FamilyBoardRow, PublicPlayer } from "@/types/game";
+import { StyledPlayerName } from "@/components/game/styled-name";
 
 type FamilySort = "members" | "bank" | "name";
 
@@ -346,7 +347,11 @@ export function PlayersClient({
                               href={`/game/spelers/${row.username}`}
                               className="font-heading text-primary hover:underline"
                             >
-                              {row.displayName}
+                              <StyledPlayerName
+                                displayName={row.displayName}
+                                title={row.selectedTitle}
+                                color={row.selectedNameColor}
+                              />
                             </Link>
                             {row.displayName !== row.username && (
                               <span className="text-xs text-muted-foreground">@{row.username}</span>

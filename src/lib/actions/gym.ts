@@ -14,6 +14,7 @@ import {
   gymLevelByNumber,
 } from "@/lib/gym";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 type Gate =
@@ -88,6 +89,7 @@ export async function trainGym(level: number): Promise<ActionResult> {
       condition: { increment: conditionGain },
       fightSkill: { increment: fightGain },
       gymExp: { increment: session.gymExp },
+      gymSessionCount: { increment: 1 },
       gymCooldownUntil: new Date(Date.now() + session.cooldownMs),
     },
   });
@@ -105,6 +107,7 @@ export async function trainGym(level: number): Promise<ActionResult> {
       : "";
   const message = `${session.name}: ${session.exercises[0].toLowerCase()}. ${bits.join(", ")}.${capped}`;
   await logEvent(g.userId, "GYM", message);
+  queueAchievementSync(g.userId);
   return ok(message);
 }
 

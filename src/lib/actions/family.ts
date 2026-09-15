@@ -34,6 +34,7 @@ import { familyBannerPath, familyPageImagePath, readAvatarFile } from "@/lib/ava
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { randomInt } from "@/lib/format";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 function revalidateFamily() {
@@ -112,6 +113,7 @@ export async function createFamily(name: string, description: string): Promise<A
   const message = `Je sticht familie ${family.name}.`;
   await logEvent(userId, "FAMILY", message);
   revalidateFamily();
+  queueAchievementSync(userId);
   return ok(message);
 }
 
@@ -297,6 +299,7 @@ export async function acceptFamilyInvite(inviteId: string): Promise<ActionResult
   const message = `Je sluit je aan bij ${invite.family.name}.`;
   await logEvent(userId, "FAMILY", message);
   revalidateFamily();
+  queueAchievementSync(userId);
   return ok(message);
 }
 

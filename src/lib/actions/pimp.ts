@@ -31,6 +31,7 @@ import {
   workerCapReached,
 } from "@/lib/pimp";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 type Gate =
@@ -91,6 +92,7 @@ export async function recruitEscort(): Promise<ActionResult> {
 
   const message = `Je haalt ${name} binnen in ${cityDisplayName(cityId)}. Charme ${charm}, loyaliteit ${loyalty}.`;
   await logEvent(g.userId, "PIMP", message);
+  queueAchievementSync(g.userId);
   return ok(message);
 }
 
@@ -296,7 +298,7 @@ export async function buyListedEscort(escortId: string): Promise<ActionResult> {
     await tx.user.update({ where: { id: g.userId }, data: { cash: { decrement: price } } });
     await tx.user.update({
       where: { id: listing.ownerId },
-      data: { cash: { increment: price }, pimpExp: { increment: SALE_PIMP_EXP } },
+      data: { cash: { increment: price }, pimpExp: { increment: SALE_PIMP_EXP }, cashEarned: { increment: price } },
     });
     const seller = await tx.user.findUnique({
       where: { id: listing.ownerId },
@@ -325,6 +327,8 @@ export async function buyListedEscort(escortId: string): Promise<ActionResult> {
 
   const message = `Je koopt ${listing.name} van ${listing.owner.username} voor ${price} euro. ${listing.name} landt in ${cityDisplayName(cityId)}.`;
   await logEvent(g.userId, "PIMP", message);
+  queueAchievementSync(g.userId);
+  queueAchievementSync(listing.ownerId);
   return ok(message);
 }
 
@@ -348,6 +352,7 @@ export async function sellEscortToNpc(workerId: string): Promise<ActionResult> {
       data: {
         cash: { increment: price },
         pimpExp: { increment: SALE_PIMP_EXP },
+        cashEarned: { increment: price },
         mainEscortId: wasMain ? null : undefined,
       },
     }),
@@ -355,6 +360,7 @@ export async function sellEscortToNpc(workerId: string): Promise<ActionResult> {
 
   const message = `Contractoverdracht: een rivaliserende club koopt ${escort.name} over voor ${price} euro. Zij gaat vrijwillig mee. +${SALE_PIMP_EXP} pimp-exp.`;
   await logEvent(g.userId, "PIMP", message);
+  queueAchievementSync(g.userId);
   return ok(message);
 }
 

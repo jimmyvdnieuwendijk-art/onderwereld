@@ -12,6 +12,7 @@ import {
   updateBio,
   uploadAvatar,
 } from "@/lib/actions/account";
+import { selectIdentity } from "@/lib/actions/achievements";
 import { logoutAction } from "@/lib/actions/session";
 import {
   AVATAR_ACCEPT,
@@ -29,7 +30,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogOut } from "lucide-react";
 import { PlayerAvatar } from "@/components/game/player-avatar";
+import { AccountSubnav } from "@/components/game/account-subnav";
+import { StyledPlayerName } from "@/components/game/styled-name";
 import { useGameAction, useLivePlayer } from "@/hooks/use-player";
+import { NAME_COLOR_SWATCHES } from "@/lib/achievement-catalog";
 import type { ActionResult, PlayerSnapshot } from "@/types/game";
 
 function FormMessage({ state }: { state: ActionResult | null }) {
@@ -53,6 +57,7 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
   const avatarAct = useGameAction();
   const bioAct = useGameAction();
   const lookAct = useGameAction();
+  const identityAct = useGameAction();
   const passwordAct = useGameAction();
   const passwordFormRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +67,8 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
   const [displayName, setDisplayName] = useState(p.displayName ?? "");
   const [bioHidden, setBioHidden] = useState(p.bioHidden);
   const [hideOnline, setHideOnline] = useState(p.hideOnline);
+  const [title, setTitle] = useState(p.selectedTitle ?? "");
+  const [color, setColor] = useState(p.selectedNameColor ?? "");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -89,12 +96,15 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
           <div>
             <h1 className="font-heading text-2xl leading-none md:text-3xl">Profiel</h1>
           </div>
-          <Link
-            href={`/game/spelers/${p.username}`}
-            className="text-sm text-primary hover:underline"
-          >
-            Bekijk publiek profiel
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <AccountSubnav />
+            <Link
+              href={`/game/spelers/${p.username}`}
+              className="text-sm text-primary hover:underline"
+            >
+              Bekijk publiek profiel
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -106,7 +116,13 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <PlayerAvatar url={shownAvatar} username={shownName} className="size-20 shrink-0 text-2xl" />
             <div className="min-w-0 space-y-1">
-              <p className="font-heading text-xl leading-none">{shownName}</p>
+              <p className="font-heading text-xl leading-none">
+                <StyledPlayerName
+                  displayName={shownName}
+                  title={p.selectedTitle}
+                  color={p.selectedNameColor}
+                />
+              </p>
               <p className="truncate text-sm text-muted-foreground">
                 @{p.username} · {p.email}
               </p>
@@ -197,6 +213,74 @@ export function AccountClient({ initialPlayer }: { initialPlayer?: PlayerSnapsho
               {lookAct.pending ? "Opslaan…" : "Weergave opslaan"}
             </Button>
             <FormMessage state={lookAct.feedback} />
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card size="sm" className="border-border/50">
+        <CardHeader className="border-b border-border/40">
+          <CardTitle>Titel en naamkleur</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              identityAct.run(() => selectIdentity(title, color));
+            }}
+          >
+            <p className="text-sm text-muted-foreground">
+              Voorbeeld:{" "}
+              <StyledPlayerName displayName={shownName} title={title || null} color={color || null} />
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="title">Titel</Label>
+                <select
+                  id="title"
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                >
+                  <option value="">Geen titel</option>
+                  {p.unlockedTitles.map((row) => (
+                    <option key={row} value={row}>
+                      {row}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nameColor">Naamkleur</Label>
+                <select
+                  id="nameColor"
+                  className="h-9 w-full rounded-md border border-input bg-transparent px-2 text-sm"
+                  value={color}
+                  onChange={(event) => setColor(event.target.value)}
+                >
+                  <option value="">Standaard</option>
+                  {p.unlockedNameColors.map((hex) => {
+                    const swatch = NAME_COLOR_SWATCHES.find((row) => row.hex === hex);
+                    return (
+                      <option key={hex} value={hex}>
+                        {swatch?.label ?? hex}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+            <Button type="submit" disabled={identityAct.pending}>
+              {identityAct.pending ? "Opslaan…" : "Identiteit opslaan"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Speel titels en kleuren vrij via{" "}
+              <Link href="/game/account/prestaties" className="text-primary hover:underline">
+                Prestaties
+              </Link>
+              .
+            </p>
+            <FormMessage state={identityAct.feedback} />
           </form>
         </CardContent>
       </Card>

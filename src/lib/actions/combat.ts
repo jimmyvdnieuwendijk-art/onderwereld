@@ -8,6 +8,7 @@ import { hospitalMsForHealth } from "@/lib/hospital";
 import { getFamilyPerks } from "@/lib/family";
 import { ammoKindForWeapon, ammoKindMeta } from "@/lib/shop-catalog";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 import type { Prisma } from "@prisma/client";
 
@@ -116,6 +117,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
         cash: { increment: stolen },
         exp: { increment: killed ? 55 : 18 },
         killCount: { increment: killed ? 1 : 0 },
+        cashEarned: { increment: stolen },
       },
     });
     await tx.user.update({
@@ -171,6 +173,7 @@ export async function attackPlayer(defenderId: string, bulletsUsed: number): Pro
     );
   }
   await tickPlayer(userId);
+  queueAchievementSync(userId);
   return ok(outcome);
 }
 
