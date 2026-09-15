@@ -5,8 +5,8 @@
  * Prisma treats adding `User.facebookId` UNIQUE as "data loss" and, without a TTY,
  * aborts unless `--accept-data-loss`. That flag is too broad for a live game DB.
  *
- * This script applies only that unique index (NULLs allowed; empty strings nulled),
- * then runs a normal `db push` for the rest of the schema (Chat, etc.).
+ * Add the column + unique index explicitly (NULLs allowed; empty strings nulled),
+ * then run a normal `db push` for the rest of the schema (Chat, etc.).
  */
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
