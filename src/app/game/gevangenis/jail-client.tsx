@@ -2,10 +2,10 @@
 
 import { payBail } from "@/lib/actions/combat";
 import { BAIL_PER_MINUTE } from "@/lib/constants";
-import { formatMoney, remainingMs } from "@/lib/format";
+import { detentionBuyoutCost, formatMoney, remainingMs } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Countdown } from "@/components/game/countdown";
+import { Countdown, useNow } from "@/components/game/countdown";
 import { useGameAction, useLivePlayer } from "@/hooks/use-player";
 import type { PlayerSnapshot } from "@/types/game";
 
@@ -18,9 +18,12 @@ export function JailClient({
 }) {
   const p = useLivePlayer(initialPlayer)!;
   const { run, pending } = useGameAction();
-  const ms = remainingMs(p.inJailUntil);
+  const now = useNow();
+  const ms = remainingMs(p.inJailUntil, now);
   const jailed = ms > 0;
-  const cost = Math.max(1, Math.ceil(ms / 60_000)) * BAIL_PER_MINUTE;
+  const minutes = jailed ? Math.max(1, Math.ceil(ms / 60_000)) : 0;
+  const cost = detentionBuyoutCost(ms, BAIL_PER_MINUTE);
+  const canPay = jailed && p.cash >= cost;
 
   return (
     <div className="space-y-4">
@@ -61,13 +64,24 @@ export function JailClient({
           {jailed ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Andere acties zijn geblokkeerd tot je vrijkomt of borg betaalt.
+                Andere acties zijn geblokkeerd tot je uitzit of jezelf uitkoopt.
               </p>
-              <p className="text-sm text-muted-foreground">
-                Borg: {formatMoney(cost)}. Wachten is gratis.
-              </p>
-              <Button disabled={pending} onClick={() => run(() => payBail())}>
-                Borg betalen
+              <div className="rounded-lg border border-[#d4a359]/35 bg-[#1a1510] px-3 py-2.5 text-sm">
+                <p className="text-[11px] uppercase tracking-wide text-[#d4a359]">Jezelf uitkopen</p>
+                <p className="mt-1 text-muted-foreground">
+                  Borg = resterende minuten (naar boven) × {formatMoney(BAIL_PER_MINUTE)}.
+                </p>
+                <p className="mt-1 tabular-nums">
+                  {minutes} min × {formatMoney(BAIL_PER_MINUTE)} ={" "}
+                  <span className="font-heading text-[#d4a359]">{formatMoney(cost)}</span>
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Jouw cash: {formatMoney(p.cash)}
+                  {!canPay ? " — te weinig om jezelf vrij te kopen." : ""}
+                </p>
+              </div>
+              <Button disabled={pending || !canPay} onClick={() => run(() => payBail())}>
+                Jezelf uitkopen · {formatMoney(cost)}
               </Button>
             </>
           ) : (

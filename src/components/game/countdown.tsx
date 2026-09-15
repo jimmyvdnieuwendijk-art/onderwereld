@@ -3,6 +3,15 @@
 import { useEffect, useState } from "react";
 import { formatClock, formatDuration, remainingMs } from "@/lib/format";
 
+export function useNow(intervalMs = 1000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 export function Countdown({
   until,
   label,
@@ -12,14 +21,8 @@ export function Countdown({
   label?: string;
   clock?: boolean;
 }) {
-  const [, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const ms = remainingMs(until);
+  const now = useNow();
+  const ms = remainingMs(until, now);
   if (ms <= 0) return null;
 
   return (

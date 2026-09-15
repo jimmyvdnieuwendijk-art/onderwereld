@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { blockedReason } from "@/lib/game/player";
-import { clamp, randomInt } from "@/lib/format";
+import { clamp, randomInt, remainingMs } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
 import { tickPlayer } from "@/lib/game/player";
 import { getFamilyPerks } from "@/lib/family";
@@ -18,7 +18,7 @@ export async function attemptCrime(crimeId: string): Promise<ActionResult> {
   const blocked = blockedReason(player);
   if (blocked) return fail(blocked, "warning");
 
-  if (player.crimeCooldownUntil && new Date(player.crimeCooldownUntil).getTime() > Date.now()) {
+  if (player.crimeCooldownUntil && remainingMs(player.crimeCooldownUntil) > 0) {
     return fail("Je moet nog bijkomen van je vorige klus.", "warning");
   }
 

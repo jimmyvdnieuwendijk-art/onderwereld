@@ -1,5 +1,6 @@
 import type { PublicPlayer } from "@/types/game";
 import { ONLINE_WINDOW_MS } from "@/lib/constants";
+import { isActiveUntil } from "@/lib/format";
 
 /** Public dossier for other players — never include city or travel destination. */
 export function publicDisplayName(user: { displayName?: string | null; username: string }) {
@@ -32,8 +33,8 @@ export function toPublicPlayer(user: {
   const bio = user.bio?.trim() ? user.bio : null;
   const seen = user.lastSeenAt?.getTime() ?? 0;
   const isOnline = !user.hideOnline && seen > 0 && now - seen <= ONLINE_WINDOW_MS;
-  const inJail = !!(user.inJailUntil && user.inJailUntil.getTime() > now);
-  const inHospital = !!(user.inHospitalUntil && user.inHospitalUntil.getTime() > now);
+  const inJail = isActiveUntil(user.inJailUntil, now);
+  const inHospital = isActiveUntil(user.inHospitalUntil, now);
   const isDead = !!user.isDead && inHospital;
   return {
     id: user.id,
@@ -47,7 +48,7 @@ export function toPublicPlayer(user: {
     isDead,
     inJail,
     inHospital,
-    isTraveling: !!(user.travelEndAt && user.travelEndAt.getTime() > now),
+    isTraveling: isActiveUntil(user.travelEndAt, now),
     killCount: user.killCount,
     familyName: user.family?.name ?? null,
     bio: hidden ? null : bio,

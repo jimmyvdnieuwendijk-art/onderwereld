@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { Countdown, useNow } from "@/components/game/countdown";
 import { remainingMs } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
-import { Countdown } from "@/components/game/countdown";
 import { DASHBOARD_LINKS } from "@/components/game/nav-config";
 import { InventoryPanel } from "@/components/game/inventory-panel";
 import { WaitQueuePanel } from "@/components/game/wait-queue-panel";
@@ -20,13 +20,14 @@ export function DashboardClient({
   extras?: WaitQueueExtras;
 }) {
   const p = useLivePlayer(initialPlayer)!;
+  const now = useNow();
 
   const statusChips = [
-    remainingMs(p.inJailUntil) > 0 ? { key: "jail", label: "Cel", until: p.inJailUntil } : null,
-    remainingMs(p.inHospitalUntil) > 0
+    remainingMs(p.inJailUntil, now) > 0 ? { key: "jail", label: "Cel", until: p.inJailUntil } : null,
+    remainingMs(p.inHospitalUntil, now) > 0
       ? { key: "hospital", label: "Ziekenhuis", until: p.inHospitalUntil }
       : null,
-    remainingMs(p.travelEndAt) > 0
+    remainingMs(p.travelEndAt, now) > 0
       ? { key: "travel", label: `Vlucht ${p.travelDestinationName ?? ""}`.trim(), until: p.travelEndAt }
       : null,
   ].filter(Boolean) as { key: string; label: string; until: string }[];
