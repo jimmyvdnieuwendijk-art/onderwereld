@@ -13,6 +13,7 @@ import { usePlayer } from "@/hooks/use-player";
 import { Countdown } from "@/components/game/countdown";
 import { TravelBanner } from "@/components/game/travel-banner";
 import { DetentionBanner } from "@/components/game/detention-banner";
+import { StyledPlayerName } from "@/components/game/styled-name";
 import { isMarktChildActive, isNavActive, MARKT_NAV_CHILDREN, MOBILE_PRIMARY, NAV_GROUPS } from "@/components/game/nav-config";
 import type { PlayerSnapshot } from "@/types/game";
 import { cn } from "@/lib/utils";
@@ -200,7 +201,14 @@ export function GameShell({
       <aside className="hidden w-64 shrink-0 border-r border-border/70 bg-sidebar/80 p-3 md:flex md:flex-col">
         <Link href="/game" className="mb-4 px-1">
           <p className="font-heading text-xl tracking-wide text-primary">Onderwereld</p>
-          <p className="text-xs text-muted-foreground">{p.displayName?.trim() || p.username} · {p.currentCityName}</p>
+          <p className="text-xs text-muted-foreground">
+            <StyledPlayerName
+              displayName={p.displayName?.trim() || p.username}
+              title={p.selectedTitle}
+              color={p.selectedNameColor}
+            />{" "}
+            · {p.currentCityName}
+          </p>
         </Link>
         <div className="flex-1 overflow-y-auto pr-0.5">
           <NavLinks unreadMessages={p.unreadMessages} />

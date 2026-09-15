@@ -40,8 +40,8 @@ export const AVATAR_ACCEPT = "image/jpeg,image/png,image/webp";
 export const ONLINE_WINDOW_MS = 3 * 60 * 1000;
 export const LAST_SEEN_WRITE_MS = 60 * 1000;
 
-export const CHAT_BODY_MAX = 280;
-export const CHAT_RATE_MS = 4_000;
+export const CHAT_BODY_MAX = 380;
+export const CHAT_RATE_MS = 900;
 export const CHAT_BURST_MAX = 25;
 export const CHAT_BURST_WINDOW_MS = 10 * 60 * 1000;
 export const CHAT_KEEP = 250;

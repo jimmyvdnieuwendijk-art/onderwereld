@@ -31,6 +31,8 @@ export const PUBLIC_PLAYER_SELECT = {
   lastSeenAt: true,
   displayName: true,
   avatarUrl: true,
+  selectedTitle: true,
+  selectedNameColor: true,
   rank: { select: { name: true, order: true } },
   family: { select: { name: true } },
 } as const satisfies Prisma.UserSelect;

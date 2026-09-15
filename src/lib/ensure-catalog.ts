@@ -4,6 +4,7 @@ import { ensureRankLadder } from "@/lib/ensure-ranks";
 import { CRIMES } from "@/lib/crime-catalog";
 import { SHOP_ITEMS } from "@/lib/shop-catalog";
 import { VEHICLES } from "@/lib/vehicle-catalog";
+import { ensureAchievements } from "@/lib/achievements";
 
 /** Exact cash for the shared DonDemo test account. */
 export const DEMO_TEST_CASH = 500_000;
@@ -75,6 +76,7 @@ export async function ensureGameCatalog() {
           update: { ...vehicle },
         });
       }
+      await ensureAchievements();
     })().catch((error) => {
       catalogSync = null;
       console.error("ensureGameCatalog", error);

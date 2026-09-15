@@ -68,7 +68,7 @@ export async function upsertFacebookUser(input: {
     await prisma.user
       .update({
         where: { id: existingByFacebook.id },
-        data: { lastLoginAt: new Date() },
+        data: { lastLoginAt: new Date(), loginCount: { increment: 1 } },
       })
       .catch(() => undefined);
     return existingByFacebook;
@@ -91,7 +91,7 @@ export async function upsertFacebookUser(input: {
     }
     const linked = await prisma.user.update({
       where: { id: existingByEmail.id },
-      data: { facebookId, lastLoginAt: new Date() },
+      data: { facebookId, lastLoginAt: new Date(), loginCount: { increment: 1 } },
       select: { id: true, username: true, email: true, usernameChosen: true },
     });
     return linked;
@@ -117,6 +117,7 @@ export async function upsertFacebookUser(input: {
         cash: STARTER_CASH,
         rankId: starterRank.id,
         lastLoginAt: new Date(),
+        loginCount: 1,
       },
       select: { id: true, username: true, email: true, usernameChosen: true },
     });

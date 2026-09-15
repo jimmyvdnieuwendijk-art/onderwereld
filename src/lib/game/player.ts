@@ -18,6 +18,7 @@ import { tickFamilyEconomy } from "@/lib/family";
 import { firePriceAlerts } from "@/lib/game/price-alerts";
 import { getRanksCached } from "@/lib/catalog";
 import { isActiveUntil, remainingMs } from "@/lib/format";
+import { normalizeNameColor } from "@/lib/player-name";
 import type { PlayerSnapshot } from "@/types/game";
 
 /** Persist energy at most every 30s so nav does not write on every request. */
@@ -258,6 +259,10 @@ function toSnapshot(
     usernameChosen: user.usernameChosen !== false,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: toIso(user.lastLoginAt),
+    selectedTitle: user.selectedTitle?.trim() || null,
+    selectedNameColor: normalizeNameColor(user.selectedNameColor),
+    unlockedTitles: user.unlockedTitles ?? [],
+    unlockedNameColors: (user.unlockedNameColors ?? []).map((hex) => hex.toLowerCase()),
     cash: user.cash,
     bankBalance: user.bankBalance,
     health: user.health,

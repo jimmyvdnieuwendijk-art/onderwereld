@@ -1,6 +1,7 @@
 import type { PublicPlayer } from "@/types/game";
 import { ONLINE_WINDOW_MS } from "@/lib/constants";
 import { isActiveUntil } from "@/lib/format";
+import { normalizeNameColor } from "@/lib/player-name";
 
 /** Public dossier for other players — never include city or travel destination. */
 export function publicDisplayName(user: { displayName?: string | null; username: string }) {
@@ -25,6 +26,8 @@ export function toPublicPlayer(user: {
   lastSeenAt?: Date | null;
   displayName?: string | null;
   avatarUrl?: string | null;
+  selectedTitle?: string | null;
+  selectedNameColor?: string | null;
   rank: { name: string; order: number };
   family: { name: string } | null;
 }): PublicPlayer {
@@ -40,6 +43,8 @@ export function toPublicPlayer(user: {
     id: user.id,
     username: user.username,
     displayName: publicDisplayName(user),
+    selectedTitle: user.selectedTitle?.trim() || null,
+    selectedNameColor: normalizeNameColor(user.selectedNameColor),
     rankName: user.rank.name,
     rankOrder: user.rank.order,
     exp: user.exp,

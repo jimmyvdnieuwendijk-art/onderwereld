@@ -37,6 +37,7 @@ import {
   vipJobByKey,
 } from "@/lib/empire";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 type Gate =
@@ -125,6 +126,7 @@ export async function recruitStreet(): Promise<ActionResult> {
     });
     const message = `${pickEmpireToast("streetOk")} ${name} stapt in ${cityDisplayName(cityId)}. Charme ${charm}.`;
     await logEvent(g.userId, "PIMP", message);
+    queueAchievementSync(g.userId);
     return ok(message);
   }
 
@@ -162,6 +164,7 @@ export async function recruitStripclub(): Promise<ActionResult> {
     });
     const message = `${pickEmpireToast("stripOk")} ${name} komt van het podium in ${cityDisplayName(cityId)}. Charme ${charm}.`;
     await logEvent(g.userId, "PIMP", message);
+    queueAchievementSync(g.userId);
     return ok(message);
   }
 
@@ -299,10 +302,11 @@ export async function spendBlackmail(mode: string): Promise<ActionResult> {
     const payout = randomInt(700, 1400);
     await prisma.user.update({
       where: { id: g.userId },
-      data: { blackmailTapes: { decrement: 1 }, cash: { increment: payout } },
+      data: { blackmailTapes: { decrement: 1 }, cash: { increment: payout }, cashEarned: { increment: payout } },
     });
     const message = `Hij koopt de tape terug. ${payout} euro, contant, nog warm. Sextortion op een corrupte gast — niet op je crew.`;
     await logEvent(g.userId, "PIMP", message);
+    queueAchievementSync(g.userId);
     return ok(message);
   }
   if (mode === "protect") {

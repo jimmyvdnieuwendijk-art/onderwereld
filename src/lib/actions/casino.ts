@@ -26,6 +26,7 @@ import {
   type PokerTable,
 } from "@/lib/casino";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 type Gate =
@@ -58,8 +59,9 @@ async function payOut(userId: string, amount: number) {
   if (amount <= 0) return;
   await prisma.user.update({
     where: { id: userId },
-    data: { cash: { increment: amount } },
+    data: { cash: { increment: amount }, cashEarned: { increment: amount } },
   });
+  queueAchievementSync(userId);
 }
 
 export async function playRoulette(kind: string, pick: string, stakeRaw: number, cheat: boolean): Promise<ActionResult> {

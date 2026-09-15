@@ -12,6 +12,7 @@ import {
 import { blockedReason, tickPlayer } from "@/lib/game/player";
 import { randomInt } from "@/lib/format";
 import { bumpWanted, fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import type { ActionResult } from "@/types/game";
 
 export async function bookFlight(destinationId: string, privateJet = false): Promise<ActionResult> {
@@ -62,12 +63,14 @@ export async function bookFlight(destinationId: string, privateJet = false): Pro
       cash: { decrement: quote.cost },
       travelDestinationId: destinationId,
       travelEndAt,
+      travelCount: { increment: 1 },
     },
   });
 
   const jetLabel = privateJet ? "Privéjet" : "Lijnvlucht";
   const message = `${jetLabel} geboekt naar ${quote.to.city} (${quote.to.airport}) voor ${quote.cost} euro. Onderweg ${quote.seconds} seconden.`;
   await logEvent(userId, "TRAVEL", message);
+  queueAchievementSync(userId);
   return ok(message);
 }
 

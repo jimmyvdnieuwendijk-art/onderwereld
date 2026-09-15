@@ -57,6 +57,10 @@ export type PlayerSnapshot = {
   usernameChosen: boolean;
   createdAt: string;
   lastLoginAt: string | null;
+  selectedTitle: string | null;
+  selectedNameColor: string | null;
+  unlockedTitles: string[];
+  unlockedNameColors: string[];
   cash: number;
   bankBalance: number;
   health: number;
@@ -122,6 +126,8 @@ export type PublicPlayer = {
   id: string;
   username: string;
   displayName: string;
+  selectedTitle: string | null;
+  selectedNameColor: string | null;
   rankName: string;
   rankOrder: number;
   exp: number;

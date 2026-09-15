@@ -15,6 +15,7 @@ import {
   bankWithdrawPayout,
 } from "@/lib/constants";
 import { fail, logEvent, ok, requireUserId, revalidateGame } from "@/lib/actions/helpers";
+import { queueAchievementSync } from "@/lib/achievements";
 import { cityDisplayName, normalizeCityId, smugglePrice, type SmuggleGood } from "@/lib/airports";
 import { clamp } from "@/lib/format";
 import { firePriceAlerts } from "@/lib/game/price-alerts";
@@ -316,7 +317,7 @@ export async function buyListing(listingId: string): Promise<ActionResult> {
       });
       await tx.user.update({
         where: { id: listing.sellerId },
-        data: { cash: { increment: listing.price } },
+        data: { cash: { increment: listing.price }, cashEarned: { increment: listing.price } },
       });
 
       const stockField = stockFieldForType(listing.type);
@@ -355,6 +356,8 @@ export async function buyListing(listingId: string): Promise<ActionResult> {
   const message = `Je koopt ${label} van ${listing.seller.username} voor ${listing.price} euro.`;
   await logEvent(userId, "MARKET", message);
   await logEvent(listing.sellerId, "MARKET", `${player.username} koopt ${label} van je voor ${listing.price} euro.`);
+  queueAchievementSync(userId);
+  queueAchievementSync(listing.sellerId);
   return ok(message);
 }
 
